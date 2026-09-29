@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { contiene, diasDe, hoyEnArgentina, periodoAnterior, periodoDe, rango } from "@/backend/models/dominio/periodo";
+import {
+  contiene,
+  diasDe,
+  hoyEnArgentina,
+  periodoAnterior,
+  periodoDe,
+  rango,
+  resolverPeriodo,
+} from "@/backend/models/dominio/periodo";
 
 // Los períodos de las consultas (CONTEXT.md): días del calendario en hora de Argentina. Lógica pura: el "ahora"
 // entra por parámetro, así ningún test depende de la fecha en que se corre.
@@ -60,5 +68,37 @@ describe("periodoAnterior", () => {
 
   it("de un rango cualquiera, la misma cantidad de días justo antes", () => {
     expect(periodoAnterior(rango("2026-09-11", "2026-09-20"))).toEqual({ desde: "2026-09-01", hasta: "2026-09-10" });
+  });
+});
+
+describe("resolverPeriodo (lo que pide el asistente: «este mes», «la semana pasada», un rango)", () => {
+  const HOY = "2026-09-17"; // jueves
+
+  it("sin nada, es el mes de hoy", () => {
+    expect(resolverPeriodo({}, HOY)).toEqual({ desde: "2026-09-01", hasta: "2026-09-30" });
+  });
+
+  it("una unidad es la de hoy; con una fecha de referencia, la que contiene a esa fecha", () => {
+    expect(resolverPeriodo({ unidad: "semana" }, HOY)).toEqual({ desde: "2026-09-14", hasta: "2026-09-20" });
+    expect(resolverPeriodo({ unidad: "dia", referencia: "2026-09-16" }, HOY)).toEqual({
+      desde: "2026-09-16",
+      hasta: "2026-09-16",
+    });
+    expect(resolverPeriodo({ unidad: "mes", referencia: "2026-08-03" }, HOY)).toEqual({
+      desde: "2026-08-01",
+      hasta: "2026-08-31",
+    });
+  });
+
+  it("desde y hasta arman un rango explícito (y tiene prioridad sobre la unidad)", () => {
+    expect(resolverPeriodo({ desde: "2026-09-01", hasta: "2026-09-10", unidad: "semana" }, HOY)).toEqual({
+      desde: "2026-09-01",
+      hasta: "2026-09-10",
+    });
+  });
+
+  it("solo desde es hasta hoy; un rango al revés es un error", () => {
+    expect(resolverPeriodo({ desde: "2026-09-10" }, HOY)).toEqual({ desde: "2026-09-10", hasta: HOY });
+    expect(() => resolverPeriodo({ desde: "2026-09-10", hasta: "2026-09-01" }, HOY)).toThrow(/antes de empezar/);
   });
 });

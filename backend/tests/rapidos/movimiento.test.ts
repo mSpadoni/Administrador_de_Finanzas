@@ -3,6 +3,7 @@ import {
   CATEGORIAS,
   DatosDeMovimientoSchema,
   montoEnPesos,
+  valorDeCotizacion,
   type DatosDeMovimiento,
 } from "@/backend/models/dominio/movimiento";
 
@@ -69,5 +70,17 @@ describe("montoEnPesos", () => {
 
     expect(() => montoEnPesos(enDolares, null)).toThrow(/cotización/);
     expect(() => montoEnPesos(GASTO, { tipoDeDolar: "blue", valor: 1400 })).toThrow(/cotización/);
+  });
+});
+
+describe("valorDeCotizacion", () => {
+  const blue = { compra: 1540, venta: 1560 };
+
+  it("un gasto en dólares se pasa a pesos con el valor de venta (lo que cuesta comprar el dólar)", () => {
+    expect(valorDeCotizacion("gasto", blue)).toBe(1560);
+  });
+
+  it("un ingreso en dólares, con el de compra (lo que te dan al venderlo)", () => {
+    expect(valorDeCotizacion("ingreso", blue)).toBe(1540);
   });
 });
