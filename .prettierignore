@@ -1,0 +1,6 @@
+# Generados
+.next/
+node_modules/
+next-env.d.ts
+package-lock.json
+tsconfig.tsbuildinfo

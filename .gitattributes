@@ -1,0 +1,2 @@
+# Todos los archivos de texto con fin de línea LF (igual que .prettierrc.json), también en Windows.
+* text=auto eol=lf
