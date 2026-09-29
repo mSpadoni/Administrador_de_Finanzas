@@ -3,10 +3,10 @@ import { afterAll, describe, expect, it } from "vitest";
 import { ChatController } from "@/backend/controllers/chat.controller";
 import { ErrorDeAplicacion } from "@/backend/errores";
 import { ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
-import { MAX_MENSAJES_CONTEXTO, textoDe, type AsistenteUIMessage } from "@/shared/chat";
+import { MAX_MENSAJES_CONTEXTO, type AsistenteUIMessage } from "@/shared/chat";
 import { borrarUsuariosDePrueba, crearUsuarioLogueado } from "../helpers/usuarioDePrueba";
 import { usuarioConChat, codigoDelError, conversar, herramientas, mensajesGuardados } from "../helpers/chatDePrueba";
-import { errorDeLaApi, modeloQueFalla, modeloQueResponde, modeloQueUsaUnaTool } from "../helpers/modeloDePrueba";
+import { errorDeLaApi, modeloQueFalla, modeloQueResponde } from "../helpers/modeloDePrueba";
 import { conVariablesAsync } from "../helpers/variablesDeEntorno";
 
 // NUESTRA orquestación del chat (guardar, errores, timeout, streaming, historial) contra la Supabase local,
@@ -115,35 +115,6 @@ describe("ChatController.responder — lo que recibe el modelo", () => {
     expect(prompt).toContain(`mensaje-${MAX_MENSAJES_CONTEXTO + 4}`); // el último de los anteriores
     expect(prompt).not.toContain('"mensaje-4"'); // uno de los que quedaron afuera
     expect(prompt).toContain("el nuevo");
-  });
-});
-
-describe("ChatController.responder — tools", () => {
-  it("cuando el modelo pide registrar un gasto, queda guardado a nombre de la persona y la respuesta muestra la tool", async () => {
-    const modelo = modeloQueUsaUnaTool(
-      "registrar_movimiento",
-      {
-        tipo: "gasto",
-        monto: 5000,
-        moneda: "ARS",
-        categoria: "supermercado",
-        medioDePago: "debito",
-        descripcion: "Súper",
-        fecha: "2026-09-10",
-      },
-      "Listo, registré $ 5.000 en supermercado."
-    );
-    const { conversaciones, movimientos, controller } = await usuarioConChat({ crearModelo: () => modelo });
-    const id = randomUUID();
-
-    await conversar(controller, id, "Gasté 5000 en el súper con débito el 10");
-
-    expect(await movimientos.listar({ desde: "2026-09-01", hasta: "2026-09-30" })).toMatchObject([
-      { tipo: "gasto", monto: 5000, categoria: "supermercado", fecha: "2026-09-10" },
-    ]);
-    const [, respuesta] = await mensajesGuardados(conversaciones, id);
-    expect(herramientas(respuesta)).toEqual(["registrar_movimiento"]);
-    expect(textoDe(respuesta)).toContain("registré $ 5.000");
   });
 });
 

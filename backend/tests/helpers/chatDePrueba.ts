@@ -19,7 +19,7 @@ export async function usuarioConChat(dependencias: ConstructorParameters<typeof 
     movimientos: () => movimientos,
     ...dependencias,
   });
-  return { usuario, conversaciones, movimientos, controller };
+  return { usuario, conversaciones, controller };
 }
 
 /** Lo que miran los tests de cada evento del stream (cada tipo de evento trae solo algunos de estos campos). */

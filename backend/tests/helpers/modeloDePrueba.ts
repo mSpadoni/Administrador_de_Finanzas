@@ -1,10 +1,6 @@
 import { APICallError } from "ai";
 import { MockLanguageModelV4, simulateReadableStream } from "ai/test";
 
-/** Una parte del stream de un modelo (lo que emite un proveedor): se deduce del propio mock, sin otra dependencia. */
-type ParteDelStream =
-  Awaited<ReturnType<MockLanguageModelV4["doStream"]>>["stream"] extends ReadableStream<infer P> ? P : never;
-
 // Modelos de lenguaje de prueba para probar NUESTRA orquestación del chat (guardar, límites, errores, timeout,
 // streaming, historial) sin depender de internet ni de lo que decida un LLM real. Usan MockLanguageModelV4, el
 // doble oficial del AI SDK, que cumple el mismo contrato que un proveedor real (OpenAI).
@@ -34,37 +30,6 @@ export function modeloQueResponde(texto: string) {
           { type: "text-end" as const, id: "t1" },
           { type: "finish" as const, usage: USO, finishReason: { unified: "stop" as const, raw: "stop" } },
         ],
-      }),
-    }),
-  });
-}
-
-/**
- * Un modelo que primero pide una tool (`nombre` con `datos`, como la pediría el modelo real) y, cuando recibe el
- * resultado, responde `texto`. Sirve para probar que el chat ejecuta las tools de verdad (con la base y la sesión).
- */
-export function modeloQueUsaUnaTool(nombre: string, datos: Record<string, unknown>, texto: string) {
-  let llamadas = 0;
-  return new MockLanguageModelV4({
-    modelId: "modelo-de-prueba",
-    doStream: async () => ({
-      stream: simulateReadableStream<ParteDelStream>({
-        initialDelayInMs: null,
-        chunkDelayInMs: 0,
-        chunks:
-          llamadas++ === 0
-            ? [
-                { type: "stream-start", warnings: [] },
-                { type: "tool-call", toolCallId: "llamada-1", toolName: nombre, input: JSON.stringify(datos) },
-                { type: "finish", usage: USO, finishReason: { unified: "tool-calls", raw: "tool_calls" } },
-              ]
-            : [
-                { type: "stream-start", warnings: [] },
-                { type: "text-start", id: "t1" },
-                { type: "text-delta", id: "t1", delta: texto },
-                { type: "text-end", id: "t1" },
-                { type: "finish", usage: USO, finishReason: { unified: "stop", raw: "stop" } },
-              ],
       }),
     }),
   });
