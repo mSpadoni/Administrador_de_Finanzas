@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { ChatController } from "@/backend/controllers/chat.controller";
 import { ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
+import { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
 import type { MetadatosDeRespuesta, AsistenteUIMessage } from "@/shared/chat";
 import { leerErrorPublico } from "@/shared/errores";
 import { crearUsuarioLogueado } from "./usuarioDePrueba";
@@ -8,15 +9,17 @@ import { crearUsuarioLogueado } from "./usuarioDePrueba";
 // Lo que comparten los tests del chat (con el modelo de prueba y con el real): un usuario con su controller,
 // mandar un mensaje como useChat y leer lo que quedó guardado.
 
-/** Un usuario logueado, sus models y un ChatController que guarda con su sesión. */
+/** Un usuario logueado, sus models (conversaciones y movimientos) y un ChatController que guarda con su sesión. */
 export async function usuarioConChat(dependencias: ConstructorParameters<typeof ChatController>[0] = {}) {
   const usuario = await crearUsuarioLogueado();
   const conversaciones = new ConversacionesModel(usuario.navegador.crearCliente);
+  const movimientos = new MovimientosModel(usuario.navegador.crearCliente);
   const controller = new ChatController({
     conversaciones: () => conversaciones,
+    movimientos: () => movimientos,
     ...dependencias,
   });
-  return { usuario, conversaciones, controller };
+  return { usuario, conversaciones, movimientos, controller };
 }
 
 /** Lo que miran los tests de cada evento del stream (cada tipo de evento trae solo algunos de estos campos). */

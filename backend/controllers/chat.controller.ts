@@ -3,6 +3,7 @@ import type { InferUIMessageChunk, LanguageModel } from "ai";
 import { ErrorDeAplicacion } from "@/backend/errores";
 import { crearModeloOpenAI } from "@/backend/lib/openai";
 import { conversacionesModel, type ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
+import { movimientosModel, type MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
 import { LIMITES_DE_USO, limiteAlcanzado, type LimitesDeUso } from "@/backend/models/dominio/limiteDeUso";
 import { crearToolsAsistente } from "@/backend/tools/asistente.tools";
 import { Agente } from "@/backend/asistente/agente";
@@ -18,6 +19,7 @@ import { tituloDesde } from "@/shared/conversaciones";
 type Dependencias = {
   crearModelo?: () => LanguageModel;
   conversaciones?: () => ConversacionesModel;
+  movimientos?: () => MovimientosModel;
   timeoutMs?: number;
   /** Pausa entre palabras al mostrar la respuesta (ms). 0 = tan rápido como llega del modelo. */
   pausaEntrePalabrasMs?: number;
@@ -35,6 +37,7 @@ type Dependencias = {
 export class ChatController {
   private readonly crearModelo: () => LanguageModel;
   private readonly conversaciones: () => ConversacionesModel;
+  private readonly movimientos: () => MovimientosModel;
   private readonly agente: Agente;
   private readonly limites: LimitesDeUso;
 
@@ -43,6 +46,7 @@ export class ChatController {
   constructor({
     crearModelo = () => crearModeloOpenAI(),
     conversaciones = () => conversacionesModel,
+    movimientos = () => movimientosModel,
     timeoutMs,
     pausaEntrePalabrasMs,
     temperatura,
@@ -50,6 +54,7 @@ export class ChatController {
   }: Dependencias = {}) {
     this.crearModelo = crearModelo;
     this.conversaciones = conversaciones;
+    this.movimientos = movimientos;
     // El agente se configura una vez (timeout y ritmo del texto); sin valores, usa los suyos.
     this.agente = new Agente({ timeoutMs, pausaEntrePalabrasMs, temperatura });
     this.limites = limites;
@@ -104,7 +109,7 @@ export class ChatController {
     return this.agente.responder({
       modelo,
       mensajes: [...historial, mensaje],
-      tools: crearToolsAsistente(),
+      tools: crearToolsAsistente({ movimientos: this.movimientos() }),
       alTerminar: (respuesta) =>
         conversaciones.agregarMensajes(conversacionId, [respuesta]).catch((error: unknown) => {
           console.error("No se pudo guardar la respuesta del asistente:", error);

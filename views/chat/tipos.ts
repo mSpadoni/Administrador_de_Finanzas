@@ -45,6 +45,26 @@ export function siguienteScroll(actual: number, objetivo: number, fraccion = 0.0
  * Tipado con los nombres reales de las tools: si se agrega o renombra una, esto deja de compilar hasta tener su texto.
  */
 export const TEXTOS_DE_HERRAMIENTAS: Record<NombreDeHerramienta, { usando: string; usada: string }> = {
+  registrar_movimiento: {
+    usando: "Registrando el movimiento…",
+    usada: "Registró el movimiento",
+  },
+  consultar_movimientos: {
+    usando: "Buscando tus movimientos…",
+    usada: "Consultó tus movimientos",
+  },
+  estadisticas: {
+    usando: "Calculando tus estadísticas…",
+    usada: "Calculó tus estadísticas",
+  },
+  borrar_movimiento: {
+    usando: "Borrando el movimiento…",
+    usada: "Borró el movimiento",
+  },
+  convertir: {
+    usando: "Convirtiendo con la cotización del día…",
+    usada: "Convirtió con la cotización del día",
+  },
   cotizacion_dolar: {
     usando: "Consultando la cotización del dólar…",
     usada: "Consultó la cotización del dólar",

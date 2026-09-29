@@ -65,6 +65,17 @@ export type DatosDeMovimiento = z.infer<typeof DatosDeMovimientoSchema>;
 /** La cotización con la que se pasó a pesos un movimiento en dólares. */
 export type CotizacionUsada = { tipoDeDolar: TipoDeDolar; valor: number };
 
+/**
+ * Qué valor de la cotización se usa para pasar a pesos un movimiento en dólares: un gasto, el de venta (lo que
+ * cuesta comprar el dólar); un ingreso, el de compra (lo que te dan al venderlo).
+ */
+export function valorDeCotizacion(
+  tipo: TipoDeMovimiento,
+  { compra, venta }: { compra: number; venta: number }
+): number {
+  return tipo === "gasto" ? venta : compra;
+}
+
 /** Un movimiento guardado: lo que describió la persona, más su id, su monto en pesos y la cotización usada. */
 export type Movimiento = DatosDeMovimiento & {
   id: string;

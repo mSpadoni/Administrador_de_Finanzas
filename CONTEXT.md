@@ -41,11 +41,11 @@ Cuál de las cotizaciones del dólar se usa: oficial, blue, MEP o tarjeta.
 _Avoid_: Clase de dólar
 
 **Cotización**:
-Cuántos pesos vale un dólar de un tipo de dólar en un momento dado, según la fuente externa.
+Cuántos pesos vale un dólar de un tipo de dólar en un momento dado, según la fuente externa. Tiene dos valores: compra (lo que te dan al vender un dólar) y venta (lo que cuesta comprarlo).
 _Avoid_: Tipo de cambio, precio del dólar
 
 **Monto en pesos**:
-Lo que valía un movimiento en dólares, en pesos, con la cotización del día en que se registró (oficial salvo que la persona diga otro tipo de dólar). No cambia después, aunque cambie el dólar.
+Lo que valía un movimiento en dólares, en pesos, con la cotización del día en que se registró (oficial salvo que la persona diga otro tipo de dólar): el valor de venta para un gasto y el de compra para un ingreso. No cambia después, aunque cambie el dólar.
 _Avoid_: Valor convertido
 
 **Conversión**:

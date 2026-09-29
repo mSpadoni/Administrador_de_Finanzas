@@ -1,7 +1,7 @@
 import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { ClienteDolar } from "@/backend/lib/dolar";
 import { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
-import { crearToolsMovimientos } from "@/backend/tools/movimientos.tools";
+import { crearToolsMovimientos, type MovimientosConsultados } from "@/backend/tools/movimientos.tools";
 import { levantarServidor, type Respuesta, type ServidorLocal } from "../helpers/servidorHttpLocal";
 import { borrarUsuariosDePrueba, crearUsuarioLogueado } from "../helpers/usuarioDePrueba";
 
@@ -190,7 +190,7 @@ describe("consultar_movimientos, estadisticas y borrar_movimiento", () => {
   it("consultar_movimientos: sin período es el mes de hoy, con los movimientos y el resumen", async () => {
     const { tools } = await personaConDatos();
 
-    const resultado = await tools.consultar_movimientos.execute!({}, opciones);
+    const resultado = (await tools.consultar_movimientos.execute!({}, opciones)) as MovimientosConsultados;
 
     expect(resultado).toMatchObject({
       ok: true,
@@ -203,10 +203,10 @@ describe("consultar_movimientos, estadisticas y borrar_movimiento", () => {
   it("consultar_movimientos filtra por tipo y categoría", async () => {
     const { tools } = await personaConDatos();
 
-    const resultado = await tools.consultar_movimientos.execute!(
+    const resultado = (await tools.consultar_movimientos.execute!(
       { periodo: { unidad: "mes", referencia: "2026-08-01" }, categoria: "supermercado" },
       opciones
-    );
+    )) as MovimientosConsultados;
 
     expect(resultado).toMatchObject({ ok: true, resumen: { gastos: 45000 } });
     expect(resultado.ok && resultado.movimientos).toHaveLength(1);

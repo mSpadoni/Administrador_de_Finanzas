@@ -65,3 +65,15 @@ export function periodoAnterior(periodo: Periodo): Periodo {
   const dias = diasDe(periodo);
   return { desde: sumarDias(periodo.desde, -dias), hasta: sumarDias(periodo.desde, -1) };
 }
+
+/**
+ * Cómo se pide un período (lo arma el asistente a partir de lo que dice la persona): un rango explícito (`desde`,
+ * y `hasta` o hasta hoy) o una unidad (por defecto el mes) que contiene a `referencia` (por defecto hoy).
+ */
+export type PedidoDePeriodo = { unidad?: UnidadDePeriodo; referencia?: string; desde?: string; hasta?: string };
+
+/** El período que se pidió. `hoy`: la fecha de hoy en Argentina. Un rango al revés es un error. */
+export function resolverPeriodo({ unidad = "mes", referencia, desde, hasta }: PedidoDePeriodo, hoy: string): Periodo {
+  if (desde) return rango(desde, hasta ?? hoy);
+  return periodoDe(unidad, referencia ?? hoy);
+}
