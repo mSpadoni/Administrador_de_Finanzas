@@ -176,6 +176,21 @@ describe("ChatController.responder — errores", () => {
     expect(codigoDelError(await conversar(controller, randomUUID(), "Hola"))).toBe("asistente_saturado");
   });
 
+  it("dos envíos a la vez del primer mensaje de una conversación nueva no dan «conversación no encontrada»", async () => {
+    // Los dos pedidos ven que la conversación no existe y los dos la quieren crear: el segundo choca con el primero, pero
+    // la conversación es de la misma persona.
+    const { conversaciones, controller } = await usuarioConChat({ crearModelo: () => modeloQueResponde("Ok.") });
+    const id = randomUUID();
+
+    const resultados = await Promise.allSettled([
+      conversar(controller, id, "Primero"),
+      conversar(controller, id, "Segundo"),
+    ]);
+
+    expect(resultados.map((resultado) => resultado.status)).toEqual(["fulfilled", "fulfilled"]);
+    expect(await conversaciones.obtener(id)).not.toBeNull();
+  });
+
   it("no deja escribir en la conversación de otro usuario y no guarda nada", async () => {
     const responde = () => modeloQueResponde("Ok.");
     const duenio = await usuarioConChat({ crearModelo: responde });

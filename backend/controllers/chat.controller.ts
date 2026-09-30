@@ -4,6 +4,7 @@ import { crearModeloOpenAI } from "@/backend/lib/openai";
 import { registrarError } from "@/backend/lib/registro";
 import { LIMITES_DE_USO, limiteAlcanzado, type LimitesDeUso } from "@/backend/models/dominio/limiteDeUso";
 import { conversacionesModel, type ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
+import { ConversacionYaExisteError } from "@/backend/models/repositorios/erroresRepositorios";
 import { crearToolsAsistente } from "@/backend/tools/asistente.tools";
 import { Agente } from "@/backend/asistente/agente";
 import { MAX_MENSAJES_CONTEXTO, type AsistenteUIMessage } from "@/shared/chat";
@@ -105,8 +106,23 @@ export class ChatController {
   private async asegurarConversacion({ conversacionId, texto }: PedidoDeChat): Promise<void> {
     const conversaciones = this.modeloConversaciones();
     if (await conversaciones.obtener(conversacionId)) return;
-    // Si falla porque el id ya existe, es de otro usuario (RLS no se la deja ver); cualquier otra falla sigue de largo.
-    await conversaciones.crear(conversacionId, tituloDesde(texto)).catch(lanzarPorFalloAlCrearConversacion);
+    try {
+      await conversaciones.crear(conversacionId, tituloDesde(texto));
+    } catch (error) {
+      if (await this.laCreoOtroEnvio(error, conversacionId)) return;
+      // El id ya existe y no se ve: es de otro usuario (RLS la oculta). Cualquier otra falla sigue de largo.
+      lanzarPorFalloAlCrearConversacion(error);
+    }
+  }
+
+  /**
+   * ¿La conversación ya existía porque otro envío de la misma persona la creó recién (ej. un doble envío del primer
+   * mensaje)? En ese caso ahora sí se ve y se sigue normalmente.
+   */
+  private async laCreoOtroEnvio(error: unknown, conversacionId: string): Promise<boolean> {
+    return (
+      error instanceof ConversacionYaExisteError && (await this.modeloConversaciones().obtener(conversacionId)) !== null
+    );
   }
 
   /**
