@@ -1,5 +1,6 @@
 import "server-only";
 import { clienteDolar, type ClienteDolar } from "@/backend/lib/dolar";
+import type { Resultado } from "@/backend/lib/erroresLib";
 import { convertirMonto, monedaDestino } from "@/backend/models/dominio/conversion";
 import { estadisticas, resumen, type Estadisticas, type Resumen } from "@/backend/models/dominio/estadisticas";
 import {
@@ -48,23 +49,25 @@ export type EntradaDeMovimiento = {
 /** Qué movimientos consultar: un período (sin valor, el mes actual) y, si se quiere, solo un tipo o una categoría. */
 export type ConsultaDeMovimientos = { periodo?: PedidoDePeriodo; tipo?: TipoDeMovimiento; categoria?: Categoria };
 
-export type MovimientoRegistrado = { ok: true; movimiento: Movimiento } | FalloDeMovimientos;
-export type MovimientosConsultados =
-  { ok: true; periodo: Periodo; movimientos: Movimiento[]; resumen: Resumen } | FalloDeMovimientos;
-export type EstadisticasConsultadas = { ok: true; estadisticas: Estadisticas } | FalloDeMovimientos;
+export type MovimientoRegistrado = Resultado<{ movimiento: Movimiento }, FalloDeMovimientos>;
+export type MovimientosConsultados = Resultado<
+  { periodo: Periodo; movimientos: Movimiento[]; resumen: Resumen },
+  FalloDeMovimientos
+>;
+export type EstadisticasConsultadas = Resultado<{ estadisticas: Estadisticas }, FalloDeMovimientos>;
 export type MovimientoBorrado = { ok: true } | FalloDeMovimientos;
-export type Conversion =
-  | {
-      ok: true;
-      monto: number;
-      de: Moneda;
-      a: Moneda;
-      tipoDeDolar: TipoDeDolar;
-      conCompra: number;
-      conVenta: number;
-      actualizada: string;
-    }
-  | FalloDeMovimientos;
+export type Conversion = Resultado<
+  {
+    monto: number;
+    de: Moneda;
+    a: Moneda;
+    tipoDeDolar: TipoDeDolar;
+    conCompra: number;
+    conVenta: number;
+    actualizada: string;
+  },
+  FalloDeMovimientos
+>;
 
 /**
  * Casos de uso de los movimientos (gastos e ingresos): registrar, consultar, estadísticas, borrar y convertir. Es el
@@ -151,7 +154,7 @@ export class MovimientosController {
   private async cotizacionDelDia(
     datos: DatosDeMovimiento,
     tipoDeDolar: TipoDeDolar
-  ): Promise<{ ok: true; usada: CotizacionUsada | null } | FalloDeMovimientos> {
+  ): Promise<Resultado<{ usada: CotizacionUsada | null }, FalloDeMovimientos>> {
     if (datos.moneda !== "USD") return { ok: true, usada: null };
     const resultado = await this.dolar.cotizacion(tipoDeDolar);
     if (!resultado.ok) return resultado;
@@ -159,7 +162,7 @@ export class MovimientosController {
   }
 
   /** El período pedido (sin valor, el mes actual), o por qué no se puede armar (ej. un rango al revés). */
-  private periodoPedido(pedido: PedidoDePeriodo | undefined): { ok: true; periodo: Periodo } | FalloDeMovimientos {
+  private periodoPedido(pedido: PedidoDePeriodo | undefined): Resultado<{ periodo: Periodo }, FalloDeMovimientos> {
     try {
       return { ok: true, periodo: resolverPeriodo(pedido ?? {}, this.hoy()) };
     } catch (error) {

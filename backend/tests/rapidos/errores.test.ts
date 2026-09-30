@@ -2,7 +2,8 @@ import { APICallError, RetryError, type UIMessageChunk } from "ai";
 import { describe, expect, it } from "vitest";
 import { respuestaDeError } from "@/app/api/respuestaDeError";
 import { ErrorDeAplicacion } from "@/backend/erroresBackend";
-import { MENSAJE_TIMEOUT, timeoutComoError, traducirError } from "@/backend/asistente/erroresAsistente";
+import { MENSAJE_TIMEOUT, traducirError } from "@/backend/asistente/erroresAsistente";
+import { timeoutComoError } from "@/backend/asistente/streams";
 import { CODIGOS_DE_ERROR, leerErrorPublico } from "@/shared/erroresShared";
 
 // Sin mocks: los errores son instancias reales de las clases del AI SDK, con el cuerpo que manda OpenAI de verdad.

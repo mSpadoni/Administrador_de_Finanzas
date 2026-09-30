@@ -8,15 +8,16 @@ import {
   type LanguageModel,
   type LanguageModelUsage,
   type StepResult,
-  type TextStreamPart,
-  type ToolSet,
 } from "ai";
 import { armarSystemPrompt } from "@/backend/lib/prompts/systemPrompt";
 import { registrarError, registrarEvento } from "@/backend/lib/registro";
 import { hoyEnArgentina } from "@/backend/models/dominio/periodo";
 import type { ToolsDelAsistente } from "@/backend/tools/asistente.tools";
-import { textoDeErrorEnStream, timeoutComoError, traducirError } from "@/backend/asistente/erroresAsistente";
-import type { AsistenteUIMessage, MedicionDeHerramienta, MetadatosDeRespuesta } from "@/shared/chat";
+import { traducirError } from "@/backend/asistente/erroresAsistente";
+import type { AsistenteUIMessage, MetadatosDeRespuesta } from "@/shared/chat";
+import { mensajesParaElModelo } from "./contexto";
+import { medidorDeRespuesta } from "./medicion";
+import { textoDeErrorEnStream, timeoutComoError } from "./streams";
 
 // El agente: todo lo que tiene que ver con el LLM (prompt, tools, pasos, streaming, log).
 // No sabe de conversaciones ni de la base: recibe los mensajes y avisa cuando termina la respuesta.
@@ -62,73 +63,6 @@ export type PedidoAlAgente = {
 /** El nombre del modelo configurado (el SDK acepta un string o un objeto de modelo). */
 function nombreDelModelo(modelo: LanguageModel): string {
   return typeof modelo === "string" ? modelo : modelo.modelId;
-}
-
-/** Un mensaje sin lo que usaron las tools: solo su texto. */
-function soloTexto(mensaje: AsistenteUIMessage): AsistenteUIMessage {
-  return { ...mensaje, parts: mensaje.parts.filter((parte) => parte.type === "text") };
-}
-
-/**
- * Lo que ve el modelo de la conversación. De la última respuesta del asistente va todo, con lo que devolvieron sus
- * tools: si la persona pregunta por lo que acaba de consultar ("¿y de eso cuánto fue en comida?"), los datos tienen
- * que seguir a mano. De las anteriores, solo el texto: las tools ocupan miles de tokens y, si las
- * necesita otra vez, el modelo vuelve a pedirlas. En la base se guarda todo, para mostrarlo al reabrir la conversación.
- */
-export function mensajesParaElModelo(mensajes: AsistenteUIMessage[]): AsistenteUIMessage[] {
-  const ultimaDelAsistente = mensajes.findLastIndex((mensaje) => mensaje.role === "assistant");
-  return mensajes.map((mensaje, indice) => (indice === ultimaDelAsistente ? mensaje : soloTexto(mensaje)));
-}
-
-/** Suma los tokens de un paso a los de antes (el proveedor puede no informar alguno: cuenta como 0). */
-function sumarTokens(antes: NonNullable<MetadatosDeRespuesta["tokens"]>, uso: LanguageModelUsage) {
-  return {
-    entrada: (antes.entrada ?? 0) + (uso.inputTokens ?? 0),
-    salida: (antes.salida ?? 0) + (uso.outputTokens ?? 0),
-    total: (antes.total ?? 0) + (uso.totalTokens ?? 0),
-  };
-}
-
-/**
- * Mide la respuesta mientras llega, para mostrarle a la persona qué hizo el asistente: el modelo, cuánto tardó cada tool,
- * los tokens gastados y la demora total.
- *
- * El modelo no manda la respuesta de una vez: manda una secuencia de eventos ("empezó", "llamó a una tool", "la tool
- * devolvió", "terminó un paso", "terminó todo"...). Esta función devuelve OTRA función, que el stream llama con cada evento y
- * que contesta con los datos que corresponden a ese evento (o `undefined` si el evento no aporta nada). Se hace así,
- * devolviendo una función, para que lo que se va juntando (pasos, tokens, cuándo empezó cada tool) quede guardado
- * adentro y siga sumando de un evento al siguiente. El navegador junta todo lo que va contestando en `message.metadata`.
- * `reloj` es la hora actual en ms (los tests la controlan).
- */
-export function medidorDeRespuesta(modelo: string, inicio = Date.now(), reloj: () => number = Date.now) {
-  let pasos = 0;
-  let tokens: NonNullable<MetadatosDeRespuesta["tokens"]> = {};
-  const inicioDeCadaTool = new Map<string, number>();
-  const herramientas: MedicionDeHerramienta[] = [];
-
-  return (evento: TextStreamPart<ToolSet>): MetadatosDeRespuesta | undefined => {
-    switch (evento.type) {
-      case "start":
-        return { modelo };
-      case "tool-call":
-        inicioDeCadaTool.set(evento.toolCallId, reloj());
-        return undefined;
-      case "tool-result":
-      case "tool-error": {
-        const empezo = inicioDeCadaTool.get(evento.toolCallId) ?? reloj();
-        herramientas.push({ id: evento.toolCallId, nombre: evento.toolName, ms: reloj() - empezo });
-        return { herramientas: [...herramientas] };
-      }
-      case "finish-step":
-        pasos += 1;
-        tokens = sumarTokens(tokens, evento.usage);
-        return { pasos, modelo: evento.response.modelId || modelo, tokens };
-      case "finish":
-        return { ms: reloj() - inicio, tokens: sumarTokens({}, evento.totalUsage) };
-      default:
-        return undefined;
-    }
-  };
 }
 
 /** Una línea de log en JSON con datos útiles de cada respuesta (demora, pasos, tokens, tools usadas). */

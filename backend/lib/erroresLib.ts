@@ -25,6 +25,12 @@ export type MotivoError =
  */
 export type Fallo<Motivo extends string = MotivoError> = { ok: false; motivo: Motivo; detalle: string };
 
+/**
+ * El resultado de algo que puede fallar sin lanzar: o salió bien (`ok: true` más sus datos) o es un fallo. `F` es el tipo
+ * de fallo de quien lo devuelve (por defecto, el de los servicios externos).
+ */
+export type Resultado<Datos extends object, F extends Fallo<string> = Fallo> = ({ ok: true } & Datos) | F;
+
 /** Arma un fallo (todos los fallos de la app tienen esta forma). */
 export const fallo = <Motivo extends string>(motivo: Motivo, detalle: string): Fallo<Motivo> => ({
   ok: false,

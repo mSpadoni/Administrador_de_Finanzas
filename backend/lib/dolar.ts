@@ -9,6 +9,7 @@ import {
   falloPorTiempo,
   falloSinRespuesta,
   type Fallo,
+  type Resultado,
 } from "./erroresLib";
 import { validarRespuestaDeDolarapi, type CasaDeDolarapi } from "./validacionLib";
 
@@ -24,8 +25,8 @@ const ENDPOINT_POR_DEFECTO = "https://dolarapi.com/v1/dolares";
 /** La cotización de un tipo de dólar, en pesos. `actualizada`: cuándo la publicó la fuente (ISO 8601). */
 export type Cotizacion = { tipoDeDolar: TipoDeDolar; compra: number; venta: number; actualizada: string };
 
-export type ResultadoCotizaciones = { ok: true; cotizaciones: Cotizacion[] } | Fallo;
-export type ResultadoCotizacion = { ok: true; cotizacion: Cotizacion } | Fallo;
+export type ResultadoCotizaciones = Resultado<{ cotizaciones: Cotizacion[] }>;
+export type ResultadoCotizacion = Resultado<{ cotizacion: Cotizacion }>;
 
 /**
  * Cómo se configura el cliente del dólar (el objeto que recibe el constructor de ClienteDolar). Todo es opcional:

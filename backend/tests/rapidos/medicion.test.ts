@@ -1,6 +1,6 @@
 import type { TextStreamPart, ToolSet } from "ai";
 import { describe, expect, it } from "vitest";
-import { medidorDeRespuesta } from "@/backend/asistente/agente";
+import { medidorDeRespuesta } from "@/backend/asistente/medicion";
 
 // Lo que mide el servidor de cada respuesta para mostrárselo a la persona: el modelo, cuánto tardó cada tool, los tokens
 // y la demora total. Se prueba con los mismos eventos que manda el AI SDK y con un reloj que se controla (nada depende
