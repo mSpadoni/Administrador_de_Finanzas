@@ -7,6 +7,7 @@ import {
   type Titulador,
 } from "@/backend/asistente/titulador";
 import { crearModeloOpenAI } from "@/backend/lib/openai";
+import { registrarError } from "@/backend/lib/registro";
 import {
   conversacionesModel,
   type ConversacionesModel,
@@ -86,7 +87,7 @@ export class ConversacionesController {
     try {
       return this.crearModelo();
     } catch (error) {
-      console.error("No se pudo crear el modelo para titular la conversación:", error);
+      registrarError("titulador.crear_modelo", error);
       return null;
     }
   }

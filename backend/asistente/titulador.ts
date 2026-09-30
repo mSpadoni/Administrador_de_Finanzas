@@ -1,5 +1,6 @@
 import "server-only";
 import { generateText, type LanguageModel } from "ai";
+import { registrarError } from "@/backend/lib/registro";
 import { textoDe, type AsistenteUIMessage } from "@/shared/chat";
 import { MAX_CARACTERES_TITULO_DEL_ASISTENTE, recortarConPuntosSuspensivos } from "@/shared/conversaciones";
 
@@ -75,7 +76,7 @@ export class Titulador {
       });
       return limpiarTitulo(text);
     } catch (error) {
-      console.error("No se pudo titular la conversación:", error);
+      registrarError("titulador.proponer", error);
       return null;
     }
   }

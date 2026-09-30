@@ -1,4 +1,5 @@
 import "server-only";
+import { registrarAviso } from "@/backend/lib/registro";
 import { datosOError } from "@/backend/lib/supabase/consultas";
 import { crearClienteServidor, type ClienteSupabase } from "@/backend/lib/supabase/server";
 import {
@@ -34,7 +35,7 @@ function aMovimiento(fila: FilaMovimiento): Movimiento | null {
     fecha: fila.fecha,
   });
   if (!datos.success) {
-    console.warn(`Movimiento ${fila.id} inválido: se omite.`, datos.error.issues[0]?.message);
+    registrarAviso("movimientos.fila_invalida", { id: fila.id, motivo: datos.error.issues[0]?.message });
     return null;
   }
   return {

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { ErrorDeAplicacion } from "@/backend/erroresBackend";
+import { registrarError } from "@/backend/lib/registro";
 import type { CodigoDeError, CuerpoDeError, ErrorPublico } from "@/shared/erroresShared";
 
 // El único lugar que traduce un error de la app a HTTP. El backend no conoce los status; acá se decide también
@@ -36,12 +37,15 @@ export function respuestaDeErrorPublico(publico: ErrorPublico): NextResponse<Cue
  * otro (Supabase caído, un bug) es un error interno: se loguea completo y al usuario le llega el mensaje genérico.
  */
 export function respuestaDeError(error: unknown): NextResponse<CuerpoDeError> {
-  if (error instanceof ErrorDeAplicacion) {
-    // Los esperables (límite, sesión) no son fallas del servidor; los del asistente sí conviene verlos con su causa.
-    if (error.codigo.startsWith("asistente_"))
-      console.error(`Error del asistente (${error.codigo}):`, error.cause ?? error);
-    return respuestaDeErrorPublico(error.publico);
+  registrarFalla(error);
+  return respuestaDeErrorPublico(error instanceof ErrorDeAplicacion ? error.publico : ERROR_INTERNO);
+}
+
+/** Deja en el log lo que conviene ver: los errores inesperados y los del asistente (con su causa). */
+function registrarFalla(error: unknown): void {
+  if (!(error instanceof ErrorDeAplicacion)) return registrarError("error_inesperado", error);
+  // Los esperables (límite, sesión) no son fallas del servidor; los del asistente sí conviene verlos con su causa.
+  if (error.codigo.startsWith("asistente_")) {
+    registrarError("asistente.error", error.cause ?? error, { codigo: error.codigo });
   }
-  console.error("Error inesperado:", error);
-  return respuestaDeErrorPublico(ERROR_INTERNO);
 }

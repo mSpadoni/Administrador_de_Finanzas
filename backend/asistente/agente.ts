@@ -12,6 +12,7 @@ import {
   type ToolSet,
 } from "ai";
 import { armarSystemPrompt } from "@/backend/lib/prompts/systemPrompt";
+import { registrarError, registrarEvento } from "@/backend/lib/registro";
 import { hoyEnArgentina } from "@/backend/models/dominio/periodo";
 import type { ToolsDelAsistente } from "@/backend/tools/asistente.tools";
 import { textoDeErrorEnStream, timeoutComoError, traducirError } from "@/backend/asistente/erroresAsistente";
@@ -135,15 +136,12 @@ function registrarRespuesta(pasos: StepResult<ToolsDelAsistente>[], uso: Languag
   const herramientas = pasos.flatMap((paso) =>
     paso.toolCalls.map((llamada) => ({ nombre: llamada.toolName, entrada: llamada.input }))
   );
-  console.info(
-    JSON.stringify({
-      evento: "chat.respuesta",
-      ms: Date.now() - inicio,
-      pasos: pasos.length,
-      tokens: uso.totalTokens,
-      herramientas,
-    })
-  );
+  registrarEvento("chat.respuesta", {
+    ms: Date.now() - inicio,
+    pasos: pasos.length,
+    tokens: uso.totalTokens,
+    herramientas,
+  });
 }
 
 /**
@@ -222,7 +220,7 @@ export class Agente {
         // El original (con el cuerpo de la respuesta de OpenAI) va solo al log del servidor.
         onError: (error) => {
           const traducido = traducirError(error);
-          console.error(`Error en el stream del asistente (${traducido.codigo}):`, error);
+          registrarError("asistente.stream", error, { codigo: traducido.codigo });
           return textoDeErrorEnStream(traducido);
         },
       })

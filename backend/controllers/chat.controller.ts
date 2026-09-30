@@ -1,6 +1,7 @@
 import "server-only";
 import type { InferUIMessageChunk, LanguageModel } from "ai";
 import { crearModeloOpenAI } from "@/backend/lib/openai";
+import { registrarError } from "@/backend/lib/registro";
 import { LIMITES_DE_USO, limiteAlcanzado, type LimitesDeUso } from "@/backend/models/dominio/limiteDeUso";
 import { conversacionesModel, type ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
 import { crearToolsAsistente } from "@/backend/tools/asistente.tools";
@@ -119,7 +120,7 @@ export class ChatController {
     return this.modeloConversaciones()
       .agregarMensajes(conversacionId, [respuesta])
       .catch((error: unknown) => {
-        console.error("No se pudo guardar la respuesta del asistente:", error);
+        registrarError("chat.guardar_respuesta", error);
       });
   }
 }

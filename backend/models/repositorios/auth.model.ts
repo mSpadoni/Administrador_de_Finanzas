@@ -1,4 +1,5 @@
 import "server-only";
+import { registrarError } from "@/backend/lib/registro";
 import { crearClienteServidor, type ClienteSupabase } from "@/backend/lib/supabase/server";
 import { Usuario } from "@/backend/models/dominio/usuario.model";
 
@@ -23,7 +24,7 @@ export class AuthModel {
       options: { redirectTo: urlDeVuelta },
     });
     if (error) {
-      console.error("Error al iniciar el login con Google:", error);
+      registrarError("auth.login_con_google", error);
       return null;
     }
     return data.url;
@@ -35,7 +36,7 @@ export class AuthModel {
     // Acá solo interesa `error`, por eso se desestructura solo esa propiedad.
     const { error } = await supabase.auth.exchangeCodeForSession(codigo);
     if (error) {
-      console.error("Error al completar el login:", error);
+      registrarError("auth.canjear_codigo", error);
       return false;
     }
     return true;

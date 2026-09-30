@@ -2,6 +2,7 @@
 "use server";
 
 import { conversacionesController } from "@/backend/controllers/conversaciones.controller";
+import { registrarError } from "@/backend/lib/registro";
 import type { AsistenteUIMessage } from "@/shared/chat";
 
 /** Borra una conversación del usuario logueado (RLS impide borrar las de otro). */
@@ -17,7 +18,7 @@ export async function retitularConversacion(id: string): Promise<string | null> 
   try {
     return await conversacionesController.retitular(id);
   } catch (error) {
-    console.error("No se pudo titular la conversación:", error);
+    registrarError("conversaciones.retitular", error);
     return null;
   }
 }
