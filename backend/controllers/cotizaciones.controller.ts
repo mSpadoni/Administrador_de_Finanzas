@@ -1,5 +1,6 @@
 import "server-only";
-import { clienteDolar, type ClienteDolar, type ResultadoCotizaciones } from "@/backend/lib/dolar";
+import { clienteDolar, type ClienteDolar } from "@/backend/lib/dolar/clienteDolar";
+import type { ResultadoCotizaciones } from "@/backend/lib/dolar/cotizaciones";
 import type { TipoDeDolar } from "@/backend/models/dominio/movimiento";
 
 /**

@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { lanzarConfiguracionIncompleta } from "./erroresLib";
 
-// Todas las validaciones con Zod de backend/lib: las variables de entorno de cada servicio (ver .env.example) y lo
-// que responde dolarapi.com. Los archivos de esta carpeta llaman a las funciones de acá: no importan zod.
+// Todas las validaciones con Zod de backend/lib: las variables de entorno de cada servicio (ver .env.example). Los archivos
+// de esta carpeta llaman a las funciones de acá: no importan zod (lo de dolarapi.com está en dolar/validacionDolar.ts).
 // No lleva `server-only` porque env.ts también lo usa el middleware (Edge).
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -41,26 +41,4 @@ export function validarVariablesDeEntorno<T extends z.ZodType>(
     );
   }
   return resultado.data;
-}
-
-// ---------------------------------------------------------------------------------------------------------------
-// Lo que responde dolarapi.com (/v1/dolares)
-
-/** Lo que responde dolarapi. Se valida todo lo que se usa: una cotización rara no llega al usuario. */
-const RespuestaDeDolarapiSchema = z.array(
-  z.object({
-    casa: z.string(),
-    compra: z.number().positive(),
-    venta: z.number().positive(),
-    fechaActualizacion: z.string(),
-  })
-);
-
-/** Una casa de cambio como la publica dolarapi (incluye casas que la app no usa). */
-export type CasaDeDolarapi = z.infer<typeof RespuestaDeDolarapiSchema>[number];
-
-/** Las casas de la respuesta de dolarapi, o null si lo que llegó no tiene la forma esperada. */
-export function validarRespuestaDeDolarapi(json: unknown): CasaDeDolarapi[] | null {
-  const resultado = RespuestaDeDolarapiSchema.safeParse(json);
-  return resultado.success ? resultado.data : null;
 }

@@ -9,7 +9,7 @@ import {
   type LanguageModelUsage,
   type StepResult,
 } from "ai";
-import { armarSystemPrompt } from "@/backend/lib/prompts/systemPrompt";
+import { armarSystemPrompt } from "@/backend/asistente/systemPrompt";
 import { registrarError, registrarEvento } from "@/backend/lib/registro";
 import { hoyEnArgentina } from "@/backend/models/dominio/periodo";
 import type { ToolsDelAsistente } from "@/backend/tools/asistente.tools";
@@ -38,7 +38,7 @@ export const MAXIMO_TOKENS_DE_SALIDA = 4000;
 export const PAUSA_ENTRE_PALABRAS_MS = 50;
 
 /** Cuánto puede tardar una respuesta completa si no se configura otra cosa (ms). */
-const TIMEOUT_POR_DEFECTO_MS = 45_000;
+const TIMEOUT_DEL_AGENTE_MS = 45_000;
 
 /** Cómo responde el asistente: se configura una vez, al crear el agente. */
 export type ConfiguracionDelAgente = {
@@ -89,7 +89,7 @@ export class Agente {
   private readonly temperatura: number | undefined;
 
   constructor({
-    timeoutMs = TIMEOUT_POR_DEFECTO_MS,
+    timeoutMs = TIMEOUT_DEL_AGENTE_MS,
     pausaEntrePalabrasMs = PAUSA_ENTRE_PALABRAS_MS,
     temperatura,
   }: ConfiguracionDelAgente = {}) {

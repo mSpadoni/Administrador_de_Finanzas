@@ -1,7 +1,8 @@
 import "server-only";
 import { traducirError } from "@/backend/asistente/erroresAsistente";
 import { ErrorDeAplicacion } from "@/backend/erroresBackend";
-import { fallo, type Fallo, type MotivoError } from "@/backend/lib/erroresLib";
+import type { MotivoDelDolar } from "@/backend/lib/dolar/erroresDolar";
+import { fallo, type Fallo } from "@/backend/lib/erroresLib";
 import { ErrorDeDominio } from "@/backend/models/dominio/erroresDominio";
 import { ConversacionYaExisteError } from "@/backend/models/repositorios/erroresRepositorios";
 import type { LimiteAlcanzado } from "@/backend/models/dominio/limiteDeUso";
@@ -38,7 +39,7 @@ export function lanzarPorFalloAlCrearConversacion(causa: unknown): never {
 }
 
 /** Por qué un caso de uso de movimientos no pudo hacer lo que se le pidió (un fallo de la cotización o un dato mal pedido). */
-export type FalloDeMovimientos = Fallo<MotivoError | "datos_invalidos" | "no_encontrado">;
+export type FalloDeMovimientos = Fallo<MotivoDelDolar | "datos_invalidos" | "no_encontrado">;
 
 export const datosInvalidos = (detalle: string): FalloDeMovimientos => fallo("datos_invalidos", detalle);
 

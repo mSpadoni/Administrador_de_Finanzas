@@ -1,7 +1,7 @@
 import "server-only";
 import { registrarError } from "@/backend/lib/registro";
 import { crearClienteServidor, type ClienteSupabase } from "@/backend/lib/supabase/server";
-import { Usuario } from "@/backend/models/dominio/usuario.model";
+import { Usuario } from "@/backend/models/dominio/usuario";
 
 /**
  * Acceso a Supabase Auth: el login con Google, la sesión (guardada en cookies) y el usuario logueado. Como los demás

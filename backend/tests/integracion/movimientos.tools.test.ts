@@ -1,6 +1,6 @@
 import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { MovimientosController, type MovimientosConsultados } from "@/backend/controllers/movimientos.controller";
-import { ClienteDolar } from "@/backend/lib/dolar";
+import { ClienteDolar } from "@/backend/lib/dolar/clienteDolar";
 import { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
 import { crearToolsAsistente } from "@/backend/tools/asistente.tools";
 import { levantarServidor, type Respuesta, type ServidorLocal } from "../helpers/servidorHttpLocal";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { armarSystemPrompt } from "@/backend/lib/prompts/systemPrompt";
+import { armarSystemPrompt } from "@/backend/asistente/systemPrompt";
 
 // El prompt del asistente: lo que no puede faltar para que las fechas relativas se entiendan y para que el asistente no
 // asuma datos de un gasto ni salga de su función. (Que el modelo lo cumpla se ve probando el chat con el modelo real.)

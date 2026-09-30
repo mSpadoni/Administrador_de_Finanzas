@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { ClienteDolar, type OpcionesDolar } from "@/backend/lib/dolar";
+import { ClienteDolar, type OpcionesDolar } from "@/backend/lib/dolar/clienteDolar";
 import { levantarServidor, type Respuesta, type ServidorLocal } from "../helpers/servidorHttpLocal";
 
 // Cómo maneja ClienteDolar cada respuesta posible de dolarapi.com, contra un servidor HTTP real en esta máquina

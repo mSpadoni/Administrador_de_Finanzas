@@ -1,5 +1,5 @@
 import "server-only";
-import { clienteDolar, type ClienteDolar } from "@/backend/lib/dolar";
+import { clienteDolar, type ClienteDolar } from "@/backend/lib/dolar/clienteDolar";
 import type { Resultado } from "@/backend/lib/erroresLib";
 import { convertirMonto, monedaDestino } from "@/backend/models/dominio/conversion";
 import { estadisticas, resumen, type Estadisticas, type Resumen } from "@/backend/models/dominio/estadisticas";

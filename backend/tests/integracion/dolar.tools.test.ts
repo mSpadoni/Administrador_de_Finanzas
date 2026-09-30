@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { CotizacionesController } from "@/backend/controllers/cotizaciones.controller";
-import { ClienteDolar, type ResultadoCotizaciones } from "@/backend/lib/dolar";
+import { ClienteDolar } from "@/backend/lib/dolar/clienteDolar";
+import type { ResultadoCotizaciones } from "@/backend/lib/dolar/cotizaciones";
 import { crearToolsAsistente } from "@/backend/tools/asistente.tools";
 import { levantarServidor, type ServidorLocal } from "../helpers/servidorHttpLocal";
 

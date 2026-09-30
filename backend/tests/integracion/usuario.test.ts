@@ -4,7 +4,7 @@
 // - expect(valor).toBe(esperado): compara. Otros: toEqual (mismo contenido), toMatchObject (al menos esas propiedades)...
 // - afterAll(fn): corre `fn` una vez al terminar todos los tests del archivo (acá, borra los personas de prueba).
 import { afterAll, describe, expect, it } from "vitest";
-import { Usuario } from "@/backend/models/dominio/usuario.model";
+import { Usuario } from "@/backend/models/dominio/usuario";
 import { borrarUsuariosDePrueba, crearUsuarioLogueado } from "../helpers/usuarioDePrueba";
 
 afterAll(borrarUsuariosDePrueba);

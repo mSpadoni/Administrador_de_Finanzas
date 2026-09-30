@@ -17,7 +17,7 @@ const MAX_CARACTERES_POR_MENSAJE = 300;
 /** Un título tiene pocas palabras: 30 tokens sobran y cortan cualquier respuesta larga. */
 const MAX_TOKENS_DEL_TITULO = 30;
 
-const TIMEOUT_POR_DEFECTO_MS = 10_000;
+const TIMEOUT_DEL_TITULADOR_MS = 10_000;
 
 const INSTRUCCIONES = `Ponés título a las conversaciones de un asistente de finanzas personales. Recibís el título actual y los últimos mensajes.
 Respondé SOLO con el título, sin nada más: de 2 a 6 palabras, en español, que diga de qué trata la conversación (ej.: «Gastos del súper», «Dólar blue y conversiones», «Resumen de septiembre»). Sin comillas, sin punto final y sin emojis.
@@ -53,7 +53,7 @@ export function limpiarTitulo(texto: string): string | null {
 
 /** Ponerle título a una conversación con el modelo. Se configura una vez (cuánto esperar) y lo usan todas las conversaciones. */
 export class Titulador {
-  constructor(private readonly timeoutMs: number = TIMEOUT_POR_DEFECTO_MS) {}
+  constructor(private readonly timeoutMs: number = TIMEOUT_DEL_TITULADOR_MS) {}
 
   /**
    * El título que propone el modelo para la conversación, o `null` si no se pudo (el modelo falló, tardó de más o no

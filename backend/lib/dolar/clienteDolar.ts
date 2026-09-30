@@ -1,5 +1,7 @@
 import "server-only";
-import { TIPOS_DE_DOLAR, type TipoDeDolar } from "@/backend/models/dominio/movimiento";
+import type { TipoDeDolar } from "@/backend/models/dominio/movimiento";
+import { CacheDeCotizaciones } from "./cacheDeCotizaciones";
+import { aCotizaciones, type ResultadoCotizacion, type ResultadoCotizaciones } from "./cotizaciones";
 import {
   falloDeConexion,
   falloDelServicio,
@@ -8,25 +10,14 @@ import {
   falloPorRespuestaInesperada,
   falloPorTiempo,
   falloSinRespuesta,
-  type Fallo,
-  type Resultado,
-} from "./erroresLib";
-import { validarRespuestaDeDolarapi, type CasaDeDolarapi } from "./validacionLib";
+  type FalloDelDolar,
+} from "./erroresDolar";
 
 // Cliente de dolarapi.com: las cotizaciones del dólar en Argentina. Es la API externa del asistente. No necesita
-// API key. Un solo pedido (/v1/dolares) trae todos los tipos de dólar; se guarda 5 minutos.
-// Lo que responde se valida en validacionLib.ts y las fallas se arman en erroresLib.ts.
-
-/** Cómo llama dolarapi a cada tipo de dólar de la app. */
-const CASA_DE: Record<TipoDeDolar, string> = { oficial: "oficial", blue: "blue", mep: "bolsa", tarjeta: "tarjeta" };
+// API key. Un solo pedido (/v1/dolares) trae todos los tipos de dólar; se guarda 5 minutos (cacheDeCotizaciones.ts).
+// Lo que responde se valida en validacionDolar.ts y las fallas se arman en erroresDolar.ts.
 
 const ENDPOINT_POR_DEFECTO = "https://dolarapi.com/v1/dolares";
-
-/** La cotización de un tipo de dólar, en pesos. `actualizada`: cuándo la publicó la fuente (ISO 8601). */
-export type Cotizacion = { tipoDeDolar: TipoDeDolar; compra: number; venta: number; actualizada: string };
-
-export type ResultadoCotizaciones = Resultado<{ cotizaciones: Cotizacion[] }>;
-export type ResultadoCotizacion = Resultado<{ cotizacion: Cotizacion }>;
 
 /**
  * Cómo se configura el cliente del dólar (el objeto que recibe el constructor de ClienteDolar). Todo es opcional:
@@ -52,7 +43,9 @@ export type OpcionesDolar = {
 
 /** Qué hacer con la respuesta de un intento de pedido. */
 type Veredicto =
-  { tipo: "listo" } | { tipo: "reintentar"; fallo: Fallo; esperaMs: number } | { tipo: "cortar"; fallo: Fallo };
+  | { tipo: "listo" }
+  | { tipo: "reintentar"; fallo: FalloDelDolar; esperaMs: number }
+  | { tipo: "cortar"; fallo: FalloDelDolar };
 
 const esperar = (ms: number) => new Promise((listo) => setTimeout(listo, ms));
 
@@ -64,12 +57,9 @@ export class ClienteDolar {
   private readonly endpoint: string;
   private readonly timeoutMs: number;
   private readonly reintentos: number;
-  private readonly duracionCacheMs: number;
   private readonly maxEsperaReintentoMs: number;
   private readonly esperaSinRetryAfterMs: number;
-  private readonly reloj: () => number;
-  /** El último pedido (en curso o terminado bien) y cuándo empezó. Los errores no se guardan. */
-  private cache: { desde: number; resultado: Promise<ResultadoCotizaciones> } | null = null;
+  private readonly cache: CacheDeCotizaciones;
 
   constructor({
     endpoint = ENDPOINT_POR_DEFECTO,
@@ -83,25 +73,14 @@ export class ClienteDolar {
     this.endpoint = endpoint;
     this.timeoutMs = timeoutMs;
     this.reintentos = reintentos;
-    this.duracionCacheMs = duracionCacheMs;
     this.maxEsperaReintentoMs = maxEsperaReintentoMs;
     this.esperaSinRetryAfterMs = esperaSinRetryAfterMs;
-    this.reloj = reloj;
+    this.cache = new CacheDeCotizaciones(duracionCacheMs, reloj);
   }
 
   /** Las cotizaciones de todos los tipos de dólar (oficial, blue, MEP y tarjeta). */
   cotizaciones(): Promise<ResultadoCotizaciones> {
-    const ahora = this.reloj();
-    if (this.cache && ahora - this.cache.desde <= this.duracionCacheMs) return this.cache.resultado;
-
-    const resultado = this.pedir();
-    const entrada = { desde: ahora, resultado };
-    this.cache = entrada;
-    // Si falló, se olvida (salvo que ya lo haya reemplazado otro pedido): la próxima consulta vuelve a intentar.
-    void resultado.then((r) => {
-      if (!r.ok && this.cache === entrada) this.cache = null;
-    });
-    return resultado;
+    return this.cache.obtener(() => this.pedir());
   }
 
   /** La cotización de un tipo de dólar. */
@@ -110,12 +89,14 @@ export class ClienteDolar {
     if (!resultado.ok) return resultado;
     const cotizacion = resultado.cotizaciones.find((c) => c.tipoDeDolar === tipoDeDolar);
     // cotizaciones() garantiza que están todos los tipos; si falta uno, la respuesta no era la esperada.
-    return cotizacion ? { ok: true, cotizacion } : falloPorCuerpoInvalido(`Falta la cotización del dólar ${tipoDeDolar}.`);
+    return cotizacion
+      ? { ok: true, cotizacion }
+      : falloPorCuerpoInvalido(`Falta la cotización del dólar ${tipoDeDolar}.`);
   }
 
   /** Pide las cotizaciones con timeout y reintentos, y valida la respuesta. */
   private async pedir(): Promise<ResultadoCotizaciones> {
-    let ultimoError: Fallo = falloSinRespuesta();
+    let ultimoError: FalloDelDolar = falloSinRespuesta();
     for (let intento = 0; intento <= this.reintentos; intento++) {
       const respuesta = await this.pedirUnaVez();
       if (!(respuesta instanceof Response)) {
@@ -148,7 +129,7 @@ export class ClienteDolar {
   }
 
   /** Un intento de pedido: la respuesta del servicio, o el fallo si no se pudo conectar o se venció el tiempo. */
-  private async pedirUnaVez(): Promise<Response | Fallo> {
+  private async pedirUnaVez(): Promise<Response | FalloDelDolar> {
     try {
       return await fetch(this.endpoint, {
         headers: { Accept: "application/json" },
@@ -167,32 +148,6 @@ export class ClienteDolar {
     const segundos = Number(respuesta.headers.get("retry-after"));
     return Number.isFinite(segundos) && segundos > 0 ? segundos * 1000 : this.esperaSinRetryAfterMs;
   }
-}
-
-/** Valida el cuerpo de un 200 y lo pasa a las cotizaciones de la app. Tienen que estar todos los tipos de dólar. */
-function aCotizaciones(cuerpo: string): ResultadoCotizaciones {
-  const casas = validarRespuestaDeDolarapi(leerJson(cuerpo));
-  return casas ? cotizacionesDeLasCasas(casas) : falloPorCuerpoInvalido();
-}
-
-/** El JSON del texto, o `undefined` si no es un JSON (la validación que sigue lo rechaza igual). */
-function leerJson(texto: string): unknown {
-  try {
-    return JSON.parse(texto);
-  } catch {
-    return undefined;
-  }
-}
-
-/** Las cotizaciones de la app a partir de las casas de dolarapi; falla si falta alguno de los tipos de dólar. */
-function cotizacionesDeLasCasas(casas: CasaDeDolarapi[]): ResultadoCotizaciones {
-  const cotizaciones: Cotizacion[] = [];
-  for (const tipoDeDolar of TIPOS_DE_DOLAR) {
-    const casa = casas.find((c) => c.casa === CASA_DE[tipoDeDolar]);
-    if (!casa) return falloPorCuerpoInvalido(`Falta la cotización del dólar ${tipoDeDolar}.`);
-    cotizaciones.push({ tipoDeDolar, compra: casa.compra, venta: casa.venta, actualizada: casa.fechaActualizacion });
-  }
-  return { ok: true, cotizaciones };
 }
 
 /** El cliente que usa la app (dolarapi.com, 5 s, 1 reintento, 5 min de caché). */

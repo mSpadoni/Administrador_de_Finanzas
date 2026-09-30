@@ -1,5 +1,5 @@
 import "server-only";
-import { Usuario } from "@/backend/models/dominio/usuario.model";
+import { Usuario } from "@/backend/models/dominio/usuario";
 import { authModel, type AuthModel } from "@/backend/models/repositorios/auth.model";
 import { codigoDeLogin } from "./validacionControllers";
 
