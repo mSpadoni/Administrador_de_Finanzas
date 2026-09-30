@@ -3,6 +3,7 @@ import { traducirError } from "@/backend/asistente/erroresAsistente";
 import { ErrorDeAplicacion } from "@/backend/erroresBackend";
 import { fallo, type Fallo, type MotivoError } from "@/backend/lib/erroresLib";
 import { esClaveDuplicada } from "@/backend/lib/supabase/erroresSupabase";
+import { ErrorDeDominio } from "@/backend/models/dominio/erroresDominio";
 import type { LimiteAlcanzado } from "@/backend/models/dominio/limiteDeUso";
 
 // Todos los errores de backend/controllers: los que cortan un caso de uso (se lanzan, la ruta los responde con su
@@ -40,6 +41,15 @@ export function lanzarPorFalloAlCrearConversacion(causa: unknown): never {
 export type FalloDeMovimientos = Fallo<MotivoError | "datos_invalidos" | "no_encontrado">;
 
 export const datosInvalidos = (detalle: string): FalloDeMovimientos => fallo("datos_invalidos", detalle);
+
+/**
+ * Por qué no se pudo armar el período pedido. Solo el rango al revés (un error del dominio) es un dato mal pedido; cualquier
+ * otro error es un bug y sigue de largo.
+ */
+export function falloDelPeriodoPedido(error: unknown): FalloDeMovimientos {
+  if (error instanceof ErrorDeDominio) return datosInvalidos(error.message);
+  throw error;
+}
 
 export const movimientoNoEncontrado = (): FalloDeMovimientos =>
   fallo("no_encontrado", "No hay un movimiento tuyo con ese id.");

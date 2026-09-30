@@ -21,10 +21,14 @@ import {
   type PedidoDePeriodo,
   type Periodo,
 } from "@/backend/models/dominio/periodo";
-import { ErrorDeDominio } from "@/backend/models/dominio/erroresDominio";
 import { DatosDeMovimientoSchema } from "@/backend/models/dominio/validacionDominio";
 import { movimientosModel, type MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
-import { datosInvalidos, movimientoNoEncontrado, type FalloDeMovimientos } from "./erroresControllers";
+import {
+  datosInvalidos,
+  falloDelPeriodoPedido,
+  movimientoNoEncontrado,
+  type FalloDeMovimientos,
+} from "./erroresControllers";
 import { primerMensaje } from "./validacionControllers";
 
 /** Lo que pide la persona al registrar un movimiento, tal como lo entiende el asistente (todavía sin validar). */
@@ -159,9 +163,7 @@ export class MovimientosController {
     try {
       return { ok: true, periodo: resolverPeriodo(pedido ?? {}, this.hoy()) };
     } catch (error) {
-      // Solo el rango al revés es un dato mal pedido; cualquier otro error es un bug y sigue de largo.
-      if (error instanceof ErrorDeDominio) return datosInvalidos(error.message);
-      throw error;
+      return falloDelPeriodoPedido(error);
     }
   }
 }
