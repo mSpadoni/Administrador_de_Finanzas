@@ -101,6 +101,24 @@ describe("ChatController.responder — lo que recibe el modelo", () => {
     expect(prompt).toContain("¿Cuál conviene?");
   });
 
+  it("en un reintento, el mensaje ya guardado queda en su lugar, antes de lo que el asistente alcanzó a responder", async () => {
+    // El primer intento registró el gasto y se cortó (ej. se venció el tiempo). Si el mensaje quedara después de esa
+    // respuesta, el modelo leería «registré el gasto» y después «gasté 5000» y podría registrarlo otra vez.
+    const modelo = modeloQueResponde("Ya quedó registrado.");
+    const { conversaciones, controller } = await usuarioConChat({ crearModelo: () => modelo });
+    const id = randomUUID();
+    await conversaciones.crear(id, "Súper");
+    const pregunta = mensaje("user", "Gasté 5000 en el súper con débito");
+    await conversaciones.agregarMensajes(id, [pregunta, mensaje("assistant", "Registré el gasto de $ 5.000.")]);
+
+    await conversar(controller, id, "Gasté 5000 en el súper con débito", pregunta.id);
+
+    const prompt = JSON.stringify(modelo.doStreamCalls[0].prompt);
+    expect(prompt.indexOf("Gasté 5000 en el súper")).toBeGreaterThan(-1);
+    expect(prompt.indexOf("Gasté 5000 en el súper")).toBeLessThan(prompt.indexOf("Registré el gasto de $ 5.000."));
+    expect(prompt.match(/Gasté 5000 en el súper/g)).toHaveLength(1); // no se duplica
+  });
+
   it(`del historial van los últimos ${MAX_MENSAJES_CONTEXTO} mensajes, más el nuevo`, async () => {
     const modelo = modeloQueResponde("Dale.");
     // Los mensajes anteriores cuentan para el límite de uso: acá se lo amplía para probar solo el historial.

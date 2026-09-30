@@ -26,11 +26,19 @@ export async function usuarioConChat(dependencias: ConstructorParameters<typeof 
 /** Lo que miran los tests de cada evento del stream (cada tipo de evento trae solo algunos de estos campos). */
 export type Evento = { type: string; errorText?: string; delta?: string; messageMetadata?: MetadatosDeRespuesta };
 
-/** Manda un mensaje como useChat (el cuerpo tal cual lo manda el navegador), lee el stream y devuelve sus eventos. */
-export async function conversar(controller: ChatController, conversacionId: string, texto: string) {
+/**
+ * Manda un mensaje como useChat (el cuerpo tal cual lo manda el navegador), lee el stream y devuelve sus eventos.
+ * `idDelMensaje`: para simular un reintento (el navegador vuelve a mandar el mismo mensaje, con el mismo id).
+ */
+export async function conversar(
+  controller: ChatController,
+  conversacionId: string,
+  texto: string,
+  idDelMensaje: string = randomUUID()
+) {
   const cuerpo = {
     id: conversacionId,
-    mensaje: { id: randomUUID(), role: "user", parts: [{ type: "text", text: texto }] },
+    mensaje: { id: idDelMensaje, role: "user", parts: [{ type: "text", text: texto }] },
   };
   const lector = (await controller.responder(cuerpo)).getReader();
   const eventos: Evento[] = [];

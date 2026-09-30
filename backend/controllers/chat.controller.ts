@@ -75,12 +75,12 @@ export class ChatController {
     const modelo = this.crearModeloOCortar();
     await this.verificarLimiteDeUso();
     await this.asegurarConversacion(pedido);
-    const historial = await this.leerHistorialSinElMensaje(pedido);
+    const conversacion = await this.conversacionParaElModelo(pedido);
     await this.modeloConversaciones().agregarMensajes(pedido.conversacionId, [pedido.mensaje]);
 
     return this.agente.responder({
       modelo,
-      mensajes: [...historial, pedido.mensaje],
+      mensajes: conversacion,
       tools: crearToolsAsistente({ movimientos: this.movimientos() }),
       alTerminar: (respuesta) => this.guardarRespuesta(pedido.conversacionId, respuesta),
     });
@@ -109,10 +109,14 @@ export class ChatController {
     await conversaciones.crear(conversacionId, tituloDesde(texto)).catch(lanzarPorFalloAlCrearConversacion);
   }
 
-  /** El historial (sin el mensaje nuevo, por si es un reintento y ya estaba guardado). */
-  private async leerHistorialSinElMensaje({ conversacionId, mensaje }: PedidoDeChat): Promise<AsistenteUIMessage[]> {
-    const mensajes = await this.modeloConversaciones().mensajes(conversacionId, MAX_MENSAJES_CONTEXTO);
-    return mensajes.filter((anterior) => anterior.id !== mensaje.id);
+  /**
+   * La conversación que ve el modelo: lo guardado y el mensaje nuevo al final. En un reintento el mensaje ya estaba
+   * guardado: queda en su lugar, con lo que el asistente haya alcanzado a responder después. Así el modelo no lo lee como
+   * un pedido nuevo ni repite lo que ya hizo (por ejemplo, registrar dos veces el mismo gasto).
+   */
+  private async conversacionParaElModelo({ conversacionId, mensaje }: PedidoDeChat): Promise<AsistenteUIMessage[]> {
+    const guardados = await this.modeloConversaciones().mensajes(conversacionId, MAX_MENSAJES_CONTEXTO);
+    return guardados.some((guardado) => guardado.id === mensaje.id) ? guardados : [...guardados, mensaje];
   }
 
   /** Guarda la respuesta del asistente al terminar (o si el usuario la corta). Si falla, solo queda en el log. */
