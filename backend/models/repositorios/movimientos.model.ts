@@ -12,7 +12,7 @@ import {
   type TipoDeMovimiento,
 } from "@/backend/models/dominio/movimiento";
 import type { Periodo } from "@/backend/models/dominio/periodo";
-import { DatosDeMovimientoSchema } from "@/backend/models/dominio/validacionDominio";
+import { leerDatosDeMovimiento, validarDatosDeMovimiento } from "@/backend/models/dominio/validacionDominio";
 import type { Database } from "@/backend/types/database";
 
 type FilaMovimiento = Database["public"]["Tables"]["movimientos"]["Row"];
@@ -25,7 +25,7 @@ export type FiltroDeMovimientos = { tipo?: TipoDeMovimiento; categoria?: Categor
  * (cargada a mano, o de una versión vieja) se omite con un aviso en vez de romper una consulta entera.
  */
 function aMovimiento(fila: FilaMovimiento): Movimiento | null {
-  const datos = DatosDeMovimientoSchema.safeParse({
+  const datos = leerDatosDeMovimiento({
     tipo: fila.tipo,
     monto: fila.monto,
     moneda: fila.moneda,
@@ -34,12 +34,12 @@ function aMovimiento(fila: FilaMovimiento): Movimiento | null {
     descripcion: fila.descripcion,
     fecha: fila.fecha,
   });
-  if (!datos.success) {
-    registrarAviso("movimientos.fila_invalida", { id: fila.id, motivo: datos.error.issues[0]?.message });
+  if (!datos.ok) {
+    registrarAviso("movimientos.fila_invalida", { id: fila.id, motivo: datos.detalle });
     return null;
   }
   return {
-    ...datos.data,
+    ...datos.datos,
     id: fila.id,
     montoEnPesos: fila.monto_en_pesos,
     cotizacion: cotizacionDeLaFila(fila),
@@ -64,7 +64,7 @@ export class MovimientosModel {
    * pesos un movimiento en dólares (null si es en pesos). El monto en pesos queda fijo (docs/adr/0001).
    */
   async registrar(datos: DatosDeMovimiento, cotizacion: CotizacionUsada | null): Promise<Movimiento> {
-    const movimiento = DatosDeMovimientoSchema.parse(datos);
+    const movimiento = validarDatosDeMovimiento(datos);
     const enPesos = montoEnPesos(movimiento, cotizacion);
     const supabase = await this.crearCliente();
     const fila = datosOError(

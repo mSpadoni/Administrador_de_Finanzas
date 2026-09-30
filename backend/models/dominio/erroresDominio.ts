@@ -20,3 +20,8 @@ export function lanzarMovimientoEnDolaresSinCotizacion(): never {
 export function lanzarPeriodoAlReves(desde: string, hasta: string): never {
   throw new ErrorDeDominio(`El período termina (${hasta}) antes de empezar (${desde}).`);
 }
+
+/** Datos de un movimiento que no son válidos, en un lugar donde ya tendrían que haber llegado validados. */
+export function lanzarMovimientoInvalido(detalle: string): never {
+  throw new ErrorDeDominio(`Movimiento inválido: ${detalle}`);
+}

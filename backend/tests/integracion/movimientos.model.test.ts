@@ -1,4 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
+import { ErrorDeDominio } from "@/backend/models/dominio/erroresDominio";
 import type { DatosDeMovimiento } from "@/backend/models/dominio/movimiento";
 import { periodoDe } from "@/backend/models/dominio/periodo";
 import { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
@@ -51,7 +52,7 @@ describe("MovimientosModel.registrar", () => {
   it("valida antes de guardar: un movimiento inválido no llega a la base", async () => {
     const { movimientos } = await personaConMovimientos();
 
-    await expect(movimientos.registrar({ ...GASTO, categoria: "sueldo" }, null)).rejects.toThrow();
+    await expect(movimientos.registrar({ ...GASTO, categoria: "sueldo" }, null)).rejects.toBeInstanceOf(ErrorDeDominio);
     expect(await movimientos.listar(periodoDe("mes", "2026-09-01"))).toEqual([]);
   });
 });

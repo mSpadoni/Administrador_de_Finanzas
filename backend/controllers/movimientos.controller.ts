@@ -22,7 +22,7 @@ import {
   type PedidoDePeriodo,
   type Periodo,
 } from "@/backend/models/dominio/periodo";
-import { DatosDeMovimientoSchema } from "@/backend/models/dominio/validacionDominio";
+import { leerDatosDeMovimiento } from "@/backend/models/dominio/validacionDominio";
 import { movimientosModel, type MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
 import {
   datosInvalidos,
@@ -30,7 +30,6 @@ import {
   movimientoNoEncontrado,
   type FalloDeMovimientos,
 } from "./erroresControllers";
-import { primerMensaje } from "./validacionControllers";
 
 /** Lo que pide la persona al registrar un movimiento, tal como lo entiende el asistente (todavía sin validar). */
 export type EntradaDeMovimiento = {
@@ -89,12 +88,12 @@ export class MovimientosController {
    * (docs/adr/0001).
    */
   async registrar({ tipoDeDolar, fecha, ...entrada }: EntradaDeMovimiento): Promise<MovimientoRegistrado> {
-    const validados = DatosDeMovimientoSchema.safeParse({ ...entrada, fecha: fecha ?? this.hoy() });
-    if (!validados.success) return datosInvalidos(primerMensaje(validados.error, "Datos inválidos."));
+    const validados = leerDatosDeMovimiento({ ...entrada, fecha: fecha ?? this.hoy() });
+    if (!validados.ok) return datosInvalidos(validados.detalle);
 
-    const cotizacion = await this.cotizacionDelDia(validados.data, tipoDeDolar ?? "oficial");
+    const cotizacion = await this.cotizacionDelDia(validados.datos, tipoDeDolar ?? "oficial");
     if (!cotizacion.ok) return cotizacion;
-    return { ok: true, movimiento: await this.modeloMovimientos().registrar(validados.data, cotizacion.usada) };
+    return { ok: true, movimiento: await this.modeloMovimientos().registrar(validados.datos, cotizacion.usada) };
   }
 
   /** Los movimientos de un período (el más reciente primero), con ingresos, gastos y balance. */
