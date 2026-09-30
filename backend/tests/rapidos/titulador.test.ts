@@ -2,11 +2,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   armarPedidoDeTitulo,
   limpiarTitulo,
-  MAX_CARACTERES_DEL_TITULO,
   MAX_MENSAJES_PARA_TITULAR,
   Titulador,
 } from "@/backend/asistente/titulador";
 import type { AsistenteUIMessage } from "@/shared/chat";
+import { MAX_CARACTERES_TITULO_DEL_ASISTENTE } from "@/shared/conversaciones";
 import { modeloQueFalla, modeloQueGenera } from "../helpers/modeloDePrueba";
 
 // El título de una conversación lo pone el modelo según lo que se habló. Se prueba lo que le mostramos, cómo se limpia lo
@@ -38,7 +38,7 @@ describe("limpiarTitulo", () => {
   it("recorta lo muy largo con «…» sin pasarse del máximo", () => {
     const largo = limpiarTitulo("palabra ".repeat(30));
 
-    expect(largo).toHaveLength(MAX_CARACTERES_DEL_TITULO);
+    expect(largo).toHaveLength(MAX_CARACTERES_TITULO_DEL_ASISTENTE);
     expect(largo?.endsWith("…")).toBe(true);
   });
 
@@ -51,7 +51,10 @@ describe("limpiarTitulo", () => {
 
 describe("armarPedidoDeTitulo", () => {
   it("le muestra el título actual y la charla, quién dijo cada cosa", () => {
-    const pedido = armarPedidoDeTitulo("Gasté 3000", [mensaje("user", "Gasté 3000 en hot dogs"), mensaje("assistant", "¿Con qué pagaste?")]);
+    const pedido = armarPedidoDeTitulo("Gasté 3000", [
+      mensaje("user", "Gasté 3000 en hot dogs"),
+      mensaje("assistant", "¿Con qué pagaste?"),
+    ]);
 
     expect(pedido).toContain("Título actual: Gasté 3000");
     expect(pedido).toContain("Persona: Gasté 3000 en hot dogs");
@@ -77,7 +80,10 @@ describe("armarPedidoDeTitulo", () => {
           toolCallId: "t",
           state: "output-available",
           input: {},
-          output: { ok: true, cotizaciones: [{ tipoDeDolar: "blue", compra: 1, venta: 2, actualizada: "SECRETO-EN-LA-TOOL" }] },
+          output: {
+            ok: true,
+            cotizaciones: [{ tipoDeDolar: "blue", compra: 1, venta: 2, actualizada: "SECRETO-EN-LA-TOOL" }],
+          },
         },
         { type: "text", text: "El blue está a $ 2." },
       ],
@@ -96,7 +102,11 @@ describe("Titulador.proponer", () => {
   it("devuelve el título que propone el modelo, ya limpio", async () => {
     const { modelo, pedidos } = modeloQueGenera("«Cotización del dólar blue».");
 
-    const titulo = await new Titulador().proponer({ modelo, tituloActual: "¿A cuánto está el blue?", mensajes: charla });
+    const titulo = await new Titulador().proponer({
+      modelo,
+      tituloActual: "¿A cuánto está el blue?",
+      mensajes: charla,
+    });
 
     expect(titulo).toBe("Cotización del dólar blue");
     expect(JSON.stringify(pedidos[0])).toContain("Persona: ¿A cuánto está el blue?");

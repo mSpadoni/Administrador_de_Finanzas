@@ -1,6 +1,7 @@
 import "server-only";
 import { generateText, type LanguageModel } from "ai";
 import { textoDe, type AsistenteUIMessage } from "@/shared/chat";
+import { MAX_CARACTERES_TITULO_DEL_ASISTENTE, recortarConPuntosSuspensivos } from "@/shared/conversaciones";
 
 // El titulador: le pide al modelo un título corto para una conversación, a partir de lo que se habló. Se usa después de cada
 // respuesta del asistente: el título arranca siendo el primer mensaje y va cambiando a medida que la conversación avanza.
@@ -11,9 +12,6 @@ export const MAX_MENSAJES_PARA_TITULAR = 8;
 
 /** Cuánto se le muestra de cada mensaje (alcanza para el tema; las tablas y los datos de las tools no hacen falta). */
 const MAX_CARACTERES_POR_MENSAJE = 300;
-
-/** Largo máximo del título (entra en la barra lateral). */
-export const MAX_CARACTERES_DEL_TITULO = 50;
 
 /** Un título tiene pocas palabras: 30 tokens sobran y cortan cualquier respuesta larga. */
 const MAX_TOKENS_DEL_TITULO = 30;
@@ -49,9 +47,7 @@ export function limpiarTitulo(texto: string): string | null {
     .replace(/\s+/g, " ")
     .trim();
   if (!limpio) return null;
-  return limpio.length <= MAX_CARACTERES_DEL_TITULO
-    ? limpio
-    : `${limpio.slice(0, MAX_CARACTERES_DEL_TITULO - 1).trimEnd()}…`;
+  return recortarConPuntosSuspensivos(limpio, MAX_CARACTERES_TITULO_DEL_ASISTENTE);
 }
 
 /** Ponerle título a una conversación con el modelo. Se configura una vez (cuánto esperar) y lo usan todas las conversaciones. */

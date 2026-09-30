@@ -19,47 +19,33 @@ export type MotivoError =
   | "servicio" // falló (5xx) o no se pudo conectar
   | "respuesta_invalida"; // respondió algo que no son las cotizaciones esperadas
 
-/** Una falla al pedir las cotizaciones: el motivo (para el código) y el detalle (para explicárselo a la persona). */
-export type Fallo = { ok: false; motivo: MotivoError; detalle: string };
+/**
+ * Por qué un caso de uso o un servicio no pudo hacer lo que se le pidió, sin lanzar: el motivo (para el código) y el detalle
+ * (para explicárselo a la persona). Quien lo devuelve nunca lanza por esto: así el asistente lo corrige o lo explica.
+ */
+export type Fallo<Motivo extends string = MotivoError> = { ok: false; motivo: Motivo; detalle: string };
 
-export const falloSinRespuesta = (): Fallo => ({
+/** Arma un fallo (todos los fallos de la app tienen esta forma). */
+export const fallo = <Motivo extends string>(motivo: Motivo, detalle: string): Fallo<Motivo> => ({
   ok: false,
-  motivo: "servicio",
-  detalle: "El servicio de cotizaciones no respondió.",
-});
-
-export const falloPorTiempo = (timeoutMs: number): Fallo => ({
-  ok: false,
-  motivo: "tiempo",
-  detalle: `El servicio de cotizaciones no respondió en ${timeoutMs / 1000} s.`,
-});
-
-export const falloDeConexion = (): Fallo => ({
-  ok: false,
-  motivo: "servicio",
-  detalle: "No se pudo conectar con el servicio de cotizaciones.",
-});
-
-export const falloPorLimite = (): Fallo => ({
-  ok: false,
-  motivo: "limite",
-  detalle: "El servicio de cotizaciones recibe demasiados pedidos.",
-});
-
-export const falloDelServicio = (status: number): Fallo => ({
-  ok: false,
-  motivo: "servicio",
-  detalle: `El servicio de cotizaciones falló (HTTP ${status}).`,
-});
-
-export const falloPorRespuestaInesperada = (status: number): Fallo => ({
-  ok: false,
-  motivo: "respuesta_invalida",
-  detalle: `El servicio respondió HTTP ${status}.`,
-});
-
-export const falloPorCuerpoInvalido = (detalle = "El servicio de cotizaciones respondió algo inesperado."): Fallo => ({
-  ok: false,
-  motivo: "respuesta_invalida",
+  motivo,
   detalle,
 });
+
+export const falloSinRespuesta = () => fallo("servicio", "El servicio de cotizaciones no respondió.");
+
+export const falloPorTiempo = (timeoutMs: number) =>
+  fallo("tiempo", `El servicio de cotizaciones no respondió en ${timeoutMs / 1000} s.`);
+
+export const falloDeConexion = () => fallo("servicio", "No se pudo conectar con el servicio de cotizaciones.");
+
+export const falloPorLimite = () => fallo("limite", "El servicio de cotizaciones recibe demasiados pedidos.");
+
+export const falloDelServicio = (status: number) =>
+  fallo("servicio", `El servicio de cotizaciones falló (HTTP ${status}).`);
+
+export const falloPorRespuestaInesperada = (status: number) =>
+  fallo("respuesta_invalida", `El servicio respondió HTTP ${status}.`);
+
+export const falloPorCuerpoInvalido = (detalle = "El servicio de cotizaciones respondió algo inesperado.") =>
+  fallo("respuesta_invalida", detalle);

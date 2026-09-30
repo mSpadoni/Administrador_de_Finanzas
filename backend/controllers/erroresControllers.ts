@@ -1,7 +1,7 @@
 import "server-only";
 import { traducirError } from "@/backend/asistente/erroresAsistente";
 import { ErrorDeAplicacion } from "@/backend/erroresBackend";
-import type { MotivoError } from "@/backend/lib/erroresLib";
+import { fallo, type Fallo, type MotivoError } from "@/backend/lib/erroresLib";
 import type { LimiteAlcanzado } from "@/backend/models/dominio/limiteDeUso";
 
 // Todos los errores de backend/controllers: los que cortan un caso de uso (se lanzan, la ruta los responde con su
@@ -30,21 +30,10 @@ export function lanzarConversacionNoEncontrada(causa: unknown): never {
   });
 }
 
-/** Por qué un caso de uso de movimientos no pudo hacer lo que se le pidió. */
-export type FalloDeMovimientos = {
-  ok: false;
-  motivo: MotivoError | "datos_invalidos" | "no_encontrado";
-  detalle: string;
-};
+/** Por qué un caso de uso de movimientos no pudo hacer lo que se le pidió (un fallo de la cotización o un dato mal pedido). */
+export type FalloDeMovimientos = Fallo<MotivoError | "datos_invalidos" | "no_encontrado">;
 
-export const datosInvalidos = (detalle: string): FalloDeMovimientos => ({
-  ok: false,
-  motivo: "datos_invalidos",
-  detalle,
-});
+export const datosInvalidos = (detalle: string): FalloDeMovimientos => fallo("datos_invalidos", detalle);
 
-export const movimientoNoEncontrado = (): FalloDeMovimientos => ({
-  ok: false,
-  motivo: "no_encontrado",
-  detalle: "No hay un movimiento tuyo con ese id.",
-});
+export const movimientoNoEncontrado = (): FalloDeMovimientos =>
+  fallo("no_encontrado", "No hay un movimiento tuyo con ese id.");

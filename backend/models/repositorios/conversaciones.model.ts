@@ -17,6 +17,14 @@ const COLUMNAS_CONVERSACION = "id, titulo, creado_en, actualizado_en";
 /** Largo máximo del título (el mismo límite que pone la base). */
 export const MAX_CARACTERES_TITULO = 120;
 
+/** El título como lo acepta la base: nunca más largo que su límite. */
+const tituloParaLaBase = (titulo: string) => titulo.slice(0, MAX_CARACTERES_TITULO);
+
+/** El rol de un mensaje: en la base se guarda en español y el AI SDK lo llama user/assistant. */
+const rolDelMensaje = (rol: AsistenteUIMessage["role"]): "usuario" | "asistente" =>
+  rol === "user" ? "usuario" : "asistente";
+const rolDeLaFila = (rol: string): AsistenteUIMessage["role"] => (rol === "usuario" ? "user" : "assistant");
+
 /**
  * Acceso a las tablas conversaciones y mensajes.
  * No filtra por usuario a mano: las políticas RLS ya limitan todo al usuario logueado.
@@ -32,7 +40,7 @@ export class ConversacionesModel {
     return datosOError(
       await supabase
         .from("conversaciones")
-        .insert({ id, titulo: titulo.slice(0, MAX_CARACTERES_TITULO) })
+        .insert({ id, titulo: tituloParaLaBase(titulo) })
         .select(COLUMNAS_CONVERSACION)
         .single(),
       "No se pudo crear la conversación"
@@ -79,7 +87,7 @@ export class ConversacionesModel {
     );
     return filas.reverse().map((fila): AsistenteUIMessage => ({
       id: fila.id,
-      role: fila.rol === "usuario" ? "user" : "assistant",
+      role: rolDeLaFila(fila.rol),
       // jsonb sin tipo: se confía en lo que guardó el propio servidor (los mensajes que arma el AI SDK).
       parts: fila.partes as unknown as AsistenteUIMessage["parts"],
     }));
@@ -97,7 +105,7 @@ export class ConversacionesModel {
       mensajes.map((mensaje, i) => ({
         id: mensaje.id,
         conversacion_id: conversacionId,
-        rol: mensaje.role === "user" ? "usuario" : "asistente",
+        rol: rolDelMensaje(mensaje.role),
         partes: mensaje.parts as unknown as NonNullable<Json>,
         creado_en: new Date(ahora + i).toISOString(),
       })),
@@ -120,7 +128,7 @@ export class ConversacionesModel {
     const cambiadas = datosOError(
       await supabase
         .from("conversaciones")
-        .update({ titulo: titulo.slice(0, MAX_CARACTERES_TITULO) })
+        .update({ titulo: tituloParaLaBase(titulo) })
         .eq("id", id)
         .select("id"),
       "No se pudo cambiar el título de la conversación"
@@ -144,7 +152,10 @@ export class ConversacionesModel {
       return respuesta.count ?? 0; // con head: true, la cantidad viene en `count` (no en `data`)
     };
     // Las dos cuentas a la vez.
-    const [ultimoMinuto, ultimoDia] = await Promise.all([mensajesDesde(VENTANA_POR_MINUTO_MS), mensajesDesde(VENTANA_POR_DIA_MS)]);
+    const [ultimoMinuto, ultimoDia] = await Promise.all([
+      mensajesDesde(VENTANA_POR_MINUTO_MS),
+      mensajesDesde(VENTANA_POR_DIA_MS),
+    ]);
     return { ultimoMinuto, ultimoDia };
   }
 
