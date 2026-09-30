@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it } from "vitest";
 import { ChatController } from "@/backend/controllers/chat.controller";
-import { ErrorDeAplicacion } from "@/backend/errores";
+import { ErrorDeAplicacion } from "@/backend/erroresBackend";
 import { ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
 import { MAX_MENSAJES_CONTEXTO, type AsistenteUIMessage } from "@/shared/chat";
 import { borrarUsuariosDePrueba, crearUsuarioLogueado } from "../helpers/usuarioDePrueba";
@@ -45,17 +45,19 @@ describe("ChatController.responder — conversación", () => {
     expect(deltas.join("")).toBe(texto);
     for (const delta of deltas) expect(delta.trim().split(/\s+/), JSON.stringify(delta)).toHaveLength(1);
   });
+});
 
-  it("al terminar manda al panel de debug el modelo, los pasos, los tokens y el motivo de fin", async () => {
+describe("ChatController.responder — lo que mide para mostrar", () => {
+  it("al empezar manda el modelo y al terminar la demora y los tokens gastados", async () => {
     const { controller } = await usuarioConChat({ crearModelo: () => modeloQueResponde("Hola.") });
 
     const eventos = await conversar(controller, randomUUID(), "Hola");
 
     expect(eventos.find((evento) => evento.type === "start")?.messageMetadata).toEqual({ modelo: "modelo-de-prueba" });
     expect(eventos.find((evento) => evento.type === "finish")?.messageMetadata).toMatchObject({
-      motivoDeFin: "stop",
       tokens: { entrada: 120, salida: 30, total: 150 },
     });
+    expect(eventos.find((evento) => evento.type === "finish")?.messageMetadata?.ms).toBeGreaterThanOrEqual(0);
   });
 });
 
@@ -123,7 +125,7 @@ describe("ChatController.responder — errores", () => {
     // Sin crearModelo: usa el real, que lee la key de las variables de entorno.
     const usuario = await crearUsuarioLogueado();
     const conversaciones = new ConversacionesModel(usuario.navegador.crearCliente);
-    const controller = new ChatController({ conversaciones: () => conversaciones });
+    const controller = new ChatController({ modeloConversaciones: () => conversaciones });
     const id = randomUUID();
 
     const error = await conVariablesAsync({ OPENAI_API_KEY: undefined }, () =>

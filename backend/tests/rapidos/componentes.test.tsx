@@ -1,17 +1,20 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useRef, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MAX_CARACTERES_MENSAJE, type AsistenteUIMessage } from "@/shared/chat";
-import type { CodigoDeError } from "@/shared/errores";
+import type { CodigoDeError } from "@/shared/erroresShared";
 import PaginaDeError from "@/app/error";
 import PaginaNoEncontrada from "@/app/not-found";
-import Atajos from "@/views/chat/Atajos";
+import DialogoDeConfirmacion from "@/views/DialogoDeConfirmacion";
 import AvisoDeError from "@/views/chat/AvisoDeError";
+import MenuDeAtajos from "@/views/chat/MenuDeAtajos";
 import MessageInput from "@/views/chat/MessageInput";
+import PerfilDeUsuario from "@/views/chat/PerfilDeUsuario";
 import PanelDeDebug from "@/views/chat/PanelDeDebug";
+import { ATAJOS } from "@/views/chat/respuesta";
 
 // Sin mocks: los componentes reales, renderizados en un DOM (jsdom) y usados como un usuario (teclado y clicks).
 // Se buscan los elementos por su rol y su nombre accesible, igual que un lector de pantalla.
@@ -56,7 +59,13 @@ describe("AvisoDeError", () => {
 });
 
 /** MessageInput es controlado: en la app el estado lo tiene ChatWindow. Acá, un padre mínimo igual. */
-function CampoConEstado({ generando = false, onEnviar = vi.fn(), onDetener = vi.fn(), inicial = "" }) {
+function CampoConEstado({
+  generando = false,
+  onEnviar = vi.fn(),
+  onDetener = vi.fn(),
+  onUsarAtajo = vi.fn(),
+  inicial = "",
+}) {
   const [valor, setValor] = useState(inicial);
   const ref = useRef<HTMLTextAreaElement>(null);
   return (
@@ -65,6 +74,7 @@ function CampoConEstado({ generando = false, onEnviar = vi.fn(), onDetener = vi.
       onCambio={setValor}
       onEnviar={onEnviar}
       onDetener={onDetener}
+      onUsarAtajo={onUsarAtajo}
       generando={generando}
       textareaRef={ref}
     />
@@ -72,7 +82,7 @@ function CampoConEstado({ generando = false, onEnviar = vi.fn(), onDetener = vi.
 }
 
 describe("MessageInput", () => {
-  it("tiene un label visible y no deja enviar un mensaje vacío", () => {
+  it("tiene su label para el lector de pantalla y no deja enviar un mensaje vacío", () => {
     render(<CampoConEstado />);
 
     expect(screen.getByRole("textbox", { name: "Tu mensaje" })).toBeInTheDocument();
@@ -111,18 +121,218 @@ describe("MessageInput", () => {
   });
 });
 
-describe("Atajos", () => {
-  it("cada atajo manda su mensaje, y se deshabilitan mientras el asistente responde", async () => {
+describe("MessageInput — una fila o dos", () => {
+  const contenedorDe = () => screen.getByRole("textbox", { name: "Tu mensaje" }).closest("[data-expandida]");
+
+  it("con una línea de texto, el «+», el texto y el botón de enviar van en una sola fila", async () => {
+    render(<CampoConEstado />);
+
+    await userEvent.type(screen.getByRole("textbox", { name: "Tu mensaje" }), "Gasté 5.000");
+
+    expect(contenedorDe()).toHaveAttribute("data-expandida", "false");
+  });
+
+  it("con un salto de línea, los botones bajan a una segunda fila; al vaciar el campo vuelven a la primera", async () => {
+    render(<CampoConEstado />);
+    const campo = screen.getByRole("textbox", { name: "Tu mensaje" });
+
+    await userEvent.type(campo, "Hola{Shift>}{Enter}{/Shift}asistente");
+    expect(contenedorDe()).toHaveAttribute("data-expandida", "true");
+
+    await userEvent.clear(campo);
+    expect(contenedorDe()).toHaveAttribute("data-expandida", "false");
+    await userEvent.type(campo, "Hola"); // se empieza de cero: una línea, una fila
+    expect(contenedorDe()).toHaveAttribute("data-expandida", "false");
+  });
+
+  it("los dos botones siguen funcionando en la segunda fila", async () => {
+    const enviar = vi.fn();
+    render(<CampoConEstado onEnviar={enviar} />);
+    await userEvent.type(screen.getByRole("textbox", { name: "Tu mensaje" }), "Hola{Shift>}{Enter}{/Shift}asistente");
+
+    await userEvent.click(screen.getByRole("button", { name: "Enviar" }));
+
+    expect(enviar).toHaveBeenCalledOnce();
+    expect(screen.getByRole("button", { name: "Atajos" })).toBeEnabled();
+  });
+});
+
+describe("MessageInput — el «+» de los atajos", () => {
+  it("elegir un atajo del menú le avisa al padre cuál fue", async () => {
     const usar = vi.fn();
-    const { rerender } = render(<Atajos onUsar={usar} deshabilitados={false} />);
+    render(<CampoConEstado onUsarAtajo={usar} />);
 
-    await userEvent.click(screen.getByRole("button", { name: "Registrar un gasto" }));
-    expect(usar).toHaveBeenCalledWith("Registrá un gasto: ");
+    await userEvent.click(screen.getByRole("button", { name: "Atajos" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: /Resumen del mes/ }));
 
-    rerender(<Atajos onUsar={usar} deshabilitados />);
-    for (const boton of within(screen.getByRole("list", { name: "Atajos" })).getAllByRole("button")) {
-      expect(boton).toBeDisabled();
-    }
+    expect(usar).toHaveBeenCalledWith(ATAJOS.find((atajo) => atajo.id === "resumen-del-mes"));
+  });
+
+  it("mientras el asistente responde, el «+» queda deshabilitado", () => {
+    render(<CampoConEstado generando />);
+
+    expect(screen.getByRole("button", { name: "Atajos" })).toBeDisabled();
+  });
+});
+
+describe("MenuDeAtajos", () => {
+  it("abre un menú con todos los atajos; elegir uno lo usa, cierra el menú y devuelve el foco al botón", async () => {
+    const usar = vi.fn();
+    render(<MenuDeAtajos onUsar={usar} deshabilitado={false} />);
+    const boton = screen.getByRole("button", { name: "Atajos" });
+    expect(boton).toHaveAttribute("aria-expanded", "false");
+
+    await userEvent.click(boton);
+
+    expect(boton).toHaveAttribute("aria-expanded", "true");
+    const menu = screen.getByRole("menu", { name: "Atajos" });
+    expect(within(menu).getAllByRole("menuitem")).toHaveLength(ATAJOS.length);
+    await userEvent.click(within(menu).getByRole("menuitem", { name: /Gastos por categoría/ }));
+    expect(usar).toHaveBeenCalledWith(ATAJOS.find((atajo) => atajo.id === "gastos-por-categoria"));
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(boton).toHaveFocus();
+  });
+
+  it("con el teclado: al abrir el foco va al primer ítem, las flechas recorren y Escape cierra", async () => {
+    render(<MenuDeAtajos onUsar={vi.fn()} deshabilitado={false} />);
+    const boton = screen.getByRole("button", { name: "Atajos" });
+
+    await userEvent.click(boton);
+    const items = screen.getAllByRole("menuitem");
+    expect(items[0]).toHaveFocus();
+    await userEvent.keyboard("{ArrowDown}");
+    expect(items[1]).toHaveFocus();
+    await userEvent.keyboard("{ArrowUp}{ArrowUp}");
+    expect(items.at(-1)).toHaveFocus(); // da la vuelta
+    await userEvent.keyboard("{Escape}");
+
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(boton).toHaveFocus();
+  });
+
+  it("un click afuera lo cierra", async () => {
+    render(
+      <>
+        <button type="button">Afuera</button>
+        <MenuDeAtajos onUsar={vi.fn()} deshabilitado={false} />
+      </>
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Atajos" }));
+
+    await userEvent.click(screen.getByRole("button", { name: "Afuera" }));
+
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+});
+
+describe("DialogoDeConfirmacion", () => {
+  const props = {
+    abierto: true,
+    titulo: "¿Borrar la conversación?",
+    descripcion: "No se puede deshacer.",
+    textoConfirmar: "Borrar",
+    onConfirmar: vi.fn(),
+    onCancelar: vi.fn(),
+  };
+
+  it("cerrado no muestra nada", () => {
+    render(<DialogoDeConfirmacion {...props} abierto={false} />);
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("abierto es un diálogo con título y descripción, y el foco arranca en «Cancelar» (la opción segura)", () => {
+    render(<DialogoDeConfirmacion {...props} />);
+
+    const dialogo = screen.getByRole("dialog", { name: "¿Borrar la conversación?" });
+    expect(dialogo).toHaveAccessibleDescription("No se puede deshacer.");
+    expect(screen.getByRole("button", { name: "Cancelar" })).toHaveFocus();
+  });
+
+  it("confirmar y cancelar avisan al padre; Escape también cancela", async () => {
+    const confirmar = vi.fn();
+    const cancelar = vi.fn();
+    render(<DialogoDeConfirmacion {...props} onConfirmar={confirmar} onCancelar={cancelar} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Borrar" }));
+    expect(confirmar).toHaveBeenCalledOnce();
+    await userEvent.keyboard("{Escape}");
+    expect(cancelar).toHaveBeenCalledOnce();
+  });
+
+  it("el foco no sale del diálogo: Shift+Tab desde «Cancelar» va a «Borrar» y Tab desde «Borrar» vuelve", async () => {
+    render(<DialogoDeConfirmacion {...props} />);
+
+    await userEvent.tab({ shift: true });
+    expect(screen.getByRole("button", { name: "Borrar" })).toHaveFocus();
+    await userEvent.tab();
+    expect(screen.getByRole("button", { name: "Cancelar" })).toHaveFocus();
+  });
+
+  it("mientras se hace la acción los botones se deshabilitan, dice qué está pasando y Escape no cancela", async () => {
+    const cancelar = vi.fn();
+    render(<DialogoDeConfirmacion {...props} pendiente textoPendiente="Borrando…" onCancelar={cancelar} />);
+
+    expect(screen.getByRole("button", { name: "Borrando…" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cancelar" })).toBeDisabled();
+    await userEvent.keyboard("{Escape}");
+    expect(cancelar).not.toHaveBeenCalled();
+  });
+});
+
+describe("PerfilDeUsuario", () => {
+  it("muestra el nombre y, sin foto, la inicial", () => {
+    render(<PerfilDeUsuario nombre="Mateo Spadoni" avatarUrl={null} cerrarSesion={vi.fn()} onAbrirDebug={vi.fn()} />);
+
+    const boton = screen.getByRole("button", { name: "Cuenta de Mateo Spadoni" });
+    expect(boton).toHaveTextContent("Mateo Spadoni");
+    expect(boton).toHaveTextContent("M");
+  });
+
+  it("con foto la muestra como imagen decorativa (el nombre ya está al lado)", () => {
+    const { container } = render(
+      <PerfilDeUsuario nombre="Mateo" avatarUrl="https://lh3.googleusercontent.com/foto" cerrarSesion={vi.fn()} onAbrirDebug={vi.fn()} />
+    );
+
+    expect(container.querySelector("img")).toHaveAttribute("src", "https://lh3.googleusercontent.com/foto");
+    expect(container.querySelector("img")).toHaveAttribute("alt", "");
+  });
+
+  it("el menú del perfil tiene el «Panel de debug» como función secundaria", async () => {
+    const abrirDebug = vi.fn();
+    render(<PerfilDeUsuario nombre="Mateo" avatarUrl={null} cerrarSesion={vi.fn()} onAbrirDebug={abrirDebug} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Cuenta de Mateo" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Panel de debug" }));
+
+    expect(abrirDebug).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("«Cerrar sesión» pregunta antes; recién al confirmar cierra la sesión", async () => {
+    const cerrarSesion = vi.fn().mockResolvedValue(undefined);
+    render(<PerfilDeUsuario nombre="Mateo" avatarUrl={null} cerrarSesion={cerrarSesion} onAbrirDebug={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Cuenta de Mateo" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Cerrar sesión" }));
+    const dialogo = screen.getByRole("dialog", { name: "¿Cerrar sesión?" });
+    expect(cerrarSesion).not.toHaveBeenCalled();
+
+    await userEvent.click(within(dialogo).getByRole("button", { name: "Cerrar sesión" }));
+
+    await waitFor(() => expect(cerrarSesion).toHaveBeenCalledOnce());
+  });
+
+  it("si se arrepiente y cancela, no cierra la sesión", async () => {
+    const cerrarSesion = vi.fn();
+    render(<PerfilDeUsuario nombre="Mateo" avatarUrl={null} cerrarSesion={cerrarSesion} onAbrirDebug={vi.fn()} />);
+    await userEvent.click(screen.getByRole("button", { name: "Cuenta de Mateo" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Cerrar sesión" }));
+
+    await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(cerrarSesion).not.toHaveBeenCalled();
   });
 });
 
@@ -145,22 +355,59 @@ describe("PanelDeDebug", () => {
         },
         { type: "text", text: "Está a $ 1.560." },
       ],
-      metadata: { modelo: "gpt-4o-mini", pasos: 2, ms: 3500, tokens: { entrada: 800, salida: 200, total: 1000 } },
+      metadata: {
+        modelo: "gpt-4.1",
+        pasos: 2,
+        ms: 3500,
+        tokens: { entrada: 800, salida: 200, total: 1000 },
+        herramientas: [{ id: "t1", nombre: "cotizacion_dolar", ms: 800 }],
+      },
     },
   ];
 
-  it("abierto, muestra qué tool usó el modelo (en palabras del usuario y su nombre técnico) y los tokens", () => {
-    render(<PanelDeDebug id="panel" mensajes={mensajes} abierto onCerrar={vi.fn()} />);
+  it("cerrado no existe", () => {
+    render(<PanelDeDebug mensajes={mensajes} abierto={false} onCerrar={vi.fn()} />);
+
+    expect(screen.queryByRole("complementary", { name: "Panel de debug" })).toBeNull();
+  });
+
+  it("abierto muestra la herramienta que decidió usar el modelo (con lo que tardó y su nombre técnico) y los tokens", () => {
+    render(<PanelDeDebug mensajes={mensajes} abierto onCerrar={vi.fn()} />);
     const panel = screen.getByRole("complementary", { name: "Panel de debug" });
 
-    expect(within(panel).getByText("Consultó la cotización del dólar")).toBeInTheDocument();
+    expect(within(panel).getByText(/Consultó la cotización del dólar · 0,8 s/)).toBeInTheDocument();
     expect(within(panel).getByText("cotizacion_dolar")).toBeInTheDocument();
-    expect(within(panel).getByText("800 / 200")).toBeInTheDocument(); // tokens de entrada / salida
+    expect(within(panel).getByText("Pedido: «¿A cuánto está el blue?»")).toBeInTheDocument();
+    expect(within(panel).getByText("Modelo: gpt-4.1 · 2 pasos")).toBeInTheDocument();
+    expect(within(panel).getByText("Contexto enviado (entrada): 800 tokens")).toBeInTheDocument();
+    const totales = within(panel).getByRole("region", { name: "Totales de la conversación" });
+    expect(totales).toHaveTextContent("1 respuesta · 1 herramienta · 3,5 s");
+    expect(totales).toHaveTextContent("1.000 tokens");
+  });
+
+  it("«Ver datos» muestra lo que decidió pasarle el modelo y lo que devolvió la tool", async () => {
+    render(<PanelDeDebug mensajes={mensajes} abierto onCerrar={vi.fn()} />);
+
+    await userEvent.click(screen.getByText("Ver datos"));
+
+    // «blue» aparece en lo que decidió pasarle el modelo y en lo que devolvió la tool; la compra, solo en el resultado.
+    expect(screen.getAllByText(/"tipoDeDolar": "blue"/, { selector: "pre" })).toHaveLength(2);
+    expect(screen.getByText(/"compra": 1540/, { selector: "pre" })).toBeVisible();
+  });
+
+  it("una respuesta sin herramientas lo dice", () => {
+    const sinTools: AsistenteUIMessage[] = [
+      { id: "u", role: "user", parts: [{ type: "text", text: "Hola" }] },
+      { id: "a", role: "assistant", parts: [{ type: "text", text: "¡Hola!" }] },
+    ];
+    render(<PanelDeDebug mensajes={sinTools} abierto onCerrar={vi.fn()} />);
+
+    expect(screen.getByText("El modelo respondió sin usar herramientas.")).toBeInTheDocument();
   });
 
   it("al abrirse lleva el foco al botón de cerrar, y Escape lo cierra (teclado)", async () => {
     const cerrar = vi.fn();
-    render(<PanelDeDebug id="panel" mensajes={mensajes} abierto onCerrar={cerrar} />);
+    render(<PanelDeDebug mensajes={mensajes} abierto onCerrar={cerrar} />);
 
     expect(screen.getByRole("button", { name: "Cerrar el panel de debug" })).toHaveFocus();
     await userEvent.keyboard("{Escape}");
@@ -168,7 +415,7 @@ describe("PanelDeDebug", () => {
   });
 
   it("sin respuestas todavía, dice qué va a aparecer (estado vacío)", () => {
-    render(<PanelDeDebug id="panel" mensajes={[]} abierto onCerrar={vi.fn()} />);
+    render(<PanelDeDebug mensajes={[]} abierto onCerrar={vi.fn()} />);
 
     expect(screen.getByText("Cuando el asistente responda, acá vas a ver qué hizo.")).toBeInTheDocument();
   });

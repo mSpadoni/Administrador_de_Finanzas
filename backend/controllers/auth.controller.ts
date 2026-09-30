@@ -1,33 +1,22 @@
 import "server-only";
-import { crearClienteServidor, type ClienteSupabase } from "@/backend/lib/supabase/server";
 import { Usuario } from "@/backend/models/dominio/usuario.model";
-import { codigoDeLogin } from "./validaciones";
+import { authModel, type AuthModel } from "@/backend/models/repositorios/auth.model";
+import { codigoDeLogin } from "./validacionControllers";
 
-/** Todo lo relacionado con el login: iniciar sesión con Google, saber quién está logueado y cerrar sesión. */
+/**
+ * Todo lo relacionado con el login: iniciar sesión con Google, saber quién está logueado y cerrar sesión.
+ * Decide qué hacer (validar lo que llega del navegador y pedírselo al modelo); el que habla con Supabase Auth es el AuthModel.
+ */
 export class AuthController {
-  // La fábrica del cliente se inyecta para poder pasar un mock en los tests.
-  // `private readonly crearCliente: ...` declara y asigna el atributo en un paso; `= crearClienteServidor` es el valor por defecto.
-  constructor(private readonly crearCliente: () => Promise<ClienteSupabase> = crearClienteServidor) {}
+  // El modelo entra por el constructor (así los tests le pasan uno con su sesión); sin nada, usa el de la app.
+  constructor(private readonly modeloAuth: () => AuthModel = () => authModel) {}
 
   /**
-   * Pide a Supabase la URL de login de Google.
-   * `urlDeVuelta` es a dónde vuelve Google después (nuestro /auth/callback).
-   * Devuelve null si Supabase no pudo generarla.
-   * `Promise<string | null>`: como es `async`, devuelve una promesa que al resolverse da texto o null.
+   * Pide la URL de login de Google. `urlDeVuelta` es a dónde vuelve Google después (nuestro /auth/callback).
+   * Devuelve null si no se pudo generar.
    */
-  async urlDeLoginConGoogle(urlDeVuelta: string): Promise<string | null> {
-    const supabase = await this.crearCliente();
-    // signInWithOAuth no redirige solo en el servidor: devuelve la URL de Google a la que hay que mandar al usuario.
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: urlDeVuelta },
-    });
-
-    if (error) {
-      console.error("Error al iniciar el login con Google:", error);
-      return null;
-    }
-    return data.url;
+  urlDeLoginConGoogle(urlDeVuelta: string): Promise<string | null> {
+    return this.modeloAuth().urlDeLoginConGoogle(urlDeVuelta);
   }
 
   /**
@@ -38,29 +27,17 @@ export class AuthController {
     // Viene en la URL (lo manda el navegador): se valida antes de dárselo a Supabase.
     const codigo = codigoDeLogin(code);
     if (!codigo) return false;
-    const supabase = await this.crearCliente();
-    // Acá solo interesa `error`, por eso se desestructura solo esa propiedad.
-    const { error } = await supabase.auth.exchangeCodeForSession(codigo);
-
-    if (error) {
-      console.error("Error al completar el login:", error);
-      return false;
-    }
-    return true;
+    return this.modeloAuth().canjearCodigo(codigo);
   }
 
-  /** Devuelve el usuario logueado (leído de las cookies de la sesión), o null si no hay nadie logueado. */
-  async obtenerUsuarioActual(): Promise<Usuario | null> {
-    const supabase = await this.crearCliente();
-    const { data } = await supabase.auth.getUser();
-    // Operador ternario: `condición ? siEsVerdadero : siEsFalso`.
-    return data.user ? Usuario.desdeSupabase(data.user) : null;
+  /** Devuelve el usuario logueado, o null si no hay nadie logueado. */
+  obtenerUsuarioActual(): Promise<Usuario | null> {
+    return this.modeloAuth().usuarioActual();
   }
 
-  /** Cierra la sesión: Supabase borra las cookies. `Promise<void>` = no devuelve nada útil, solo hay que esperarla. */
-  async cerrarSesion(): Promise<void> {
-    const supabase = await this.crearCliente();
-    await supabase.auth.signOut();
+  /** Cierra la sesión. `Promise<void>` = no devuelve nada útil, solo hay que esperarla. */
+  cerrarSesion(): Promise<void> {
+    return this.modeloAuth().cerrarSesion();
   }
 }
 

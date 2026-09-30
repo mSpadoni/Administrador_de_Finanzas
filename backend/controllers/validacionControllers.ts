@@ -1,19 +1,19 @@
 import "server-only";
 import { z } from "zod";
-import { ErrorDeAplicacion } from "@/backend/errores";
 import { MAX_CARACTERES_MENSAJE, type AsistenteUIMessage } from "@/shared/chat";
+import { lanzarPedidoInvalido } from "./erroresControllers";
 
 // Todo lo que manda el navegador se valida acá, con Zod, antes de que el controller haga nada: ningún dato del
 // navegador llega a un model sin pasar por uno de estos esquemas. (zod `z` describe cómo tiene que ser un dato y
 // lo valida; el texto de cada regla es el error que ve el usuario.)
-// Otras validaciones viven con su dueño: las entradas de las tools (las manda el LLM) en cada tool, y los
+// Otras validaciones viven con su dueño: las entradas de las tools (las manda el LLM) en tools/validacionTools.ts, y los
 // movimientos en el dominio (models/dominio/movimiento.ts).
 
-/** Cualquier dato del navegador que no pasa su esquema: el controller lo corta con este error (la ruta, 400). */
+/** Cualquier dato del navegador que no pasa su esquema: se corta con un error de pedido inválido (la ruta, 400). */
 function validar<Esquema extends z.ZodType>(esquema: Esquema, datos: unknown): z.output<Esquema> {
   const resultado = esquema.safeParse(datos);
   if (!resultado.success) {
-    throw new ErrorDeAplicacion("pedido_invalido", resultado.error.issues[0]?.message ?? "El pedido no es válido.");
+    return lanzarPedidoInvalido(resultado.error.issues[0]?.message ?? "El pedido no es válido.");
   }
   return resultado.data;
 }

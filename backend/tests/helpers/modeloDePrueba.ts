@@ -56,3 +56,24 @@ export function modeloQueFalla(error: unknown) {
     },
   });
 }
+
+/**
+ * Un modelo que responde `texto` de una vez (sin streaming), como cuando el código usa `generateText` (ej. para ponerle
+ * título a una conversación). `pedidos` guarda lo que recibió, para comprobar qué se le mostró.
+ */
+export function modeloQueGenera(texto: string) {
+  const pedidos: unknown[] = [];
+  const modelo = new MockLanguageModelV4({
+    modelId: "modelo-de-prueba",
+    doGenerate: async (opciones) => {
+      pedidos.push(opciones.prompt);
+      return {
+        content: [{ type: "text" as const, text: texto }],
+        finishReason: { unified: "stop" as const, raw: "stop" },
+        usage: USO,
+        warnings: [],
+      };
+    },
+  });
+  return { modelo, pedidos };
+}

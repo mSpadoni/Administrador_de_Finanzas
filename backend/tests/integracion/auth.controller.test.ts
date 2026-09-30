@@ -6,13 +6,14 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { AuthController } from "@/backend/controllers/auth.controller";
 import { Usuario } from "@/backend/models/dominio/usuario.model";
+import { AuthModel } from "@/backend/models/repositorios/auth.model";
 import { borrarUsuariosDePrueba, crearUsuarioLogueado, NavegadorDePrueba } from "../helpers/usuarioDePrueba";
 
 afterAll(borrarUsuariosDePrueba);
 
 describe("AuthController.obtenerUsuarioActual", () => {
   it("devuelve null si el persona no inició sesión", async () => {
-    const controller = new AuthController(new NavegadorDePrueba().crearCliente);
+    const controller = new AuthController(() => new AuthModel(new NavegadorDePrueba().crearCliente));
 
     expect(await controller.obtenerUsuarioActual()).toBeNull();
   });
@@ -22,7 +23,7 @@ describe("AuthController.obtenerUsuarioActual", () => {
       full_name: "Mateo Spadoni",
       avatar_url: "https://ejemplo.com/mateo.png",
     });
-    const controller = new AuthController(persona.navegador.crearCliente);
+    const controller = new AuthController(() => new AuthModel(persona.navegador.crearCliente));
 
     const usuario = await controller.obtenerUsuarioActual();
 
@@ -40,8 +41,8 @@ describe("AuthController.obtenerUsuarioActual", () => {
     const persona = await crearUsuarioLogueado();
 
     // Cada controller crea su cliente de cero, leyendo solo las cookies: igual que dos requests distintos.
-    const primerRequest = await new AuthController(persona.navegador.crearCliente).obtenerUsuarioActual();
-    const segundoRequest = await new AuthController(persona.navegador.crearCliente).obtenerUsuarioActual();
+    const primerRequest = await new AuthController(() => new AuthModel(persona.navegador.crearCliente)).obtenerUsuarioActual();
+    const segundoRequest = await new AuthController(() => new AuthModel(persona.navegador.crearCliente)).obtenerUsuarioActual();
 
     expect(primerRequest?.id).toBe(persona.id);
     expect(segundoRequest?.id).toBe(persona.id);
@@ -51,8 +52,8 @@ describe("AuthController.obtenerUsuarioActual", () => {
     const ana = await crearUsuarioLogueado({ full_name: "Ana" });
     const beto = await crearUsuarioLogueado({ full_name: "Beto" });
 
-    const vistoPorAna = await new AuthController(ana.navegador.crearCliente).obtenerUsuarioActual();
-    const vistoPorBeto = await new AuthController(beto.navegador.crearCliente).obtenerUsuarioActual();
+    const vistoPorAna = await new AuthController(() => new AuthModel(ana.navegador.crearCliente)).obtenerUsuarioActual();
+    const vistoPorBeto = await new AuthController(() => new AuthModel(beto.navegador.crearCliente)).obtenerUsuarioActual();
 
     expect(vistoPorAna?.nombre).toBe("Ana");
     expect(vistoPorBeto?.nombre).toBe("Beto");
@@ -62,7 +63,7 @@ describe("AuthController.obtenerUsuarioActual", () => {
 describe("AuthController.cerrarSesion", () => {
   it("después de cerrar sesión, el siguiente request ya no tiene persona", async () => {
     const persona = await crearUsuarioLogueado();
-    const controller = new AuthController(persona.navegador.crearCliente);
+    const controller = new AuthController(() => new AuthModel(persona.navegador.crearCliente));
 
     await controller.cerrarSesion();
 
@@ -73,7 +74,7 @@ describe("AuthController.cerrarSesion", () => {
 describe("AuthController.urlDeLoginConGoogle", () => {
   it("arma la URL de Supabase → Google con el callback de la app y PKCE", async () => {
     const navegador = new NavegadorDePrueba();
-    const controller = new AuthController(navegador.crearCliente);
+    const controller = new AuthController(() => new AuthModel(navegador.crearCliente));
 
     const url = await controller.urlDeLoginConGoogle("http://localhost:3000/auth/callback");
 
@@ -93,7 +94,7 @@ describe("AuthController.urlDeLoginConGoogle", () => {
 describe("AuthController.completarLogin", () => {
   it("rechaza un code inválido y no deja sesión (la home muestra el aviso de error)", async () => {
     const navegador = new NavegadorDePrueba();
-    const controller = new AuthController(navegador.crearCliente);
+    const controller = new AuthController(() => new AuthModel(navegador.crearCliente));
     await controller.urlDeLoginConGoogle("http://localhost:3000/auth/callback");
 
     const ok = await controller.completarLogin("code-que-no-existe");

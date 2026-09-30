@@ -6,14 +6,16 @@ import {
   stepCountIs,
   streamText,
   type LanguageModel,
+  type LanguageModelUsage,
+  type StepResult,
   type TextStreamPart,
   type ToolSet,
 } from "ai";
 import { armarSystemPrompt } from "@/backend/lib/prompts/systemPrompt";
 import { hoyEnArgentina } from "@/backend/models/dominio/periodo";
 import type { ToolsDelAsistente } from "@/backend/tools/asistente.tools";
-import { textoDeErrorEnStream, timeoutComoError, traducirError } from "@/backend/asistente/errores";
-import type { MetadatosDeRespuesta, AsistenteUIMessage } from "@/shared/chat";
+import { textoDeErrorEnStream, timeoutComoError, traducirError } from "@/backend/asistente/erroresAsistente";
+import type { AsistenteUIMessage, MedicionDeHerramienta, MetadatosDeRespuesta } from "@/shared/chat";
 
 // El agente: todo lo que tiene que ver con el LLM (prompt, tools, pasos, streaming, log).
 // No sabe de conversaciones ni de la base: recibe los mensajes y avisa cuando termina la respuesta.
@@ -29,9 +31,12 @@ export const MAXIMO_TOKENS_DE_SALIDA = 4000;
 
 /**
  * El modelo manda el texto en ráfagas irregulares; así la respuesta se lee más cómoda: sale palabra por palabra,
- * a un ritmo parejo (~30 palabras por segundo).
+ * a un ritmo parejo (~20 palabras por segundo).
  */
-export const PAUSA_ENTRE_PALABRAS_MS = 30;
+export const PAUSA_ENTRE_PALABRAS_MS = 50;
+
+/** Cuánto puede tardar una respuesta completa si no se configura otra cosa (ms). */
+const TIMEOUT_POR_DEFECTO_MS = 45_000;
 
 /** Cómo responde el asistente: se configura una vez, al crear el agente. */
 export type ConfiguracionDelAgente = {
@@ -53,6 +58,11 @@ export type PedidoAlAgente = {
   alTerminar: (respuesta: AsistenteUIMessage) => Promise<void>;
 };
 
+/** El nombre del modelo configurado (el SDK acepta un string o un objeto de modelo). */
+function nombreDelModelo(modelo: LanguageModel): string {
+  return typeof modelo === "string" ? modelo : modelo.modelId;
+}
+
 /** Un mensaje sin lo que usaron las tools: solo su texto. */
 function soloTexto(mensaje: AsistenteUIMessage): AsistenteUIMessage {
   return { ...mensaje, parts: mensaje.parts.filter((parte) => parte.type === "text") };
@@ -69,39 +79,71 @@ export function mensajesParaElModelo(mensajes: AsistenteUIMessage[]): AsistenteU
   return mensajes.map((mensaje, indice) => (indice === ultimaDelAsistente ? mensaje : soloTexto(mensaje)));
 }
 
-/** El nombre del modelo configurado (el SDK acepta un string o un objeto de modelo). */
-function nombreDelModelo(modelo: LanguageModel): string {
-  return typeof modelo === "string" ? modelo : modelo.modelId;
+/** Suma los tokens de un paso a los de antes (el proveedor puede no informar alguno: cuenta como 0). */
+function sumarTokens(antes: NonNullable<MetadatosDeRespuesta["tokens"]>, uso: LanguageModelUsage) {
+  return {
+    entrada: (antes.entrada ?? 0) + (uso.inputTokens ?? 0),
+    salida: (antes.salida ?? 0) + (uso.outputTokens ?? 0),
+    total: (antes.total ?? 0) + (uso.totalTokens ?? 0),
+  };
 }
 
 /**
- * Arma los datos del panel de debug a medida que pasa el stream: el modelo al empezar, el número de paso al
- * terminar cada uno (con el modelo exacto que respondió) y, al final, los tokens, la demora y el motivo de fin.
- * El navegador junta todo en `message.metadata`.
+ * Mide la respuesta mientras llega, para mostrarle a la persona qué hizo el asistente: el modelo, cuánto tardó cada tool,
+ * los tokens gastados y la demora total.
+ *
+ * El modelo no manda la respuesta de una vez: manda una secuencia de eventos ("empezó", "llamó a una tool", "la tool
+ * devolvió", "terminó un paso", "terminó todo"...). Esta función devuelve OTRA función, que el stream llama con cada evento y
+ * que contesta con los datos que corresponden a ese evento (o `undefined` si el evento no aporta nada). Se hace así,
+ * devolviendo una función, para que lo que se va juntando (pasos, tokens, cuándo empezó cada tool) quede guardado
+ * adentro y siga sumando de un evento al siguiente. El navegador junta todo lo que va contestando en `message.metadata`.
+ * `reloj` es la hora actual en ms (los tests la controlan).
  */
-export function medidorDeRespuesta(modelo: string, inicio = Date.now()) {
+export function medidorDeRespuesta(modelo: string, inicio = Date.now(), reloj: () => number = Date.now) {
   let pasos = 0;
-  return (parte: TextStreamPart<ToolSet>): MetadatosDeRespuesta | undefined => {
-    switch (parte.type) {
+  let tokens: NonNullable<MetadatosDeRespuesta["tokens"]> = {};
+  const inicioDeCadaTool = new Map<string, number>();
+  const herramientas: MedicionDeHerramienta[] = [];
+
+  return (evento: TextStreamPart<ToolSet>): MetadatosDeRespuesta | undefined => {
+    switch (evento.type) {
       case "start":
         return { modelo };
+      case "tool-call":
+        inicioDeCadaTool.set(evento.toolCallId, reloj());
+        return undefined;
+      case "tool-result":
+      case "tool-error": {
+        const empezo = inicioDeCadaTool.get(evento.toolCallId) ?? reloj();
+        herramientas.push({ id: evento.toolCallId, nombre: evento.toolName, ms: reloj() - empezo });
+        return { herramientas: [...herramientas] };
+      }
       case "finish-step":
         pasos += 1;
-        return { pasos, modelo: parte.response.modelId || modelo };
+        tokens = sumarTokens(tokens, evento.usage);
+        return { pasos, modelo: evento.response.modelId || modelo, tokens };
       case "finish":
-        return {
-          ms: Date.now() - inicio,
-          motivoDeFin: parte.finishReason,
-          tokens: {
-            entrada: parte.totalUsage.inputTokens,
-            salida: parte.totalUsage.outputTokens,
-            total: parte.totalUsage.totalTokens,
-          },
-        };
+        return { ms: reloj() - inicio, tokens: sumarTokens({}, evento.totalUsage) };
       default:
         return undefined;
     }
   };
+}
+
+/** Una línea de log en JSON con datos útiles de cada respuesta (demora, pasos, tokens, tools usadas). */
+function registrarRespuesta(pasos: StepResult<ToolsDelAsistente>[], uso: LanguageModelUsage, inicio: number): void {
+  const herramientas = pasos.flatMap((paso) =>
+    paso.toolCalls.map((llamada) => ({ nombre: llamada.toolName, entrada: llamada.input }))
+  );
+  console.info(
+    JSON.stringify({
+      evento: "chat.respuesta",
+      ms: Date.now() - inicio,
+      pasos: pasos.length,
+      tokens: uso.totalTokens,
+      herramientas,
+    })
+  );
 }
 
 /**
@@ -115,7 +157,7 @@ export class Agente {
   private readonly temperatura: number | undefined;
 
   constructor({
-    timeoutMs = 45_000,
+    timeoutMs = TIMEOUT_POR_DEFECTO_MS,
     pausaEntrePalabrasMs = PAUSA_ENTRE_PALABRAS_MS,
     temperatura,
   }: ConfiguracionDelAgente = {}) {
@@ -129,14 +171,19 @@ export class Agente {
    * El modelo decide qué tools usar según lo que pide el usuario: acá no se elige por él.
    * Si el modelo falla en el medio, el error llega dentro del stream con su código.
    */
-  async responder({ modelo, mensajes, tools, alTerminar }: PedidoAlAgente) {
-    const { timeoutMs, pausaEntrePalabrasMs, temperatura } = this;
+  async responder(pedido: PedidoAlAgente) {
     const inicio = Date.now();
-    const medir = medidorDeRespuesta(nombreDelModelo(modelo), inicio);
-    const resultado = streamText({
+    const respuestaDelModelo = await this.pedirAlModelo(pedido, inicio);
+    return this.comoStreamDeMensajes(respuestaDelModelo, pedido, inicio);
+  }
+
+  /** Paso 1: le manda al modelo la conversación y las tools, con los límites (pasos, tokens, tiempo) configurados. */
+  private async pedirAlModelo({ modelo, mensajes, tools }: PedidoAlAgente, inicio: number) {
+    return streamText({
       model: modelo,
       system: armarSystemPrompt(hoyEnArgentina(new Date())),
-      // Con las tools, cada resultado anterior se le pasa al modelo como lo define la tool. Una tool que quedó a medias (el usuario cortó la respuesta) no se manda.
+      // Con las tools, cada resultado anterior se le pasa al modelo como lo define la tool. Una tool que quedó a medias
+      // (el usuario cortó la respuesta) no se manda.
       messages: await convertToModelMessages(mensajesParaElModelo(mensajes), {
         tools,
         ignoreIncompleteToolCalls: true,
@@ -147,32 +194,26 @@ export class Agente {
       // Por paso: pone un techo al gasto de cada respuesta.
       maxOutputTokens: MAXIMO_TOKENS_DE_SALIDA,
       maxRetries: 1,
-      temperature: temperatura,
-      timeout: timeoutMs,
+      temperature: this.temperatura,
+      timeout: this.timeoutMs,
       // Palabra por palabra, con una pausa pareja entre cada una.
-      experimental_transform: smoothStream({ delayInMs: pausaEntrePalabrasMs, chunking: "word" }),
-      onFinish: ({ steps, totalUsage }) => {
-        // Log en formato JSON con datos útiles de cada respuesta (demora, pasos, tokens, tools usadas).
-        const herramientas = steps.flatMap((paso) =>
-          paso.toolCalls.map((llamada) => ({ nombre: llamada.toolName, entrada: llamada.input }))
-        );
-        console.info(
-          JSON.stringify({
-            evento: "chat.respuesta",
-            ms: Date.now() - inicio,
-            pasos: steps.length,
-            tokens: totalUsage.totalTokens,
-            herramientas,
-          })
-        );
-      },
+      experimental_transform: smoothStream({ delayInMs: this.pausaEntrePalabrasMs, chunking: "word" }),
+      onFinish: ({ steps, totalUsage }) => registrarRespuesta(steps, totalUsage, inicio),
     });
+  }
 
-    return resultado
+  /** Paso 2: convierte lo que responde el modelo en mensajes para el navegador, con sus errores traducidos. */
+  private comoStreamDeMensajes(
+    respuestaDelModelo: Awaited<ReturnType<Agente["pedirAlModelo"]>>,
+    { modelo, mensajes, alTerminar }: PedidoAlAgente,
+    inicio: number
+  ) {
+    const medir = medidorDeRespuesta(nombreDelModelo(modelo), inicio);
+    return respuestaDelModelo
       .toUIMessageStream<AsistenteUIMessage>({
         originalMessages: mensajes,
         generateMessageId: randomUUID,
-        // Modelo, pasos, tokens y demora de esta respuesta, para el panel de debug.
+        // Modelo, tools, tokens y demora de esta respuesta, para mostrarlos.
         messageMetadata: ({ part }) => medir(part),
         onFinish: async ({ responseMessage }) => {
           if (responseMessage.parts.length > 0) await alTerminar(responseMessage);

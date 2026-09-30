@@ -1,23 +1,25 @@
 import { describe, expect, it } from "vitest";
-import type { ParteDelAsistente, AsistenteUIMessage } from "@/shared/chat";
+import type { AsistenteUIMessage } from "@/shared/chat";
 import { comoTextoDeDebug, respuestasParaDebug, totalesDeDebug } from "@/views/chat/debug";
 
-// Sin mocks: mensajes y resultados con los mismos tipos que arman useChat y las tools.
+// Lo que muestra el panel de debug: por cada respuesta, qué decidió hacer el modelo, cuánto tardó y cuántos tokens gastó.
 
-const usuario = (id: string, texto: string): AsistenteUIMessage => ({
-  id,
-  role: "user",
-  parts: [{ type: "text", text: texto }],
-});
-const asistente = (
-  id: string,
-  parts: ParteDelAsistente[],
-  metadata?: AsistenteUIMessage["metadata"]
-): AsistenteUIMessage => ({
+const usuario = (texto: string): AsistenteUIMessage => ({ id: `u-${texto}`, role: "user", parts: [{ type: "text", text: texto }] });
+
+const conTool = (id: string, metadata?: AsistenteUIMessage["metadata"]): AsistenteUIMessage => ({
   id,
   role: "assistant",
-  parts,
   metadata,
+  parts: [
+    {
+      type: "tool-cotizacion_dolar",
+      toolCallId: `t-${id}`,
+      state: "output-available",
+      input: { tipoDeDolar: "blue" },
+      output: { ok: true, cotizaciones: [] },
+    },
+    { type: "text", text: "Listo." },
+  ],
 });
 
 describe("comoTextoDeDebug", () => {
@@ -28,27 +30,73 @@ describe("comoTextoDeDebug", () => {
 });
 
 describe("respuestasParaDebug", () => {
-  const mensajes: AsistenteUIMessage[] = [
-    usuario("u1", "Hola"),
-    asistente("a1", [{ type: "text", text: "¡Hola!" }]), // de una sesión anterior: sin metadatos
-    usuario("u2", "¿Cómo vengo este mes?"),
-    asistente("a2", [{ type: "text", text: "Vas $ 120.000 en gastos." }], {
-      modelo: "gpt-4.1",
-      pasos: 2,
-      ms: 4200,
-      tokens: { entrada: 900, salida: 300, total: 1200 },
-    }),
-  ];
+  it("arma una entrada por respuesta del asistente, con el pedido que la originó y sus herramientas", () => {
+    const respuestas = respuestasParaDebug([usuario("¿Y el blue?"), conTool("a1"), usuario("Gracias"), conTool("a2")]);
 
-  it("arma una entrada por respuesta, con el pedido del usuario y los datos del modelo", () => {
-    const [primera, segunda] = respuestasParaDebug(mensajes);
-
-    expect(primera).toMatchObject({ numero: 1, pedido: "Hola", llamadas: [], metadatos: undefined });
-    expect(segunda).toMatchObject({ numero: 2, pedido: "¿Cómo vengo este mes?", llamadas: [] });
-    expect(segunda.metadatos?.tokens?.total).toBe(1200);
+    expect(respuestas.map((r) => [r.id, r.pedido])).toEqual([
+      ["a1", "¿Y el blue?"],
+      ["a2", "Gracias"],
+    ]);
+    expect(respuestas[0]?.herramientas[0]).toMatchObject({
+      id: "t-a1",
+      nombre: "cotizacion_dolar",
+      entrada: '{\n  "tipoDeDolar": "blue"\n}',
+      fallo: false,
+      ms: undefined,
+    });
   });
 
-  it("los totales suman tools, tokens y demora de las respuestas que los tienen", () => {
-    expect(totalesDeDebug(respuestasParaDebug(mensajes))).toEqual({ tokens: 1200, ms: 4200, llamadas: 0 });
+  it("con la medición del servidor, cada herramienta trae lo que tardó", () => {
+    const [respuesta] = respuestasParaDebug([
+      usuario("¿Y el blue?"),
+      conTool("a1", { herramientas: [{ id: "t-a1", nombre: "cotizacion_dolar", ms: 800 }] }),
+    ]);
+
+    expect(respuesta?.herramientas[0]?.ms).toBe(800);
+    expect(respuesta?.herramientas[0]?.texto).toContain("0,8 s");
+  });
+
+  it("un resultado con ok: false se marca como fallo", () => {
+    const fallida: AsistenteUIMessage = {
+      id: "a",
+      role: "assistant",
+      parts: [
+        {
+          type: "tool-cotizacion_dolar",
+          toolCallId: "t",
+          state: "output-available",
+          input: {},
+          output: { ok: false, motivo: "servicio", detalle: "No respondió." },
+        },
+      ],
+    };
+
+    expect(respuestasParaDebug([usuario("Hola"), fallida])[0]?.herramientas[0]?.fallo).toBe(true);
+  });
+
+  it("sin mensajes no hay respuestas", () => {
+    expect(respuestasParaDebug([])).toEqual([]);
+  });
+});
+
+describe("totalesDeDebug", () => {
+  it("suma respuestas, herramientas, demora y tokens de toda la conversación", () => {
+    const respuestas = respuestasParaDebug([
+      usuario("uno"),
+      conTool("a1", { ms: 1000, tokens: { entrada: 100, salida: 10, total: 110 } }),
+      usuario("dos"),
+      conTool("a2", { ms: 2500, tokens: { entrada: 300, salida: 40, total: 340 } }),
+    ]);
+
+    expect(totalesDeDebug(respuestas)).toEqual({
+      respuestas: 2,
+      herramientas: 2,
+      ms: 3500,
+      tokens: { entrada: 400, salida: 50, total: 450 },
+    });
+  });
+
+  it("las respuestas sin medición (de la base) cuentan como cero", () => {
+    expect(totalesDeDebug(respuestasParaDebug([usuario("uno"), conTool("a1")])).tokens.total).toBe(0);
   });
 });

@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { ChatController } from "@/backend/controllers/chat.controller";
-import { codigoDeLogin, esIdDeConversacion, validarPedidoDeChat } from "@/backend/controllers/validaciones";
-import { ErrorDeAplicacion } from "@/backend/errores";
+import { codigoDeLogin, esIdDeConversacion, validarPedidoDeChat } from "@/backend/controllers/validacionControllers";
+import { ErrorDeAplicacion } from "@/backend/erroresBackend";
 import { MAX_CARACTERES_MENSAJE } from "@/shared/chat";
 
 // Sin mocks: cuerpos como los que manda el navegador (válidos y armados a mano para romper las reglas).

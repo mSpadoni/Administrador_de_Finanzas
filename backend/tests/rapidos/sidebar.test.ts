@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { conActividad, sinConversacion, type EstadoSidebar } from "@/views/chat/sidebar";
+import { conActividad, conTitulo, sinConversacion, type EstadoSidebar } from "@/views/chat/sidebar";
 
 // Sin mocks: funciones puras con los mismos datos que maneja el sidebar.
 
@@ -29,5 +29,18 @@ describe("conActividad", () => {
 describe("sinConversacion", () => {
   it("la saca de la lista", () => {
     expect(sinConversacion(ESTADO, "b")).toEqual({ conversaciones: [{ id: "a", titulo: "Gastos de septiembre" }] });
+  });
+});
+
+describe("conTitulo", () => {
+  it("cambia el título de esa conversación y deja las demás y su orden", () => {
+    expect(conTitulo(ESTADO, "b", "Cotización del dólar").conversaciones).toEqual([
+      { id: "a", titulo: "Gastos de septiembre" },
+      { id: "b", titulo: "Cotización del dólar" },
+    ]);
+  });
+
+  it("si la conversación no está en la lista, no pasa nada", () => {
+    expect(conTitulo(ESTADO, "z", "Otro")).toEqual(ESTADO);
   });
 });

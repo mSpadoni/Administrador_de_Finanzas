@@ -1,8 +1,7 @@
 import "server-only";
 import { tool } from "ai";
-import { z } from "zod";
 import { clienteDolar, type ClienteDolar, type ResultadoCotizaciones } from "@/backend/lib/dolar";
-import { TIPOS_DE_DOLAR } from "@/backend/models/dominio/movimiento";
+import { EntradaCotizacionDolarSchema } from "./validacionTools";
 
 /** La tool cotizacion_dolar. `dolar` permite probar con otro servidor. */
 export function crearToolsDolar(dolar: ClienteDolar = clienteDolar) {
@@ -11,9 +10,7 @@ export function crearToolsDolar(dolar: ClienteDolar = clienteDolar) {
       description:
         "Cotización actual del dólar en Argentina (oficial, blue, MEP y tarjeta), con compra y venta en pesos. Usala " +
         "cuando pregunten por el dólar. Nunca digas una cotización sin haberla pedido con esta herramienta.",
-      inputSchema: z.object({
-        tipoDeDolar: z.enum(TIPOS_DE_DOLAR).optional().describe("Solo ese tipo de dólar. Sin valor: todos."),
-      }),
+      inputSchema: EntradaCotizacionDolarSchema,
       execute: async ({ tipoDeDolar }): Promise<ResultadoCotizaciones> => {
         const resultado = await dolar.cotizaciones();
         if (!resultado.ok || !tipoDeDolar) return resultado;

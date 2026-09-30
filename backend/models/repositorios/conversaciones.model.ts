@@ -114,6 +114,20 @@ export class ConversacionesModel {
     );
   }
 
+  /** Cambia el título de la conversación. Devuelve false si no existe o es de otro usuario (RLS no la deja tocar). */
+  async actualizarTitulo(id: string, titulo: string): Promise<boolean> {
+    const supabase = await this.crearCliente();
+    const cambiadas = datosOError(
+      await supabase
+        .from("conversaciones")
+        .update({ titulo: titulo.slice(0, MAX_CARACTERES_TITULO) })
+        .eq("id", id)
+        .select("id"),
+      "No se pudo cambiar el título de la conversación"
+    );
+    return cambiadas.length > 0;
+  }
+
   /**
    * Cuántos mensajes mandó el usuario logueado en el último minuto y en las últimas 24 horas (para el límite de uso).
    * RLS ya limita la cuenta a los mensajes de sus conversaciones. `head: true` pide solo la cantidad, sin las filas.

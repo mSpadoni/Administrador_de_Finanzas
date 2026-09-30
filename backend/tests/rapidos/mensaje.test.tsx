@@ -73,7 +73,7 @@ describe("MessageBubble — contenido", () => {
     expect(screen.getByRole("cell", { name: "$ 50.000" })).toBeInTheDocument();
   });
 
-  it("cada tool que usó el asistente se dice con texto: en curso, lista o con error", () => {
+  it("las herramientas no se listan en el globo: lo que hace el asistente se ve en vivo, fuera de la respuesta", () => {
     const parte = (state: "input-available" | "output-available"): ParteDelAsistente =>
       state === "input-available"
         ? { type: "tool-cotizacion_dolar", toolCallId: "t1", state, input: {} }
@@ -86,8 +86,8 @@ describe("MessageBubble — contenido", () => {
           };
     mostrar(delAsistente("Un momento.", [parte("input-available"), parte("output-available")]));
 
-    const herramientas = screen.getByRole("list", { name: "Herramientas que usó el asistente" });
-    expect(within(herramientas).getByText("Consultando la cotización del dólar…")).toBeInTheDocument();
-    expect(within(herramientas).getByText("No se pudo: consultó la cotización del dólar")).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: "Pasos de la respuesta" })).toBeNull();
+    expect(screen.queryByText("Consultando la cotización del dólar…")).toBeNull();
+    expect(screen.getByText("Un momento.")).toBeVisible();
   });
 });

@@ -1,4 +1,4 @@
-import type { CodigoDeError, ErrorPublico } from "@/shared/errores";
+import type { CodigoDeError, ErrorPublico } from "@/shared/erroresShared";
 
 /**
  * Un error que la app conoce: tiene un código estable, un mensaje para el usuario y, en `cause`, el error original

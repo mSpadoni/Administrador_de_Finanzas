@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ErrorDeConfiguracion } from "@/backend/lib/env";
+import { ErrorDeConfiguracion } from "@/backend/lib/erroresLib";
 import { crearModeloOpenAI } from "@/backend/lib/openai";
 import { conVariables } from "../helpers/variablesDeEntorno";
 

@@ -1,4 +1,4 @@
-import type { CodigoDeError } from "@/shared/errores";
+import type { CodigoDeError } from "@/shared/erroresShared";
 
 // Cuántos mensajes puede mandar un usuario al asistente. Cada mensaje gasta crédito de OpenAI: sin límite, un usuario
 // (o un script con su sesión) podría agotarlo. Lógica pura: los conteos los trae el repositorio de conversaciones.

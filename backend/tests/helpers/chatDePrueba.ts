@@ -1,9 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { ChatController } from "@/backend/controllers/chat.controller";
+import { MovimientosController } from "@/backend/controllers/movimientos.controller";
 import { ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
 import { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
-import type { MetadatosDeRespuesta, AsistenteUIMessage } from "@/shared/chat";
-import { leerErrorPublico } from "@/shared/errores";
+import type { AsistenteUIMessage, MetadatosDeRespuesta } from "@/shared/chat";
+import { leerErrorPublico } from "@/shared/erroresShared";
 import { crearUsuarioLogueado } from "./usuarioDePrueba";
 
 // Lo que comparten los tests del chat (con el modelo de prueba y con el real): un usuario con su controller,
@@ -15,8 +16,8 @@ export async function usuarioConChat(dependencias: ConstructorParameters<typeof 
   const conversaciones = new ConversacionesModel(usuario.navegador.crearCliente);
   const movimientos = new MovimientosModel(usuario.navegador.crearCliente);
   const controller = new ChatController({
-    conversaciones: () => conversaciones,
-    movimientos: () => movimientos,
+    modeloConversaciones: () => conversaciones,
+    movimientos: () => new MovimientosController(() => movimientos),
     ...dependencias,
   });
   return { usuario, conversaciones, controller };

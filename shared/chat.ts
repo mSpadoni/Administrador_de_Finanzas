@@ -17,20 +17,36 @@ export type HerramientasDelAsistente = InferUITools<ToolsDelAsistente>;
 /** Los nombres de las tools del asistente ("registrar_movimiento", "cotizacion_dolar"…). */
 export type NombreDeHerramienta = keyof HerramientasDelAsistente;
 
+/** El resultado de una tool cuando salió bien (las que fallan devuelven `ok: false` y no se dibujan como tarjeta). */
+export type ResultadoExitoso<N extends NombreDeHerramienta> = Extract<
+  NonNullable<HerramientasDelAsistente[N]["output"]>,
+  { ok: true }
+>;
+
+/** Las estadísticas de un período tal como las devuelve la tool `estadisticas` (también las usa el panel «Este mes»). */
+export type EstadisticasDelPeriodo = ResultadoExitoso<"estadisticas">["estadisticas"];
+
+/** Un movimiento guardado, tal como lo devuelven las tools. */
+export type MovimientoGuardado = ResultadoExitoso<"registrar_movimiento">["movimiento"];
+
+/** Cuánto tardó una tool en una respuesta (desde que el modelo la llamó hasta que devolvió su resultado). */
+export type MedicionDeHerramienta = { id: string; nombre: string; ms: number };
+
 /**
- * Datos de cada respuesta del asistente para el panel de debug. Los manda el servidor mientras responde (el modelo al
- * empezar, los pasos a medida que pasan, los tokens y la demora al final). No se guardan en la base: al reabrir
- * una conversación, las respuestas viejas muestran sus tools pero no estos datos.
+ * Lo que mide el servidor de cada respuesta del asistente y le manda al navegador mientras responde: el modelo al
+ * empezar, cuánto tardó cada tool a medida que terminan, los tokens gastados al terminar cada paso y la demora total al
+ * final. No se guarda en la base: al reabrir una conversación, las respuestas viejas muestran sus tools pero no esto.
  */
 export type MetadatosDeRespuesta = {
   modelo?: string;
   /** Rondas con el modelo: cada tool usada suma una, más la respuesta final. */
   pasos?: number;
-  /** Demora total, desde el pedido hasta el último token (ms). */
+  /** Demora total, desde el pedido hasta el último token (ms). Solo está cuando la respuesta terminó. */
   ms?: number;
+  /** Tokens gastados hasta ahora (entrada = el contexto que se le mandó al modelo, sumado de todos los pasos). */
   tokens?: { entrada?: number; salida?: number; total?: number };
-  /** Por qué terminó: "stop" (normal), "length" (llegó al máximo de tokens), "tool-calls"... */
-  motivoDeFin?: string;
+  /** Las tools que ya terminaron, con lo que tardó cada una. */
+  herramientas?: MedicionDeHerramienta[];
 };
 
 /** Un mensaje del chat del asistente, con sus partes tipadas (texto, y cada tool con sus datos y resultado). */
