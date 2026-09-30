@@ -1,8 +1,8 @@
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { isStaticToolUIPart } from "ai";
-import { textoDe, type ParteDelAsistente, type AsistenteUIMessage } from "@/shared/chat";
-import { avisoDeHerramienta } from "./tipos";
+import { textoDe, type AsistenteUIMessage } from "@/shared/chat";
+import { ResultadoDeTool } from "./TarjetasDeResultado";
 
 // react-markdown no renderiza HTML crudo: lo que escriba el modelo no puede inyectar scripts.
 // Este objeto dice cómo dibujar cada elemento del Markdown (párrafo, lista, tabla...) con estilos propios.
@@ -35,18 +35,6 @@ const componentesMarkdown: Components = {
   a: (props) => <a className="text-blue-700 underline" target="_blank" rel="noreferrer" {...props} />,
 };
 
-/** Cómo se muestra el uso de una tool: texto visible (no solo un ícono) y un indicador de estado. */
-function AvisoDeTool({ parte }: { parte: ParteDelAsistente }) {
-  const aviso = avisoDeHerramienta(parte);
-  if (!aviso) return null;
-  return (
-    <li className="flex items-center gap-1.5 text-xs text-slate-600">
-      <span aria-hidden="true">{aviso.icono}</span>
-      {aviso.texto}
-    </li>
-  );
-}
-
 /**
  * Un globo de mensaje del chat. Los del usuario van a la derecha como texto plano;
  * los del asistente a la izquierda, con las tools que usó y el Markdown convertido a HTML (tablas, listas, negritas...).
@@ -68,13 +56,10 @@ export default function MessageBubble({ mensaje }: { mensaje: AsistenteUIMessage
           esUsuario ? "bg-blue-700 text-white" : "border border-slate-200 bg-white text-slate-900"
         }`}
       >
-        {tools.length > 0 && (
-          <ul aria-label="Herramientas que usó el asistente" className={texto ? "mb-2 space-y-0.5" : "space-y-0.5"}>
-            {tools.map((parte, indice) => (
-              <AvisoDeTool key={indice} parte={parte} />
-            ))}
-          </ul>
-        )}
+        {/* Lo que devolvió cada tool, dibujado como tarjeta, tabla o barras (solo si salió bien). */}
+        {tools.map((parte, indice) => (
+          <ResultadoDeTool key={indice} parte={parte} />
+        ))}
         {esUsuario ? (
           <p className="whitespace-pre-wrap">{texto}</p>
         ) : (

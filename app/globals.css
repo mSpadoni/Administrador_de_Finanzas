@@ -1,6 +1,23 @@
 /* Trae Tailwind: habilita las clases utilitarias que se usan en los componentes (flex, px-4, text-slate-700...). */
 @import "tailwindcss";
 
+/* Animación de entrada: lo que aparece (una conversación nueva, un ítem de la lista) sube un poquito mientras se
+   hace visible. Se usa con `motion-safe:animate-aparecer`: con «reducir movimiento» activado no se anima. */
+@theme {
+  --animate-aparecer: aparecer 300ms ease-out both;
+
+  @keyframes aparecer {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
 /* Variables CSS globales (se usan con var(--nombre)): colores de fondo y de texto de toda la app. */
 :root {
   --background: #f8fafc;
@@ -18,8 +35,19 @@ body {
     sans-serif;
 }
 
-/* Foco siempre visible para quien navega con teclado (WCAG 2.4.7). */
-:focus-visible {
-  outline: 3px solid #005fcc;
-  outline-offset: 2px;
+/* Sin el retardo de doble toque en celulares: los botones responden al primer toque. */
+button,
+a,
+[role="menuitem"] {
+  touch-action: manipulation;
+}
+
+/* Foco siempre visible para quien navega con teclado (WCAG 2.4.7). Va en la capa `base` de Tailwind: así una clase como
+   `outline-none` (que un componente usa cuando dibuja su propio aro de foco, como el campo de texto del chat) le gana.
+   Fuera de una capa, esta regla pisaba a todas las clases de Tailwind. */
+@layer base {
+  :focus-visible {
+    outline: 3px solid #005fcc;
+    outline-offset: 2px;
+  }
 }

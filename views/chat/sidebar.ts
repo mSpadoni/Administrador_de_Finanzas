@@ -14,6 +14,14 @@ export function conActividad(estado: EstadoSidebar, conversacion: ItemConversaci
   return { ...estado, conversaciones: [existente ?? conversacion, ...resto] };
 }
 
+/** La conversación cambió de título (lo puso el asistente según lo que se habló). Si no está en la lista, no pasa nada. */
+export function conTitulo(estado: EstadoSidebar, id: string, titulo: string): EstadoSidebar {
+  return {
+    ...estado,
+    conversaciones: estado.conversaciones.map((item) => (item.id === id ? { ...item, titulo } : item)),
+  };
+}
+
 /** Se borró una conversación: sale de la lista. */
 export function sinConversacion(estado: EstadoSidebar, id: string): EstadoSidebar {
   return { conversaciones: estado.conversaciones.filter((conversacion) => conversacion.id !== id) };

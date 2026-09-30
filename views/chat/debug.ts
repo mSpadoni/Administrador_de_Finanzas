@@ -1,104 +1,100 @@
 import { getStaticToolName, isStaticToolUIPart } from "ai";
-import {
-  textoDe,
-  type HerramientasDelAsistente,
-  type MetadatosDeRespuesta,
-  type NombreDeHerramienta,
-  type AsistenteUIMessage,
-} from "@/shared/chat";
-import { herramientaFallo, TEXTOS_DE_HERRAMIENTAS } from "./tipos";
+import { textoDe, type AsistenteUIMessage, type MetadatosDeRespuesta } from "@/shared/chat";
+import { duracionDeLaTool } from "./actividad";
+import { avisoDeHerramienta, herramientaFallo } from "./tipos";
 
-// Qué muestra el panel de debug de cada respuesta del asistente: las tools que usó (con lo que les pasó y lo que
-// devolvieron) y los datos del modelo (pasos, tokens, demora). Funciones puras: salen de los mensajes de useChat.
+// Lo que muestra el panel de debug: por cada respuesta del asistente, qué decidió hacer el modelo (qué herramientas usó
+// y con qué datos), qué devolvieron, cuánto tardó y cuántos tokens gastó. Funciones puras, sin dibujar nada.
 
-export type EstadoDeLlamada = "en curso" | "lista" | "con error";
+/** Cuántos caracteres se muestran como máximo de un dato de una tool (los resultados pueden ser enormes). */
+export const MAX_CARACTERES_EN_DEBUG = 1500;
 
-export type LlamadaParaDebug = {
+/** Un dato como texto legible: JSON con sangría, o el texto tal cual; si es largo, se corta y se dice cuánto falta. */
+export function comoTextoDeDebug(valor: unknown, max = MAX_CARACTERES_EN_DEBUG): string {
+  const texto = typeof valor === "string" ? valor : (JSON.stringify(valor, null, 2) ?? String(valor));
+  return texto.length <= max ? texto : `${texto.slice(0, max)}… (${texto.length - max} caracteres más)`;
+}
+
+/** Una tool que usó el modelo en una respuesta. */
+export type HerramientaDeDebug = {
   id: string;
-  /** El nombre técnico de la tool (ej. "verificar_fdp"). */
-  herramienta: NombreDeHerramienta;
-  /** En el vocabulario del usuario (ej. "Verificó la f.d.p."). */
-  descripcion: string;
-  estado: EstadoDeLlamada;
-  /** Lo que le pasó el modelo, como JSON legible. */
+  /** El nombre técnico, tal cual lo llama el modelo (`cotizacion_dolar`). */
+  nombre: string;
+  /** Lo que se le dice a la persona («Consultó la cotización del dólar · 0,8 s»). */
+  texto: string;
+  /** Lo que decidió el modelo pasarle (los argumentos de la tool). */
   entrada: string;
-  /** Lo que devolvió (o el error); null mientras se está usando. */
-  salida: string | null;
+  /** Lo que devolvió; undefined si todavía no terminó. */
+  salida: string | undefined;
+  fallo: boolean;
+  ms: number | undefined;
 };
 
-export type RespuestaParaDebug = {
+/** Una respuesta del asistente, con lo que hizo. */
+export type RespuestaDeDebug = {
   id: string;
-  /** Número de respuesta dentro de la conversación (1, 2, 3...). */
-  numero: number;
-  /** El mensaje del usuario que la pidió, recortado. */
+  /** Lo que pidió la persona (su último mensaje antes de esta respuesta), recortado. */
   pedido: string;
-  llamadas: LlamadaParaDebug[];
+  herramientas: HerramientaDeDebug[];
+  /** Modelo, pasos, tokens y demora, si el servidor los midió (no se guardan: las respuestas viejas no los tienen). */
   metadatos: MetadatosDeRespuesta | undefined;
 };
 
-/** Largo máximo de cada entrada o salida en el panel: una lista de movimientos puede ocupar miles de caracteres. */
-export const MAX_CARACTERES_EN_DEBUG = 1500;
-
-/** Un valor como texto legible para el panel: JSON con sangría y lo muy largo recortado, avisando cuánto falta. */
-export function comoTextoDeDebug(valor: unknown, max = MAX_CARACTERES_EN_DEBUG): string {
-  const texto = typeof valor === "string" ? valor : (JSON.stringify(valor, null, 2) ?? String(valor));
-  if (texto.length <= max) return texto;
-  return `${texto.slice(0, max)}… (${texto.length - max} caracteres más)`;
+function salidaDeLaTool(
+  parte: Extract<AsistenteUIMessage["parts"][number], { toolCallId: string }>
+): string | undefined {
+  if (parte.state === "output-available") return comoTextoDeDebug(parte.output);
+  if (parte.state === "output-error") return parte.errorText;
+  return undefined;
 }
 
-/** Las respuestas del asistente en orden, cada una con el pedido del usuario, sus tools y los datos del modelo. */
-export function respuestasParaDebug(mensajes: AsistenteUIMessage[]): RespuestaParaDebug[] {
+/** Las respuestas del asistente de la conversación, en orden, cada una con su pedido y sus herramientas. */
+export function respuestasParaDebug(mensajes: AsistenteUIMessage[]): RespuestaDeDebug[] {
+  const respuestas: RespuestaDeDebug[] = [];
   let pedido = "";
-  let numero = 0;
-  return mensajes.flatMap((mensaje) => {
+  for (const mensaje of mensajes) {
     if (mensaje.role === "user") {
-      pedido = textoDe(mensaje);
-      return [];
+      pedido = comoTextoDeDebug(textoDe(mensaje), 120);
+      continue;
     }
-    if (mensaje.role !== "assistant") return [];
-    numero += 1;
-    const llamadas = mensaje.parts.filter(isStaticToolUIPart).map((parte): LlamadaParaDebug => {
-      const herramienta = getStaticToolName<HerramientasDelAsistente>(parte);
-      const estado: EstadoDeLlamada = herramientaFallo(parte)
-        ? "con error"
-        : parte.state === "output-available"
-          ? "lista"
-          : "en curso";
-      const salida =
-        parte.state === "output-available"
-          ? comoTextoDeDebug(parte.output)
-          : parte.state === "output-error"
-            ? parte.errorText
-            : null;
+    const herramientas = mensaje.parts.filter(isStaticToolUIPart).map((parte) => {
+      const ms = duracionDeLaTool(mensaje.metadata, parte.toolCallId);
       return {
         id: parte.toolCallId,
-        herramienta,
-        descripcion: TEXTOS_DE_HERRAMIENTAS[herramienta].usada,
-        estado,
+        nombre: getStaticToolName(parte),
+        texto: avisoDeHerramienta(parte, ms)?.texto ?? getStaticToolName(parte),
         entrada: comoTextoDeDebug(parte.input ?? {}),
-        salida,
+        salida: salidaDeLaTool(parte),
+        fallo: herramientaFallo(parte),
+        ms,
       };
     });
-    return [
-      {
-        id: mensaje.id,
-        numero,
-        pedido: comoTextoDeDebug(pedido, 120),
-        llamadas,
-        metadatos: mensaje.metadata,
-      },
-    ];
-  });
+    respuestas.push({ id: mensaje.id, pedido, herramientas, metadatos: mensaje.metadata });
+  }
+  return respuestas;
 }
 
-/** Los tokens y la demora de toda la conversación abierta (solo de las respuestas que tienen esos datos). */
-export function totalesDeDebug(respuestas: RespuestaParaDebug[]): { tokens: number; ms: number; llamadas: number } {
-  return respuestas.reduce(
-    (total, respuesta) => ({
-      tokens: total.tokens + (respuesta.metadatos?.tokens?.total ?? 0),
-      ms: total.ms + (respuesta.metadatos?.ms ?? 0),
-      llamadas: total.llamadas + respuesta.llamadas.length,
-    }),
-    { tokens: 0, ms: 0, llamadas: 0 }
-  );
+/** Los totales de toda la conversación (solo cuentan las respuestas medidas). */
+export type TotalesDeDebug = {
+  respuestas: number;
+  herramientas: number;
+  ms: number;
+  tokens: { entrada: number; salida: number; total: number };
+};
+
+export function totalesDeDebug(respuestas: RespuestaDeDebug[]): TotalesDeDebug {
+  const totales: TotalesDeDebug = {
+    respuestas: respuestas.length,
+    herramientas: 0,
+    ms: 0,
+    tokens: { entrada: 0, salida: 0, total: 0 },
+  };
+  for (const { herramientas, metadatos } of respuestas) {
+    totales.herramientas += herramientas.length;
+    totales.ms += metadatos?.ms ?? 0;
+    totales.tokens.entrada += metadatos?.tokens?.entrada ?? 0;
+    totales.tokens.salida += metadatos?.tokens?.salida ?? 0;
+    totales.tokens.total += metadatos?.tokens?.total ?? 0;
+  }
+  return totales;
 }

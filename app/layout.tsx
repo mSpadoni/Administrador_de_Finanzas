@@ -24,7 +24,7 @@ export default function RootLayout({
   // Las llaves `{...}` meten un valor de JavaScript dentro del HTML.
   return (
     <html lang="es">
-      <body className="min-h-screen antialiased">{children}</body>
+      <body className="min-h-dvh antialiased">{children}</body>
     </html>
   );
 }

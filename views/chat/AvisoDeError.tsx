@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { SE_PUEDE_REINTENTAR } from "@/shared/errores";
+import { SE_PUEDE_REINTENTAR } from "@/shared/erroresShared";
 import { errorParaMostrar } from "./tipos";
 
 type Props = { error: Error; onReintentar: () => void };

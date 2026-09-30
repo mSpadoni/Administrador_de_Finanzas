@@ -1,9 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import { cerrarSesion } from "@/app/auth/actions";
-import { borrarConversacion } from "@/app/conversacion/actions";
+import { borrarConversacion, leerConversacion, retitularConversacion } from "@/app/conversacion/actions";
 import { authController } from "@/backend/controllers/auth.controller";
 import { conversacionesController } from "@/backend/controllers/conversaciones.controller";
-import { esIdDeConversacion } from "@/backend/controllers/validaciones";
+import { movimientosController } from "@/backend/controllers/movimientos.controller";
+import { esIdDeConversacion } from "@/backend/controllers/validacionControllers";
 import PantallaDeChat from "@/views/chat/PantallaDeChat";
 
 /** En Next 15 los parámetros de la URL llegan como Promise: `/conversacion/abc` → `{ id: "abc" }`. */
@@ -22,19 +23,32 @@ export default async function PaginaConversacion({ params }: Props) {
   if (!esIdDeConversacion(id)) notFound();
 
   // Promise.all: las dos lecturas a la vez, no una después de la otra.
-  const [conversaciones, abierta] = await Promise.all([
+  const [conversaciones, abierta, estadisticasDelMes] = await Promise.all([
     conversacionesController.listar(),
     conversacionesController.abrir(id),
+    // Si el resumen del mes falla, el chat sigue funcionando: el panel avisa que no pudo cargarlo.
+    movimientosController.estadisticasDelMes().catch((error: unknown) => {
+      console.error("No se pudo leer el resumen del mes", error);
+      return null;
+    }),
   ]);
+
+  // `.map` arma una lista nueva con lo que devuelve la función para cada conversación. Acá se queda solo con `id` y
+  // `titulo`, que es lo único que necesita el costado: el resto de las columnas (fechas de creación y de última
+  // actividad) no viajan al navegador.
+  const paraElCostado = conversaciones.map(({ id, titulo }) => ({ id, titulo }));
 
   return (
     <PantallaDeChat
       usuario={usuario}
-      conversaciones={conversaciones.map(({ id, titulo }) => ({ id, titulo }))}
+      conversaciones={paraElCostado}
       conversacionId={id}
       mensajesIniciales={abierta.mensajes}
+      estadisticasDelMes={estadisticasDelMes}
       cerrarSesion={cerrarSesion}
       borrarConversacion={borrarConversacion}
+      leerConversacion={leerConversacion}
+      retitularConversacion={retitularConversacion}
     />
   );
 }

@@ -1,143 +1,133 @@
-// "use client": corre en el navegador, porque maneja estado (mensajes, lo que se escribe) y clicks.
+// "use client": corre en el navegador, porque maneja clicks y lo que se escribe.
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import type { AsistenteUIMessage } from "@/shared/chat";
-import Atajos from "./Atajos";
+import { useRef } from "react";
 import AvisoDeError from "./AvisoDeError";
-import { useChatDelAsistente } from "./hooks/useChatDelAsistente";
-import { useSeguirAlFinal } from "./hooks/useSeguirAlFinal";
+import EstadoEnVivo from "./EstadoEnVivo";
+import { useChatEnPantalla } from "./ContextoDelChat";
+import { useDeslizarAlBajar } from "./hooks/useDeslizarAlBajar";
 import MessageBubble from "./MessageBubble";
 import MessageInput from "./MessageInput";
-import PanelDeDebug from "./PanelDeDebug";
-import { atajoEstaCompleto } from "./respuesta";
-
-type Props = {
-  /** Id de la conversación (lo genera el servidor al abrir una nueva; se guarda con el primer mensaje). */
-  conversacionId: string;
-  /** El historial, leído de la base una sola vez al abrir la conversación. */
-  mensajesIniciales: AsistenteUIMessage[];
-  nombre: string;
-};
+import { mensajeListoParaMostrar } from "./respuesta";
+import TextoEscribiendose from "./TextoEscribiendose";
 
 /**
- * La ventana de chat: mensajes con la respuesta en streaming, avisos de estado, errores, el campo para escribir,
- * los atajos y el panel de debug. La conversación la maneja useChatDelAsistente y el scroll, useSeguirAlFinal.
+ * La ventana de chat: mensajes con la respuesta en streaming, qué está haciendo el asistente, errores y el campo para
+ * escribir. El chat en sí (mensajes, borrador, scroll) vive en ProveedorDelChat, porque también lo usan los atajos de la
+ * barra lateral.
+ *
+ * En una conversación vacía el saludo y el campo de texto van juntos en el medio de la pantalla (como ChatGPT); con el primer
+ * mensaje el campo baja hasta abajo del todo, deslizándose, y los mensajes ocupan el resto. Es el mismo campo en los dos
+ * lugares (no se vuelve a crear): no pierde el foco ni lo que se escribió.
  */
-export default function ChatWindow({ conversacionId, mensajesIniciales, nombre }: Props) {
-  const { messages, status, error, stop, regenerate, enviar, anuncio, generando } = useChatDelAsistente(
+export default function ChatWindow({ nombre }: { nombre: string }) {
+  const {
     conversacionId,
-    mensajesIniciales
-  );
-  const { zonaRef, alScrollear, volverAlFinal } = useSeguirAlFinal(messages, status);
-  const [borrador, setBorrador] = useState(""); // Lo que el usuario está escribiendo y todavía no mandó.
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [debugAbierto, setDebugAbierto] = useState(false); // El panel de debug arranca plegado.
-  const botonDebugRef = useRef<HTMLButtonElement>(null);
-
-  // useCallback: la misma función en cada render (el panel la usa en un efecto y no tiene que re-ejecutarlo con
-  // cada palabra que llega). Al cerrar, el foco vuelve al botón que lo abrió.
-  const cerrarDebug = useCallback(() => {
-    setDebugAbierto(false);
-    botonDebugRef.current?.focus();
-  }, []);
-
-  /** Manda un mensaje del usuario (el del campo o el de un atajo). */
-  function mandar(texto: string) {
-    if (!texto.trim() || generando) return;
-    volverAlFinal(); // Al mandar un mensaje, se vuelve al final para ver la respuesta.
-    enviar(texto.trim());
-    setBorrador("");
-    textareaRef.current?.focus();
-  }
-
-  /** Un atajo: se manda directo si está completo, o se pone en el campo para que el usuario lo termine. */
-  function usarAtajo(mensaje: string) {
-    if (atajoEstaCompleto(mensaje)) {
-      mandar(mensaje);
-    } else {
-      setBorrador(mensaje);
-      textareaRef.current?.focus();
-    }
-  }
+    abriendo,
+    messages,
+    error,
+    regenerate,
+    stop,
+    generando,
+    anuncio,
+    estadoDelAsistente,
+    borrador,
+    setBorrador,
+    textareaRef,
+    zonaRef,
+    alScrollear,
+    mandar,
+    usarAtajo,
+  } = useChatEnPantalla();
+  const campoRef = useRef<HTMLDivElement>(null);
+  const centrado = messages.length === 0;
+  useDeslizarAlBajar(campoRef, centrado, conversacionId);
 
   return (
-    <>
-      <main id="chat" className="flex min-h-0 flex-1 flex-col">
-        <section aria-labelledby="titulo-conversacion" className="flex min-h-0 flex-1 flex-col">
-          <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 py-1.5">
-            <h2 id="titulo-conversacion" className="text-sm font-medium text-slate-700">
-              Conversación con el asistente
-            </h2>
-            {/* Botón con texto: muestra qué tools usó el modelo, tokens y demora (bonus del challenge). */}
-            <button
-              ref={botonDebugRef}
-              type="button"
-              onClick={() => (debugAbierto ? cerrarDebug() : setDebugAbierto(true))}
-              aria-expanded={debugAbierto}
-              aria-controls="panel-debug"
-              className="rounded-lg border border-slate-300 px-3 py-1 text-xs font-medium text-slate-800 hover:bg-slate-100"
-            >
-              <span aria-hidden="true">🛠 </span>
-              {debugAbierto ? "Ocultar debug" : "Ver debug"}
-            </button>
-          </div>
+    <main id="chat" className="flex min-h-0 flex-1 flex-col">
+      <section aria-labelledby="titulo-conversacion" data-campo={centrado ? "al-medio" : "abajo"} className="flex min-h-0 flex-1 flex-col">
+        <h2 id="titulo-conversacion" className="sr-only">
+          Conversación con el asistente
+        </h2>
 
-          <div
-            ref={zonaRef}
-            onScroll={(evento) => alScrollear(evento.currentTarget)}
-            className="flex-1 overflow-y-auto px-4 py-6"
-          >
-            <div className="mx-auto flex max-w-3xl flex-col gap-4">
-              {messages.length === 0 && (
-                <div className="rounded-2xl border border-slate-200 bg-white p-6">
-                  <p className="text-lg font-medium text-slate-900">Hola, {nombre}. ¿Qué querés hacer?</p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Contame un gasto o un ingreso como se lo contarías a alguien («gasté 5.000 en el súper con débito»),
-                    preguntá cómo venís este mes o a cuánto está el dólar. También tenés atajos abajo.
-                  </p>
-                </div>
-              )}
-
-              {/* aria-live="off": mientras la respuesta llega palabra por palabra no se anuncia (sería ruido).
-                  La respuesta completa la anuncia la región de abajo cuando termina. */}
-              <ol aria-label="Mensajes" aria-live="off" className="flex flex-col gap-4">
-                {messages.map((mensaje) => (
-                  <MessageBubble key={mensaje.id} mensaje={mensaje} />
-                ))}
-              </ol>
-
-              {/* Estado visible con texto, no solo una animación (heurística #1). */}
-              <div role="status" className="text-sm text-slate-700">
-                {status === "submitted" && (
-                  <p className="flex items-center gap-2">
-                    <span aria-hidden="true" className="size-2 animate-pulse rounded-full bg-blue-700" />
-                    El asistente está pensando…
-                  </p>
+        {/* El scroll es de todo el bloque, campo incluido: el campo queda pegado abajo (sticky) y los mensajes pasan por
+            debajo al scrollear, con su fondo translúcido. Con la conversación vacía el campo no se pega: va junto al
+            saludo, en el medio. */}
+        <div
+          ref={zonaRef}
+          onScroll={(evento) => alScrollear(evento.currentTarget)}
+          aria-busy={abriendo}
+          // Mientras se lee otra conversación, la actual se atenúa (no queda la pantalla en blanco ni congelada).
+          className={`flex-1 overflow-y-auto transition-opacity duration-200 motion-reduce:transition-none ${
+            abriendo ? "opacity-50" : "opacity-100"
+          }`}
+        >
+          <div className={`flex min-h-full flex-col ${centrado ? "justify-center" : ""}`}>
+            <div className={`px-4 ${centrado ? "flex-none pt-6 pb-2" : "flex-1 py-6"}`}>
+              {/* key: al cambiar de conversación este bloque se vuelve a crear y entra con su animación (y el saludo se
+                  escribe de nuevo), en vez de cambiar de golpe. */}
+              <div key={conversacionId} className="mx-auto flex max-w-3xl flex-col gap-4 motion-safe:animate-aparecer">
+                {centrado && (
+                  <div className="text-center">
+                    {/* El saludo se escribe solo, como si se estuviera tipeando en el momento; la explicación aparece después. */}
+                    <TextoEscribiendose
+                      texto={`Hola, ${nombre}. ¿Qué querés hacer?`}
+                      className="text-2xl font-semibold text-slate-900 sm:text-3xl"
+                    />
+                    <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 [animation-delay:1.8s] motion-safe:animate-aparecer">
+                      Contame un gasto o un ingreso como se lo contarías a alguien («gasté 5.000 en el súper con débito»),
+                      preguntá cómo venís este mes o a cuánto está el dólar. También tenés atajos en el «+» del campo y
+                      en la barra lateral.
+                    </p>
+                  </div>
                 )}
-              </div>
-              <p aria-live="polite" className="sr-only">
-                {anuncio}
-              </p>
 
-              {error && <AvisoDeError error={error} onReintentar={() => void regenerate()} />}
+                {/* aria-live="off": mientras la respuesta llega palabra por palabra no se anuncia (sería ruido).
+                    La respuesta completa la anuncia la región de abajo cuando termina. */}
+                <ol aria-label="Mensajes" aria-live="off" className="flex flex-col gap-4">
+                  {messages.map((mensaje) => {
+                    // La respuesta que se está generando con herramientas se muestra recién cuando terminaron todas
+                    // (mientras tanto, la línea de estado dice qué está haciendo); las demás, siempre.
+                    const seEstaGenerando = generando && mensaje.id === messages.at(-1)?.id;
+                    return mensajeListoParaMostrar(mensaje, seEstaGenerando) ? (
+                      <MessageBubble key={mensaje.id} mensaje={mensaje} />
+                    ) : null;
+                  })}
+                </ol>
+
+                {/* Qué está haciendo el asistente ahora (y con qué API), con los segundos que lleva: estado visible con
+                    texto, no solo una animación (heurística #1). Solo mientras responde. */}
+                {generando && <EstadoEnVivo texto={estadoDelAsistente} />}
+                <p aria-live="polite" className="sr-only">
+                  {anuncio}
+                </p>
+
+                {error && <AvisoDeError error={error} onReintentar={() => void regenerate()} />}
+              </div>
+            </div>
+
+            {/* El degradé de fondo deja leer el texto de ayuda sin tapar los mensajes que pasan por debajo. */}
+            <div
+              ref={campoRef}
+              className={
+                centrado ? "" : "sticky bottom-0 z-10 bg-gradient-to-t from-slate-50/80 via-slate-50/40 to-transparent"
+              }
+            >
+              <div className="mx-auto w-full max-w-3xl">
+                <MessageInput
+                  valor={borrador}
+                  onCambio={setBorrador}
+                  onEnviar={() => mandar(borrador)}
+                  onDetener={stop}
+                  onUsarAtajo={usarAtajo}
+                  generando={generando}
+                  textareaRef={textareaRef}
+                />
+              </div>
             </div>
           </div>
-
-          <div className="mx-auto w-full max-w-3xl">
-            <MessageInput
-              valor={borrador}
-              onCambio={setBorrador}
-              onEnviar={() => mandar(borrador)}
-              onDetener={stop}
-              generando={generando}
-              textareaRef={textareaRef}
-            />
-            <Atajos onUsar={usarAtajo} deshabilitados={generando} />
-          </div>
-        </section>
-      </main>
-      <PanelDeDebug id="panel-debug" mensajes={messages} abierto={debugAbierto} onCerrar={cerrarDebug} />
-    </>
+        </div>
+      </section>
+    </main>
   );
 }

@@ -6,6 +6,9 @@ import { respuestaDeError, respuestaDeErrorPublico } from "../respuestaDeError";
 // En Vercel, cuánto puede durar la función como máximo (segundos): el stream del asistente con sus tools.
 export const maxDuration = 60;
 
+/** Lo que ve la persona cuando su sesión venció y intenta mandar un mensaje. */
+const MENSAJE_SESION_VENCIDA = "Tu sesión expiró. Volvé a ingresar con Google.";
+
 /**
  * Endpoint POST /api/chat: lo llama useChat en el navegador con el mensaje nuevo y el id de la conversación.
  * Si sale bien, devuelve la respuesta del asistente en streaming. Si algo falla antes de empezar, responde JSON
@@ -15,10 +18,7 @@ export async function POST(request: Request) {
   // 1) Solo usuarios logueados pueden usar el asistente.
   const usuario = await authController.obtenerUsuarioActual();
   if (!usuario) {
-    return respuestaDeErrorPublico({
-      codigo: "no_autenticado",
-      mensaje: "Tu sesión expiró. Volvé a ingresar con Google.",
-    });
+    return respuestaDeErrorPublico({ codigo: "no_autenticado", mensaje: MENSAJE_SESION_VENCIDA });
   }
 
   // 2) El cuerpo tal cual lo mandó el navegador (si no es JSON, null): lo valida el controller con Zod.

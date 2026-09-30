@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { ErrorDeAplicacion } from "@/backend/errores";
-import type { CodigoDeError, CuerpoDeError, ErrorPublico } from "@/shared/errores";
+import { ErrorDeAplicacion } from "@/backend/erroresBackend";
+import type { CodigoDeError, CuerpoDeError, ErrorPublico } from "@/shared/erroresShared";
 
 // El único lugar que traduce un error de la app a HTTP. El backend no conoce los status; acá se decide también
 // qué se loguea. Al navegador llega solo { error: { codigo, mensaje } }: nunca el error original.

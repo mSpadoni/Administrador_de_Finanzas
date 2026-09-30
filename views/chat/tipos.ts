@@ -1,6 +1,7 @@
 import { getStaticToolName, isStaticToolUIPart, isToolUIPart } from "ai";
 import type { NombreDeHerramienta, ParteDelAsistente } from "@/shared/chat";
-import { leerErrorPublico, type ErrorPublico } from "@/shared/errores";
+import { leerErrorPublico, type ErrorPublico } from "@/shared/erroresShared";
+import { formatoDuracion } from "./formato";
 
 /**
  * El error del chat como lo muestra la vista: su código (para decidir qué ofrecer, ej. "Reintentar") y el mensaje
@@ -71,12 +72,48 @@ export const TEXTOS_DE_HERRAMIENTAS: Record<NombreDeHerramienta, { usando: strin
   },
 };
 
-/** Qué ve el usuario de cada uso de una tool: un ícono y el texto (nunca solo el ícono). */
-export function avisoDeHerramienta(parte: ParteDelAsistente): { icono: string; texto: string } | null {
+/** La API externa de las cotizaciones del dólar: se cita mientras el asistente la consulta. */
+const FUENTE_DEL_DOLAR = "dolarapi.com";
+
+/**
+ * De qué API externa saca datos una herramienta mientras trabaja, o null si trabaja solo con los datos de la persona (su
+ * base). El dólar sale de dolarapi.com, también al registrar un movimiento en dólares (que busca la cotización del día).
+ */
+export function fuenteDeLaHerramienta(parte: ParteDelAsistente): string | null {
+  if (!isStaticToolUIPart(parte)) return null;
+  switch (parte.type) {
+    case "tool-cotizacion_dolar":
+    case "tool-convertir":
+      return FUENTE_DEL_DOLAR;
+    case "tool-registrar_movimiento":
+      // Mientras el modelo escribe los datos, la moneda puede no haber llegado todavía.
+      return parte.input?.moneda === "USD" ? FUENTE_DEL_DOLAR : null;
+    default:
+      return null;
+  }
+}
+
+/**
+ * Lo que dice la línea de estado mientras una herramienta trabaja, con la API que consulta si usa una: «Consultando la
+ * cotización del dólar en dolarapi.com…».
+ */
+export function textoDeHerramientaEnCurso(parte: ParteDelAsistente): string {
+  if (!isStaticToolUIPart(parte)) return "";
+  const { usando } = TEXTOS_DE_HERRAMIENTAS[getStaticToolName(parte) as NombreDeHerramienta];
+  const fuente = fuenteDeLaHerramienta(parte);
+  return fuente ? usando.replace(/…$/, ` en ${fuente}…`) : usando;
+}
+
+/**
+ * Qué ve el usuario de cada uso de una tool: un ícono y el texto (nunca solo el ícono). `ms`: lo que tardó, si el servidor
+ * ya lo midió (se agrega al final: «Consultó tus movimientos · 0,8 s»).
+ */
+export function avisoDeHerramienta(parte: ParteDelAsistente, ms?: number): { icono: string; texto: string } | null {
   if (!isStaticToolUIPart(parte)) return null;
   const textos = TEXTOS_DE_HERRAMIENTAS[getStaticToolName(parte) as NombreDeHerramienta];
-  if (herramientaFallo(parte)) return { icono: "⚠", texto: `No se pudo: ${textos.usada.toLowerCase()}` };
-  if (parte.state === "output-available") return { icono: "✓", texto: textos.usada };
+  const duracion = ms === undefined ? "" : ` · ${formatoDuracion(ms)}`;
+  if (herramientaFallo(parte)) return { icono: "⚠", texto: `No se pudo: ${textos.usada.toLowerCase()}${duracion}` };
+  if (parte.state === "output-available") return { icono: "✓", texto: `${textos.usada}${duracion}` };
   return { icono: "…", texto: textos.usando };
 }
 

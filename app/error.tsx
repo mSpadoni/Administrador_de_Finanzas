@@ -28,3 +28,5 @@ export default function PaginaDeError({ reset }: { error: Error & { digest?: str
     </PantallaDeAviso>
   );
 }
+
+

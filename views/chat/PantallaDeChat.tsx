@@ -1,34 +1,51 @@
-import type { AsistenteUIMessage } from "@/shared/chat";
-import LoginButton from "@/views/LoginButton";
+import type { AsistenteUIMessage, EstadisticasDelPeriodo } from "@/shared/chat";
+import BarraLateral from "./BarraLateral";
 import ChatWindow from "./ChatWindow";
+import EncabezadoDeLaApp from "./EncabezadoDeLaApp";
+import { ProveedorDelChat } from "./ContextoDelChat";
 import { ProveedorSidebar } from "./EstadoSidebar";
-import SidebarConversaciones from "./SidebarConversaciones";
+import { PanelDeDebugDelChat } from "./PanelDeDebug";
+import CajonDelBalance from "./CajonDelBalance";
+import PanelDelMes from "./PanelDelMes";
 import type { ItemConversacion } from "./sidebar";
 
 type Props = {
-  usuario: { nombreVisible: string; primerNombre: string };
+  usuario: { nombreVisible: string; primerNombre: string; avatarUrl: string | null };
   conversaciones: ItemConversacion[];
   conversacionId: string;
   mensajesIniciales: AsistenteUIMessage[];
+  /** Las estadísticas del mes en curso para el panel «Este mes» (null si no se pudieron leer). */
+  estadisticasDelMes: EstadisticasDelPeriodo | null;
   /** Server actions que conecta la página (las views no importan código del servidor). */
   cerrarSesion: () => Promise<void>;
   borrarConversacion: (id: string) => Promise<void>;
+  /** Lee el historial de una conversación (para abrirla sin recargar la página). */
+  leerConversacion: (id: string) => Promise<AsistenteUIMessage[]>;
+  /** Le pide al servidor un título para la conversación según lo que se habló (null si no se pudo). */
+  retitularConversacion: (id: string) => Promise<string | null>;
 };
 
 /**
- * La pantalla del usuario logueado: encabezado con el único <h1>, la lista de conversaciones (<nav>) al costado
- * el chat (<main>) y el panel de debug (<aside>). Es un Server Component: solo arma el layout; el chat y la lista corren en el navegador.
+ * La pantalla del usuario logueado: encabezado con el único <h1> (que lleva a una conversación nueva), la barra lateral
+ * (<nav>) con atajos, conversaciones y perfil, el chat (<main>), el resumen «Este mes» (<aside>: fijo a la derecha en compu,
+ * en un cajón en celular y tablet) y, si se abre, el panel de debug (<aside>). Es un Server Component: solo arma el layout;
+ * el chat y la barra corren en el navegador.
  */
 export default function PantallaDeChat({
   usuario,
   conversaciones,
   conversacionId,
   mensajesIniciales,
+  estadisticasDelMes,
   cerrarSesion,
   borrarConversacion,
+  leerConversacion,
+  retitularConversacion,
 }: Props) {
+  // `relative overflow-hidden`: los textos solo para lector de pantalla (`sr-only`) son `absolute`; sin esto agrandaban la
+  // página y dejaban scrollear por debajo del campo.
   return (
-    <div className="flex h-dvh flex-col">
+    <div className="relative flex h-dvh flex-col overflow-hidden">
       {/* Skip link: con Tab, lo primero es poder saltar directo al chat (WCAG 2.4.1). */}
       <a
         href="#chat"
@@ -36,29 +53,32 @@ export default function PantallaDeChat({
       >
         Ir al chat
       </a>
-      <header className="border-b border-slate-200 bg-white">
-        <div className="flex items-center justify-between gap-4 px-4 py-3">
-          <h1 className="text-lg font-bold text-slate-900">Administrador de Finanzas</h1>
-          <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-slate-700 sm:inline">{usuario.nombreVisible}</span>
-            <LoginButton accion={cerrarSesion} variante="salir" />
-          </div>
-        </div>
-      </header>
-      {/* Estado compartido del sidebar: arranca con lo que leyó la página y se actualiza desde el chat sin
-          volver a consultar. key: al abrir otra conversación, arranca de nuevo con los datos frescos. */}
-      <ProveedorSidebar key={conversacionId} inicial={{ conversaciones }}>
-        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-          <SidebarConversaciones actualId={conversacionId} borrar={borrarConversacion} />
-          {/* El chat (<main>) y el panel de debug (<aside>). key: al cambiar de conversación, arranca de cero
-              con el historial de la otra. */}
-          <ChatWindow
-            key={conversacionId}
-            conversacionId={conversacionId}
-            mensajesIniciales={mensajesIniciales}
-            nombre={usuario.primerNombre}
+      {/* Estado compartido del sidebar y del chat: arrancan con lo que leyó la página y después se actualizan en el
+          navegador (sin volver a consultar ni recargar): cambiar de conversación, crear o borrar una no vuelve a pedir la página. */}
+      <ProveedorSidebar inicial={{ conversaciones }}>
+        <ProveedorDelChat
+          conversacionId={conversacionId}
+          mensajesIniciales={mensajesIniciales}
+          leerConversacion={leerConversacion}
+          retitular={retitularConversacion}
+        >
+          <EncabezadoDeLaApp
+            usuario={{ nombre: usuario.nombreVisible, avatarUrl: usuario.avatarUrl }}
+            cerrarSesion={cerrarSesion}
           />
-        </div>
+          <CajonDelBalance estadisticas={estadisticasDelMes} />
+          <div className="flex min-h-0 flex-1 flex-col md:flex-row">
+            <BarraLateral
+              borrar={borrarConversacion}
+              usuario={{ nombre: usuario.nombreVisible, avatarUrl: usuario.avatarUrl }}
+              cerrarSesion={cerrarSesion}
+            />
+            <ChatWindow nombre={usuario.primerNombre} />
+            <PanelDelMes estadisticas={estadisticasDelMes} />
+          </div>
+          {/* El panel de debug (bonus): cerrado no existe; se abre desde el menú del perfil. */}
+          <PanelDeDebugDelChat />
+        </ProveedorDelChat>
       </ProveedorSidebar>
     </div>
   );

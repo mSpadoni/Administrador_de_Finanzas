@@ -5,16 +5,20 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { authController } from "@/backend/controllers/auth.controller";
+import { origenDeLaPeticion } from "./origen";
 
-/** Arranca el login: manda al alumno a la pantalla de Google (o de vuelta a "/" con error si falló). */
+/** A dónde se vuelve si no se pudo generar la URL de Google (la pantalla de inicio muestra el aviso). */
+const RUTA_DE_LOGIN_FALLIDO = "/?error=login";
+
+/** Arranca el login: manda al usuario a la pantalla de Google (o de vuelta a "/" con error si falló). */
 export async function ingresarConGoogle(): Promise<void> {
-  // `origin` = dirección de la app (ej. http://localhost:3000), para armar la URL a la que Google vuelve después.
-  // `(await headers()).get(...)`: primero espera los headers del request y después lee "origin".
-  const origin = (await headers()).get("origin") ?? "http://localhost:3000";
-  const urlDeGoogle = await authController.urlDeLoginConGoogle(`${origin}/auth/callback`);
+  // `origen` = dirección de la app, para armar la URL a la que Google vuelve después (ver origenDeLaPeticion).
+  // `await headers()`: primero espera los headers del request.
+  const origen = origenDeLaPeticion(await headers());
+  const urlDeGoogle = await authController.urlDeLoginConGoogle(`${origen}/auth/callback`);
 
   // redirect corta la función y manda al navegador a otra URL.
-  redirect(urlDeGoogle ?? "/?error=login");
+  redirect(urlDeGoogle ?? RUTA_DE_LOGIN_FALLIDO);
 }
 
 /** Cierra la sesión y vuelve a la pantalla de inicio. */

@@ -1,180 +1,155 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type KeyboardEvent } from "react";
+import { lineasDeUso } from "./actividad";
+import { useChatEnPantalla } from "./ContextoDelChat";
+import { respuestasParaDebug, totalesDeDebug, type HerramientaDeDebug, type RespuestaDeDebug } from "./debug";
+import { formatoDuracion, formatoTokens } from "./formato";
+import Icono from "./iconos";
 import type { AsistenteUIMessage } from "@/shared/chat";
-import { respuestasParaDebug, totalesDeDebug, type EstadoDeLlamada, type RespuestaParaDebug } from "./debug";
 
 type Props = {
-  id: string;
   mensajes: AsistenteUIMessage[];
   abierto: boolean;
   onCerrar: () => void;
 };
 
-const numero = (valor: number) => valor.toLocaleString("es-AR");
-const segundos = (ms: number) => `${(ms / 1000).toLocaleString("es-AR", { maximumFractionDigits: 1 })} s`;
-
-/** Estado de cada tool con ícono Y texto (no solo color). */
-const ESTADOS: Record<EstadoDeLlamada, { icono: string; clase: string }> = {
-  "en curso": { icono: "…", clase: "text-slate-700" },
-  lista: { icono: "✓", clase: "text-green-800" },
-  "con error": { icono: "⚠", clase: "text-red-800" },
-};
-
-function Bloque({ titulo, texto }: { titulo: string; texto: string }) {
+/** Una herramienta que usó el modelo: qué hizo, y (plegado) lo que decidió pasarle y lo que devolvió. */
+function Herramienta({ herramienta }: { herramienta: HerramientaDeDebug }) {
   return (
-    <details className="mt-1">
-      <summary className="cursor-pointer text-xs font-medium text-slate-700">{titulo}</summary>
-      <pre className="mt-1 max-h-64 overflow-auto rounded bg-slate-100 p-2 text-[0.75rem] whitespace-pre-wrap text-slate-900">
-        {texto}
-      </pre>
-    </details>
-  );
-}
-
-function Respuesta({ respuesta, abierta }: { respuesta: RespuestaParaDebug; abierta: boolean }) {
-  const { metadatos, llamadas } = respuesta;
-  return (
-    <li className="rounded-lg border border-slate-200 bg-white">
-      <details open={abierta}>
-        <summary className="cursor-pointer px-3 py-2 text-sm">
-          <span className="font-medium text-slate-900">Respuesta {respuesta.numero}</span>
-          <span className="block truncate text-xs text-slate-600">«{respuesta.pedido}»</span>
-        </summary>
-        <div className="space-y-3 border-t border-slate-200 px-3 py-2">
-          {metadatos?.tokens ? (
-            <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs">
-              <dt className="text-slate-600">Modelo</dt>
-              <dd className="truncate font-mono text-slate-900">{metadatos.modelo ?? "—"}</dd>
-              <dt className="text-slate-600">Pasos</dt>
-              <dd className="text-slate-900">{metadatos.pasos ?? "—"}</dd>
-              <dt className="text-slate-600">Tokens (entrada / salida)</dt>
-              <dd className="text-slate-900">
-                {numero(metadatos.tokens.entrada ?? 0)} / {numero(metadatos.tokens.salida ?? 0)}
-              </dd>
-              <dt className="text-slate-600">Demora</dt>
-              <dd className="text-slate-900">{metadatos.ms !== undefined ? segundos(metadatos.ms) : "—"}</dd>
-              <dt className="text-slate-600">Motivo de fin</dt>
-              <dd className="font-mono text-slate-900">{metadatos.motivoDeFin ?? "—"}</dd>
-            </dl>
-          ) : (
-            <p className="text-xs text-slate-600">
-              {metadatos?.modelo
-                ? `Respondiendo con ${metadatos.modelo}…`
-                : "Sin tokens ni demora: es una respuesta de antes de abrir esta conversación."}
-            </p>
-          )}
-
-          {llamadas.length === 0 ? (
-            <p className="text-xs text-slate-600">Respondió sin usar tools.</p>
-          ) : (
-            <ol aria-label={`Tools de la respuesta ${respuesta.numero}`} className="space-y-2">
-              {llamadas.map((llamada, i) => {
-                const estado = ESTADOS[llamada.estado];
-                return (
-                  <li key={llamada.id} className="rounded border border-slate-200 p-2">
-                    <p className="text-xs">
-                      <span className="text-slate-600">{i + 1}. </span>
-                      <span className="font-medium text-slate-900">{llamada.descripcion}</span>
-                    </p>
-                    <p className="text-xs">
-                      <code className="font-mono text-slate-700">{llamada.herramienta}</code>
-                      {" · "}
-                      <span className={estado.clase}>
-                        <span aria-hidden="true">{estado.icono} </span>
-                        {llamada.estado}
-                      </span>
-                    </p>
-                    <Bloque titulo="Entrada" texto={llamada.entrada} />
-                    {llamada.salida !== null && <Bloque titulo="Salida" texto={llamada.salida} />}
-                  </li>
-                );
-              })}
-            </ol>
-          )}
-        </div>
+    <li className="rounded-lg border border-slate-200 bg-white p-2">
+      <p className="flex flex-wrap items-baseline justify-between gap-x-2">
+        <span className="font-medium text-slate-900">
+          <span aria-hidden="true">{herramienta.fallo ? "⚠ " : "✓ "}</span>
+          {herramienta.texto}
+        </span>
+        <code className="rounded bg-slate-100 px-1 text-xs text-slate-700">{herramienta.nombre}</code>
+      </p>
+      <details className="mt-1 text-xs">
+        <summary className="cursor-pointer rounded text-slate-700 select-none">Ver datos</summary>
+        <p className="mt-1 font-medium text-slate-700">Lo que decidió pasarle el modelo:</p>
+        <pre className="mt-0.5 overflow-x-auto rounded bg-slate-100 p-2 text-slate-800">{herramienta.entrada}</pre>
+        <p className="mt-1 font-medium text-slate-700">Lo que devolvió:</p>
+        <pre className="mt-0.5 overflow-x-auto rounded bg-slate-100 p-2 text-slate-800">
+          {herramienta.salida ?? "Todavía sin resultado."}
+        </pre>
       </details>
     </li>
   );
 }
 
-/**
- * Panel de debug: qué tools eligió el modelo en cada respuesta, con qué datos y qué devolvieron, y cuántos
- * pasos, tokens y segundos llevó. Arranca plegado (divulgación progresiva); en escritorio queda al costado y en
- * mobile es un Drawer. Se arma con los mensajes que ya tiene useChat: no consulta nada.
- */
-export default function PanelDeDebug({ id, mensajes, abierto, onCerrar }: Props) {
+/** Una respuesta del asistente: el pedido, las herramientas que decidió usar y lo que costó. */
+function Respuesta({ respuesta, numero }: { respuesta: RespuestaDeDebug; numero: number }) {
+  const uso = lineasDeUso(respuesta.metadatos);
+  return (
+    <article aria-label={`Respuesta ${numero}`} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <h3 className="text-sm font-semibold text-slate-900">
+        Respuesta {numero}
+        {respuesta.metadatos?.ms !== undefined && (
+          <span className="font-normal text-slate-700"> · {formatoDuracion(respuesta.metadatos.ms)}</span>
+        )}
+      </h3>
+      <p className="mt-0.5 truncate text-xs text-slate-600">Pedido: «{respuesta.pedido}»</p>
+      {respuesta.herramientas.length === 0 ? (
+        <p className="mt-2 text-xs text-slate-700">El modelo respondió sin usar herramientas.</p>
+      ) : (
+        <>
+          <p className="mt-2 text-xs font-medium text-slate-700">Herramientas que decidió usar el modelo, en orden:</p>
+          <ol aria-label="Herramientas" className="mt-1 space-y-1.5 text-sm">
+            {respuesta.herramientas.map((herramienta) => (
+              <Herramienta key={herramienta.id} herramienta={herramienta} />
+            ))}
+          </ol>
+        </>
+      )}
+      {uso.length > 0 && (
+        <ul aria-label="Uso" className="mt-2 space-y-0.5 border-t border-slate-200 pt-2 text-xs text-slate-700">
+          {uso.map((linea) => (
+            <li key={linea}>{linea}</li>
+          ))}
+        </ul>
+      )}
+    </article>
+  );
+}
+
+function ContenidoDelPanel({ mensajes, onCerrar }: Omit<Props, "abierto">) {
   const cerrarRef = useRef<HTMLButtonElement>(null);
-
-  // Al abrirlo, el foco va adentro; con Escape se cierra.
-  useEffect(() => {
-    if (!abierto) return;
-    cerrarRef.current?.focus();
-    const alPresionarTecla = (evento: KeyboardEvent) => evento.key === "Escape" && onCerrar();
-    window.addEventListener("keydown", alPresionarTecla);
-    return () => window.removeEventListener("keydown", alPresionarTecla);
-  }, [abierto, onCerrar]);
-
   const respuestas = respuestasParaDebug(mensajes);
   const totales = totalesDeDebug(respuestas);
 
+  // Al abrir, el foco va al botón de cerrar; al cerrar, vuelve a donde estaba (el botón del menú que lo abrió).
+  useEffect(() => {
+    const anterior = document.activeElement as HTMLElement | null;
+    cerrarRef.current?.focus();
+    return () => anterior?.focus();
+  }, []);
+
+  function alPresionarTecla(evento: KeyboardEvent<HTMLElement>) {
+    if (evento.key === "Escape") onCerrar();
+  }
+
   return (
-    <>
-      {/* Fondo oscuro detrás del Drawer en mobile: tocarlo lo cierra. */}
-      {abierto && (
-        <div aria-hidden="true" onClick={onCerrar} className="fixed inset-0 z-20 bg-slate-900/40 md:hidden" />
-      )}
-      <aside
-        id={id}
-        aria-labelledby="titulo-debug"
-        className={`${
-          abierto ? "fixed inset-y-0 right-0 z-30 flex w-80 shadow-xl md:static md:shadow-none" : "hidden"
-        } flex-col border-l border-slate-200 bg-slate-50 md:w-96`}
-      >
-        <div className="flex items-center justify-between gap-2 border-b border-slate-200 bg-white p-3">
-          <h2 id="titulo-debug" className="text-sm font-semibold text-slate-900">
-            Panel de debug
-          </h2>
-          <button
-            ref={cerrarRef}
-            type="button"
-            onClick={onCerrar}
-            aria-label="Cerrar el panel de debug"
-            className="rounded-lg px-2 py-1 text-sm text-slate-700 hover:bg-slate-100"
-          >
-            ✕
-          </button>
-        </div>
+    <aside
+      aria-label="Panel de debug"
+      onKeyDown={alPresionarTecla}
+      className="fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-slate-200 bg-white shadow-2xl sm:w-[28rem]"
+    >
+      <div className="flex items-center justify-between gap-2 border-b border-slate-200 p-3">
+        <h2 className="text-base font-semibold text-slate-900">Panel de debug</h2>
+        <button
+          ref={cerrarRef}
+          type="button"
+          onClick={onCerrar}
+          aria-label="Cerrar el panel de debug"
+          className="grid size-11 place-items-center rounded-xl text-slate-700 hover:bg-slate-100"
+        >
+          <Icono nombre="cerrar" className="size-5" />
+        </button>
+      </div>
 
-        <div className="flex-1 space-y-3 overflow-y-auto p-3">
-          <p className="text-xs text-slate-700">
-            Qué tools eligió el modelo en cada respuesta, con qué datos y qué devolvieron.
-          </p>
-          <dl className="grid grid-cols-3 gap-2 text-center">
-            {[
-              { titulo: "Tools", valor: numero(totales.llamadas) },
-              { titulo: "Tokens", valor: numero(totales.tokens) },
-              { titulo: "Demora", valor: segundos(totales.ms) },
-            ].map((dato) => (
-              <div key={dato.titulo} className="rounded-lg border border-slate-200 bg-white p-2">
-                <dt className="text-xs text-slate-600">{dato.titulo}</dt>
-                <dd className="text-sm font-semibold text-slate-900">{dato.valor}</dd>
-              </div>
+      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
+        {respuestas.length === 0 ? (
+          <p className="text-sm text-slate-700">Cuando el asistente responda, acá vas a ver qué hizo.</p>
+        ) : (
+          <>
+            <section aria-label="Totales de la conversación" className="rounded-xl bg-slate-900 p-3 text-sm text-white">
+              <p className="font-medium">Esta conversación</p>
+              <p className="mt-1 text-slate-200 tabular-nums">
+                {totales.respuestas} {totales.respuestas === 1 ? "respuesta" : "respuestas"} · {totales.herramientas}{" "}
+                {totales.herramientas === 1 ? "herramienta" : "herramientas"} · {formatoDuracion(totales.ms)}
+              </p>
+              <p className="text-slate-200 tabular-nums">
+                {formatoTokens(totales.tokens.total)} tokens ({formatoTokens(totales.tokens.entrada)} /{" "}
+                {formatoTokens(totales.tokens.salida)} entrada / salida)
+              </p>
+            </section>
+            {respuestas.map((respuesta, indice) => (
+              <Respuesta key={respuesta.id} respuesta={respuesta} numero={indice + 1} />
             ))}
-          </dl>
-
-          {respuestas.length === 0 ? (
-            <p className="text-sm text-slate-600">Cuando el asistente responda, acá vas a ver qué hizo.</p>
-          ) : (
-            // La más reciente arriba y abierta; las anteriores, plegadas.
-            <ol aria-label="Respuestas del asistente" className="space-y-2">
-              {[...respuestas].reverse().map((respuesta, i) => (
-                <Respuesta key={respuesta.id} respuesta={respuesta} abierta={i === 0} />
-              ))}
-            </ol>
-          )}
-        </div>
-      </aside>
-    </>
+            <p className="text-xs text-slate-600">
+              Los tiempos y los tokens se miden al generar cada respuesta: las de conversaciones que reabrís no los
+              tienen.
+            </p>
+          </>
+        )}
+      </div>
+    </aside>
   );
+}
+
+/**
+ * El panel de debug (el bonus del challenge): un panel a la derecha que muestra, por cada respuesta, las llamadas a tools
+ * que decidió el modelo (con sus datos y resultados), cuánto tardó y los tokens consumidos. Se abre desde el menú del
+ * perfil, como función secundaria; mientras está cerrado no existe.
+ */
+export default function PanelDeDebug({ mensajes, abierto, onCerrar }: Props) {
+  // El contenido (con sus efectos de foco) solo existe mientras el panel está abierto.
+  return abierto ? <ContenidoDelPanel mensajes={mensajes} onCerrar={onCerrar} /> : null;
+}
+
+/** El panel conectado al chat de la pantalla (lo que se ve en la app). */
+export function PanelDeDebugDelChat() {
+  const { messages, debugAbierto, cerrarDebug } = useChatEnPantalla();
+  return <PanelDeDebug mensajes={messages} abierto={debugAbierto} onCerrar={cerrarDebug} />;
 }
