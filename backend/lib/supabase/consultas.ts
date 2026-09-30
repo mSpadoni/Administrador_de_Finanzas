@@ -1,3 +1,5 @@
+import { lanzarErrorDeBase } from "./erroresSupabase";
+
 // Ayudas para los repositorios: lo que se repetía en cada consulta a Supabase.
 
 /** Lo que devuelve una consulta de Supabase: o trae los datos (`error: null`), o trae el error. */
@@ -11,6 +13,6 @@ type DatosSiSalioBien<R extends Respuesta> = Extract<R, { error: null }>["data"]
  * Ej: `datosOError(await supabase.from("mensajes").select(...), "No se pudieron leer los mensajes")`.
  */
 export function datosOError<R extends Respuesta>(respuesta: R, queSeHacia: string): DatosSiSalioBien<R> {
-  if (respuesta.error) throw new Error(`${queSeHacia}: ${respuesta.error.message}`);
+  if (respuesta.error) return lanzarErrorDeBase(queSeHacia, respuesta.error.message);
   return respuesta.data as DatosSiSalioBien<R>;
 }

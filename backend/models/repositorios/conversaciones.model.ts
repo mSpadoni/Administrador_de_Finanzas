@@ -2,7 +2,7 @@ import "server-only";
 import type { UIMessage } from "ai";
 import type { AsistenteUIMessage } from "@/shared/chat";
 import { datosOError } from "@/backend/lib/supabase/consultas";
-import type { UsoReciente } from "@/backend/models/dominio/limiteDeUso";
+import { VENTANA_POR_DIA_MS, VENTANA_POR_MINUTO_MS, type UsoReciente } from "@/backend/models/dominio/limiteDeUso";
 import { crearClienteServidor, type ClienteSupabase } from "@/backend/lib/supabase/server";
 import type { Database, Json } from "@/backend/types/database";
 
@@ -144,7 +144,7 @@ export class ConversacionesModel {
       return respuesta.count ?? 0; // con head: true, la cantidad viene en `count` (no en `data`)
     };
     // Las dos cuentas a la vez.
-    const [ultimoMinuto, ultimoDia] = await Promise.all([mensajesDesde(60_000), mensajesDesde(86_400_000)]);
+    const [ultimoMinuto, ultimoDia] = await Promise.all([mensajesDesde(VENTANA_POR_MINUTO_MS), mensajesDesde(VENTANA_POR_DIA_MS)]);
     return { ultimoMinuto, ultimoDia };
   }
 

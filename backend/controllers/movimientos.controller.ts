@@ -1,8 +1,8 @@
 import "server-only";
 import { clienteDolar, type ClienteDolar } from "@/backend/lib/dolar";
+import { redondear } from "@/backend/models/dominio/dinero";
 import { estadisticas, resumen, type Estadisticas, type Resumen } from "@/backend/models/dominio/estadisticas";
 import {
-  DatosDeMovimientoSchema,
   montoEnPesos,
   valorDeCotizacion,
   type Categoria,
@@ -22,11 +22,11 @@ import {
   type PedidoDePeriodo,
   type Periodo,
 } from "@/backend/models/dominio/periodo";
+import { ErrorDeDominio } from "@/backend/models/dominio/erroresDominio";
+import { DatosDeMovimientoSchema } from "@/backend/models/dominio/validacionDominio";
 import { movimientosModel, type MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
 import { datosInvalidos, movimientoNoEncontrado, type FalloDeMovimientos } from "./erroresControllers";
-
-/** Centavos por peso (o por dólar): los montos se redondean a dos decimales. */
-const CENTAVOS_POR_UNIDAD = 100;
+import { primerMensaje } from "./validacionControllers";
 
 /** Lo que pide la persona al registrar un movimiento, tal como lo entiende el asistente (todavía sin validar). */
 export type EntradaDeMovimiento = {
@@ -63,8 +63,6 @@ export type Conversion =
     }
   | FalloDeMovimientos;
 
-const redondear = (valor: number) => Math.round(valor * CENTAVOS_POR_UNIDAD) / CENTAVOS_POR_UNIDAD;
-
 /**
  * Casos de uso de los movimientos (gastos e ingresos): registrar, consultar, estadísticas, borrar y convertir. Es el
  * único que le dice al modelo qué guardar y qué leer: las tools del asistente y el panel «Este mes» le piden las cosas
@@ -86,7 +84,7 @@ export class MovimientosController {
    */
   async registrar({ tipoDeDolar, fecha, ...entrada }: EntradaDeMovimiento): Promise<MovimientoRegistrado> {
     const validados = DatosDeMovimientoSchema.safeParse({ ...entrada, fecha: fecha ?? this.hoy() });
-    if (!validados.success) return datosInvalidos(validados.error.issues[0]?.message ?? "Datos inválidos.");
+    if (!validados.success) return datosInvalidos(primerMensaje(validados.error, "Datos inválidos."));
 
     const cotizacion = await this.cotizacionDelDia(validados.data, tipoDeDolar ?? "oficial");
     if (!cotizacion.ok) return cotizacion;
@@ -95,8 +93,9 @@ export class MovimientosController {
 
   /** Los movimientos de un período (el más reciente primero), con ingresos, gastos y balance. */
   async consultar({ periodo: pedido, tipo, categoria }: ConsultaDeMovimientos): Promise<MovimientosConsultados> {
-    const periodo = this.periodoPedido(pedido);
-    if ("ok" in periodo) return periodo;
+    const pedidoDePeriodo = this.periodoPedido(pedido);
+    if (!pedidoDePeriodo.ok) return pedidoDePeriodo;
+    const { periodo } = pedidoDePeriodo;
     // La categoría ya viene de la lista: si no corresponde al tipo, la consulta simplemente no trae nada.
     const lista = await this.modeloMovimientos().listar(periodo, { tipo, categoria: categoria as Categoria });
     return { ok: true, periodo, movimientos: lista, resumen: resumen(lista) };
@@ -104,9 +103,9 @@ export class MovimientosController {
 
   /** Las estadísticas de un período (sin valor, el mes actual), comparadas con el período anterior. */
   async estadisticas(pedido?: PedidoDePeriodo): Promise<EstadisticasConsultadas> {
-    const periodo = this.periodoPedido(pedido);
-    if ("ok" in periodo) return periodo;
-    return { ok: true, estadisticas: await this.estadisticasDe(periodo) };
+    const pedidoDePeriodo = this.periodoPedido(pedido);
+    if (!pedidoDePeriodo.ok) return pedidoDePeriodo;
+    return { ok: true, estadisticas: await this.estadisticasDe(pedidoDePeriodo.periodo) };
   }
 
   /** Las estadísticas del mes en curso (las lee el panel «Este mes»). */
@@ -159,11 +158,13 @@ export class MovimientosController {
   }
 
   /** El período pedido (sin valor, el mes actual), o por qué no se puede armar (ej. un rango al revés). */
-  private periodoPedido(pedido: PedidoDePeriodo | undefined): Periodo | FalloDeMovimientos {
+  private periodoPedido(pedido: PedidoDePeriodo | undefined): { ok: true; periodo: Periodo } | FalloDeMovimientos {
     try {
-      return resolverPeriodo(pedido ?? {}, this.hoy());
+      return { ok: true, periodo: resolverPeriodo(pedido ?? {}, this.hoy()) };
     } catch (error) {
-      return datosInvalidos(error instanceof Error ? error.message : "El período no es válido.");
+      // Solo el rango al revés es un dato mal pedido; cualquier otro error es un bug y sigue de largo.
+      if (error instanceof ErrorDeDominio) return datosInvalidos(error.message);
+      throw error;
     }
   }
 }

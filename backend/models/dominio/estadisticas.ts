@@ -1,4 +1,5 @@
 import type { Categoria, Movimiento, TipoDeMovimiento } from "./movimiento";
+import { aCentavos, aPesos, redondear } from "./dinero";
 import { contiene, diasDe, periodoAnterior, type Periodo } from "./periodo";
 
 // Balance y estadísticas de un período (CONTEXT.md). Lógica pura. Todo en pesos (el monto en pesos de cada
@@ -18,11 +19,6 @@ export type Estadisticas = {
   promedioDiarioDeGastos: number;
   variacionDeGastos: { anterior: number; porcentaje: number | null };
 };
-
-const aCentavos = (pesos: number) => Math.round(pesos * 100);
-const aPesos = (centavos: number) => centavos / 100;
-/** Redondea a dos decimales (pesos o porcentajes). */
-const redondear = (valor: number) => Math.round(valor * 100) / 100;
 
 /** Suma en centavos el monto en pesos de los movimientos de un tipo. */
 function totalEnCentavos(movimientos: readonly Movimiento[], tipo: TipoDeMovimiento): number {

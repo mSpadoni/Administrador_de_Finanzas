@@ -2,7 +2,6 @@ import "server-only";
 import { datosOError } from "@/backend/lib/supabase/consultas";
 import { crearClienteServidor, type ClienteSupabase } from "@/backend/lib/supabase/server";
 import {
-  DatosDeMovimientoSchema,
   montoEnPesos,
   TIPOS_DE_DOLAR,
   type Categoria,
@@ -12,6 +11,7 @@ import {
   type TipoDeMovimiento,
 } from "@/backend/models/dominio/movimiento";
 import type { Periodo } from "@/backend/models/dominio/periodo";
+import { DatosDeMovimientoSchema } from "@/backend/models/dominio/validacionDominio";
 import type { Database } from "@/backend/types/database";
 
 type FilaMovimiento = Database["public"]["Tables"]["movimientos"]["Row"];

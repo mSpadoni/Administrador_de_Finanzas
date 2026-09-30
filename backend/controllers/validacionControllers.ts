@@ -9,11 +9,16 @@ import { lanzarPedidoInvalido } from "./erroresControllers";
 // Otras validaciones viven con su dueño: las entradas de las tools (las manda el LLM) en tools/validacionTools.ts, y los
 // movimientos en el dominio (models/dominio/movimiento.ts).
 
+/** El primer problema de una validación, con el texto que ve la persona (o `porDefecto` si no trae ninguno). */
+export function primerMensaje(error: { issues: readonly { message: string }[] }, porDefecto: string): string {
+  return error.issues[0]?.message ?? porDefecto;
+}
+
 /** Cualquier dato del navegador que no pasa su esquema: se corta con un error de pedido inválido (la ruta, 400). */
 function validar<Esquema extends z.ZodType>(esquema: Esquema, datos: unknown): z.output<Esquema> {
   const resultado = esquema.safeParse(datos);
   if (!resultado.success) {
-    return lanzarPedidoInvalido(resultado.error.issues[0]?.message ?? "El pedido no es válido.");
+    return lanzarPedidoInvalido(primerMensaje(resultado.error, "El pedido no es válido."));
   }
   return resultado.data;
 }

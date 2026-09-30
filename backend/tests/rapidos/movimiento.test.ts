@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   CATEGORIAS,
-  DatosDeMovimientoSchema,
   montoEnPesos,
   valorDeCotizacion,
   type DatosDeMovimiento,
 } from "@/backend/models/dominio/movimiento";
+import { DatosDeMovimientoSchema } from "@/backend/models/dominio/validacionDominio";
 
 // Qué es un movimiento válido (CONTEXT.md) y cómo se calcula su monto en pesos (docs/adr/0001). Lógica pura.
 

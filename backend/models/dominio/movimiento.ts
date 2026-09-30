@@ -1,4 +1,11 @@
-import { z } from "zod";
+import { aCentavos, aPesos } from "./dinero";
+import {
+  lanzarCotizacionEnUnMovimientoEnPesos,
+  lanzarMovimientoEnDolaresSinCotizacion,
+} from "./erroresDominio";
+import type { DatosDeMovimiento } from "./validacionDominio";
+
+export type { DatosDeMovimiento } from "./validacionDominio";
 
 // Qué es un movimiento (gasto o ingreso) y cómo se calcula su monto en pesos. Vocabulario en CONTEXT.md; por qué el
 // monto en pesos se fija con la cotización del día del registro, en docs/adr/0001. Lógica pura: sin base ni red.
@@ -33,35 +40,6 @@ export type MedioDePago = (typeof MEDIOS_DE_PAGO)[number];
 export type TipoDeDolar = (typeof TIPOS_DE_DOLAR)[number];
 export type Categoria = (typeof CATEGORIAS)[TipoDeMovimiento][number];
 
-/** Un día del calendario, "AAAA-MM-DD" (la fecha del movimiento según la persona, en hora de Argentina). */
-export const FechaSchema = z.iso.date("La fecha tiene que ser un día del calendario (AAAA-MM-DD).");
-
-/** Plata: positiva y con a lo sumo dos decimales. */
-const MontoSchema = z
-  .number()
-  .positive("El monto tiene que ser mayor que cero.")
-  .refine((monto) => Math.round(monto * 100) / 100 === monto, "El monto puede tener a lo sumo dos decimales.");
-
-/** Lo que describe la persona. El monto en pesos no: lo calcula la app con la cotización del día. */
-export const DatosDeMovimientoSchema = z
-  .object({
-    tipo: z.enum(TIPOS_DE_MOVIMIENTO),
-    monto: MontoSchema,
-    moneda: z.enum(MONEDAS),
-    categoria: z.string(),
-    medioDePago: z.enum(MEDIOS_DE_PAGO),
-    descripcion: z.string().trim().min(1, "La descripción está vacía.").max(200),
-    fecha: FechaSchema,
-  })
-  .refine((datos) => (CATEGORIAS[datos.tipo] as readonly string[]).includes(datos.categoria), {
-    message: "La categoría no corresponde al tipo de movimiento.",
-    path: ["categoria"],
-  })
-  // Después del refine la categoría ya es una de la lista: se lo dice al tipo.
-  .transform((datos) => datos as typeof datos & { categoria: Categoria });
-
-export type DatosDeMovimiento = z.infer<typeof DatosDeMovimientoSchema>;
-
 /** La cotización con la que se pasó a pesos un movimiento en dólares. */
 export type CotizacionUsada = { tipoDeDolar: TipoDeDolar; valor: number };
 
@@ -90,14 +68,14 @@ export type Movimiento = DatosDeMovimiento & {
  */
 export function montoEnPesos(datos: Pick<DatosDeMovimiento, "monto" | "moneda">, cotizacion: CotizacionUsada | null) {
   if (datos.moneda === "ARS") {
-    if (cotizacion) throw new Error("Un movimiento en pesos no lleva cotización.");
+    if (cotizacion) return lanzarCotizacionEnUnMovimientoEnPesos();
     return datos.monto;
   }
-  if (!cotizacion) throw new Error("Un movimiento en dólares necesita la cotización con la que se pasa a pesos.");
+  if (!cotizacion) return lanzarMovimientoEnDolaresSinCotizacion();
   // Centavos × diezmilésimos (la cotización se guarda con 4 decimales) = centavos × 10.000, redondeado.
-  const centavos = BigInt(Math.round(datos.monto * 100));
+  const centavos = BigInt(aCentavos(datos.monto));
   const diezmilesimos = BigInt(Math.round(cotizacion.valor * 10_000));
   const producto = centavos * diezmilesimos;
   const centavosEnPesos = (producto + BigInt(5_000)) / BigInt(10_000);
-  return Number(centavosEnPesos) / 100;
+  return aPesos(Number(centavosEnPesos));
 }

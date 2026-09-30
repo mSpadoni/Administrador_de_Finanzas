@@ -2,12 +2,12 @@ import "server-only";
 import { z } from "zod";
 import {
   CATEGORIAS,
-  FechaSchema,
   MEDIOS_DE_PAGO,
   MONEDAS,
   TIPOS_DE_DOLAR,
   TIPOS_DE_MOVIMIENTO,
 } from "@/backend/models/dominio/movimiento";
+import { FechaSchema } from "@/backend/models/dominio/validacionDominio";
 
 // Todo lo que el LLM le manda a una tool se valida acá, con Zod: son los `inputSchema` de cada tool. Las descripciones
 // (`.describe`) son las que lee el modelo para decidir cómo llamarlas. Lo que se hace con esos datos (registrar,

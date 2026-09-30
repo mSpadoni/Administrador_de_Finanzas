@@ -8,6 +8,10 @@ export type LimitesDeUso = { porMinuto: number; porDia: number };
 /** Holgados para estudiar (una consulta cada 6 s sostenida es mucho), cortos para un abuso. */
 export const LIMITES_DE_USO: LimitesDeUso = { porMinuto: 10, porDia: 150 };
 
+/** Las dos ventanas en las que se cuentan los mensajes (ms). */
+export const VENTANA_POR_MINUTO_MS = 60_000;
+export const VENTANA_POR_DIA_MS = 86_400_000;
+
 /** Cuántos mensajes mandó el usuario en el último minuto y en las últimas 24 horas. */
 export type UsoReciente = { ultimoMinuto: number; ultimoDia: number };
 

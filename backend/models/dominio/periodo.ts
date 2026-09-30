@@ -1,3 +1,5 @@
+import { lanzarPeriodoAlReves } from "./erroresDominio";
+
 // Los períodos de las consultas (CONTEXT.md): rangos de días del calendario en hora de Argentina, con los dos
 // extremos incluidos. Lógica pura: el "ahora" entra por parámetro. Las fechas son "AAAA-MM-DD"; para operar se
 // pasan a Date en UTC (sin horas), así no interviene la zona horaria de la máquina.
@@ -36,7 +38,7 @@ export function periodoDe(unidad: UnidadDePeriodo, fecha: string): Periodo {
 
 /** Un período explícito. Un rango que termina antes de empezar es un error. */
 export function rango(desde: string, hasta: string): Periodo {
-  if (desde > hasta) throw new Error(`El período termina (${hasta}) antes de empezar (${desde}).`);
+  if (desde > hasta) return lanzarPeriodoAlReves(desde, hasta);
   return { desde, hasta };
 }
 
