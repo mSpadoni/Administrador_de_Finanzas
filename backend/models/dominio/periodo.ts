@@ -21,19 +21,29 @@ export function hoyEnArgentina(ahora: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Buenos_Aires" }).format(ahora);
 }
 
-/** El día, la semana (de lunes a domingo) o el mes calendario que contiene a `fecha`. */
-export function periodoDe(unidad: UnidadDePeriodo, fecha: string): Periodo {
-  if (unidad === "dia") return { desde: fecha, hasta: fecha };
-  const dia = aDate(fecha);
-  if (unidad === "semana") {
+/**
+ * Cómo se arma el período de cada unidad: una estrategia por unidad (`Record` obliga a que cada unidad nueva tenga la
+ * suya: si se agrega "año" a UnidadDePeriodo y no acá, no compila).
+ */
+const PERIODO_POR_UNIDAD: Record<UnidadDePeriodo, (fecha: string) => Periodo> = {
+  dia: (fecha) => ({ desde: fecha, hasta: fecha }),
+  semana: (fecha) => {
     // getUTCDay: 0 = domingo. Días desde el lunes: lunes 0 … domingo 6.
-    const desdeElLunes = (dia.getUTCDay() + 6) % 7;
+    const desdeElLunes = (aDate(fecha).getUTCDay() + 6) % 7;
     const lunes = sumarDias(fecha, -desdeElLunes);
     return { desde: lunes, hasta: sumarDias(lunes, 6) };
-  }
-  const primero = new Date(Date.UTC(dia.getUTCFullYear(), dia.getUTCMonth(), 1));
-  const ultimo = new Date(Date.UTC(dia.getUTCFullYear(), dia.getUTCMonth() + 1, 0));
-  return { desde: aFecha(primero), hasta: aFecha(ultimo) };
+  },
+  mes: (fecha) => {
+    const dia = aDate(fecha);
+    const primero = new Date(Date.UTC(dia.getUTCFullYear(), dia.getUTCMonth(), 1));
+    const ultimo = new Date(Date.UTC(dia.getUTCFullYear(), dia.getUTCMonth() + 1, 0));
+    return { desde: aFecha(primero), hasta: aFecha(ultimo) };
+  },
+};
+
+/** El día, la semana (de lunes a domingo) o el mes calendario que contiene a `fecha`. */
+export function periodoDe(unidad: UnidadDePeriodo, fecha: string): Periodo {
+  return PERIODO_POR_UNIDAD[unidad](fecha);
 }
 
 /** Un período explícito. Un rango que termina antes de empezar es un error. */

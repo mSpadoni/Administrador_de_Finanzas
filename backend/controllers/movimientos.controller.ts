@@ -132,8 +132,8 @@ export class MovimientosController {
       de,
       a: monedaDestino(de),
       tipoDeDolar,
-      conCompra: convertirMonto(monto, de, tipoDeDolar, compra),
-      conVenta: convertirMonto(monto, de, tipoDeDolar, venta),
+      conCompra: convertirMonto(monto, de, compra),
+      conVenta: convertirMonto(monto, de, venta),
       actualizada,
     };
   }

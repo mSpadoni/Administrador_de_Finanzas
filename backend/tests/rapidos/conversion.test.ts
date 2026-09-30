@@ -12,11 +12,11 @@ describe("monedaDestino", () => {
 
 describe("convertirMonto", () => {
   it("de dólares a pesos multiplica por la cotización, redondeado al centavo", () => {
-    expect(convertirMonto(20.5, "USD", "oficial", 1432.37)).toBe(29363.59);
+    expect(convertirMonto(20.5, "USD", 1432.37)).toBe(29363.59);
   });
 
   it("de pesos a dólares divide por la cotización, con dos decimales", () => {
-    expect(convertirMonto(500_000, "ARS", "blue", 1250)).toBe(400);
-    expect(convertirMonto(100, "ARS", "blue", 3)).toBe(33.33);
+    expect(convertirMonto(500_000, "ARS", 1250)).toBe(400);
+    expect(convertirMonto(100, "ARS", 3)).toBe(33.33);
   });
 });

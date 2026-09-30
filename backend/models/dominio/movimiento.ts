@@ -1,8 +1,4 @@
-import { aCentavos, aPesos } from "./dinero";
-import {
-  lanzarCotizacionEnUnMovimientoEnPesos,
-  lanzarMovimientoEnDolaresSinCotizacion,
-} from "./erroresDominio";
+import { ESTRATEGIA_POR_MONEDA } from "./moneda";
 import type { DatosDeMovimiento } from "./validacionDominio";
 
 export type { DatosDeMovimiento } from "./validacionDominio";
@@ -71,19 +67,9 @@ export type Movimiento = DatosDeMovimiento & {
 
 /**
  * El monto en pesos de un movimiento: el mismo si es en pesos; si es en dólares, el monto por la cotización,
- * redondeado al centavo (con enteros, para que no aparezcan errores de punto flotante). Pedir un monto en dólares
- * sin cotización, o en pesos con cotización, es un error de quien llama.
+ * redondeado al centavo (la cuenta de cada moneda está en moneda.ts). Pedir un monto en dólares sin cotización, o en
+ * pesos con cotización, es un error de quien llama.
  */
 export function montoEnPesos(datos: Pick<DatosDeMovimiento, "monto" | "moneda">, cotizacion: CotizacionUsada | null) {
-  if (datos.moneda === "ARS") {
-    if (cotizacion) return lanzarCotizacionEnUnMovimientoEnPesos();
-    return datos.monto;
-  }
-  if (!cotizacion) return lanzarMovimientoEnDolaresSinCotizacion();
-  // Centavos × diezmilésimos (la cotización se guarda con 4 decimales) = centavos × 10.000, redondeado.
-  const centavos = BigInt(aCentavos(datos.monto));
-  const diezmilesimos = BigInt(Math.round(cotizacion.valor * 10_000));
-  const producto = centavos * diezmilesimos;
-  const centavosEnPesos = (producto + BigInt(5_000)) / BigInt(10_000);
-  return aPesos(Number(centavosEnPesos));
+  return ESTRATEGIA_POR_MONEDA[datos.moneda].enPesos(datos.monto, cotizacion);
 }
