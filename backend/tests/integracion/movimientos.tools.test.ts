@@ -2,7 +2,7 @@ import { afterAll, afterEach, describe, expect, it } from "vitest";
 import { MovimientosController, type MovimientosConsultados } from "@/backend/controllers/movimientos.controller";
 import { ClienteDolar } from "@/backend/lib/dolar";
 import { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
-import { crearToolsMovimientos } from "@/backend/tools/movimientos.tools";
+import { crearToolsAsistente } from "@/backend/tools/asistente.tools";
 import { levantarServidor, type Respuesta, type ServidorLocal } from "../helpers/servidorHttpLocal";
 import { borrarUsuariosDePrueba, crearUsuarioLogueado } from "../helpers/usuarioDePrueba";
 
@@ -45,7 +45,7 @@ async function personaConTools(dolarapi: Respuesta = DOLARES) {
   servidor = await levantarServidor(() => dolarapi);
   const dolar = new ClienteDolar({ endpoint: servidor.url, reintentos: 0 });
   const controller = new MovimientosController(() => movimientos, dolar, () => HOY);
-  const tools = crearToolsMovimientos({ movimientos: controller });
+  const tools = crearToolsAsistente({ movimientos: controller });
   return { movimientos, tools, dolarapi: servidor };
 }
 

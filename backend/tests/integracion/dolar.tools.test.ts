@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { CotizacionesController } from "@/backend/controllers/cotizaciones.controller";
 import { ClienteDolar, type ResultadoCotizaciones } from "@/backend/lib/dolar";
-import { crearToolsDolar } from "@/backend/tools/dolar.tools";
+import { crearToolsAsistente } from "@/backend/tools/asistente.tools";
 import { levantarServidor, type ServidorLocal } from "../helpers/servidorHttpLocal";
 
 // La tool cotizacion_dolar tal como la llama el modelo, contra un servidor HTTP local que responde como dolarapi.com.
@@ -30,7 +31,8 @@ afterEach(async () => {
 
 async function toolContra(status: number, cuerpo = "") {
   servidor = await levantarServidor(() => ({ status, headers: { "content-type": "application/json" }, cuerpo }));
-  return crearToolsDolar(new ClienteDolar({ endpoint: servidor.url, reintentos: 0 })).cotizacion_dolar;
+  const dolar = new ClienteDolar({ endpoint: servidor.url, reintentos: 0 });
+  return crearToolsAsistente({ cotizaciones: new CotizacionesController(dolar) }).cotizacion_dolar;
 }
 
 describe("cotizacion_dolar", () => {

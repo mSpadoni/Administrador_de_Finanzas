@@ -1,20 +1,35 @@
 import "server-only";
-import type { ClienteDolar } from "@/backend/lib/dolar";
-import { crearToolsDolar } from "@/backend/tools/dolar.tools";
-import { crearToolsMovimientos, type DependenciasDeMovimientos } from "@/backend/tools/movimientos.tools";
+import type { CotizacionesController } from "@/backend/controllers/cotizaciones.controller";
+import type { MovimientosController } from "@/backend/controllers/movimientos.controller";
+import { crearToolBorrarMovimiento } from "./borrarMovimiento.tool";
+import { crearToolConsultarMovimientos } from "./consultarMovimientos.tool";
+import { crearToolConvertir } from "./convertir.tool";
+import { crearToolCotizacionDolar } from "./cotizacionDolar.tool";
+import { crearToolEstadisticas } from "./estadisticas.tool";
+import { crearToolRegistrarMovimiento } from "./registrarMovimiento.tool";
 
 /** Lo que se le puede pasar a las tools del asistente para reemplazar sus piezas (útil en los tests). */
-export type DependenciasDelAsistente = DependenciasDeMovimientos & { dolar?: ClienteDolar };
+export type DependenciasDelAsistente = {
+  /** El controller que ejecutan las tools de movimientos y de convertir (con la sesión del pedido). */
+  movimientos?: MovimientosController;
+  /** El controller que ejecuta la tool de la cotización del dólar. */
+  cotizaciones?: CotizacionesController;
+};
 
 /**
- * Todas las tools del asistente, en un solo lugar. De acá sale también el tipo de los mensajes que ve el navegador
+ * Todas las tools del asistente, en un solo lugar: cada una vive en su archivo (`<nombre>.tool.ts`) y acá se registran con
+ * el nombre con el que las llama el modelo. De acá sale también el tipo de los mensajes que ve el navegador
  * (shared/chat.ts): si una tool cambia de nombre, de datos o de resultado, la vista deja de compilar.
- * Sin dependencias usa las de la app (el controller de movimientos con la sesión del pedido y dolarapi.com).
+ * Sin dependencias usa las de la app (los controllers de movimientos y de cotizaciones).
  */
-export function crearToolsAsistente({ movimientos, dolar }: DependenciasDelAsistente = {}) {
+export function crearToolsAsistente({ movimientos, cotizaciones }: DependenciasDelAsistente = {}) {
   return {
-    ...crearToolsMovimientos({ movimientos }),
-    ...crearToolsDolar(dolar),
+    registrar_movimiento: crearToolRegistrarMovimiento(movimientos),
+    consultar_movimientos: crearToolConsultarMovimientos(movimientos),
+    estadisticas: crearToolEstadisticas(movimientos),
+    borrar_movimiento: crearToolBorrarMovimiento(movimientos),
+    convertir: crearToolConvertir(movimientos),
+    cotizacion_dolar: crearToolCotizacionDolar(cotizaciones),
   };
 }
 
