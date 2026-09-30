@@ -15,18 +15,19 @@ const MENSAJE_SESION_VENCIDA = "Tu sesión expiró. Volvé a ingresar con Google
  * `{ error: { codigo, mensaje } }` con su status HTTP (ver respuestaDeError.ts).
  */
 export async function POST(request: Request) {
-  // 1) Solo usuarios logueados pueden usar el asistente.
-  const usuario = await authController.obtenerUsuarioActual();
-  if (!usuario) {
-    return respuestaDeErrorPublico({ codigo: "no_autenticado", mensaje: MENSAJE_SESION_VENCIDA });
-  }
-
-  // 2) El cuerpo tal cual lo mandó el navegador (si no es JSON, null): lo valida el controller con Zod.
-  const cuerpo: unknown = await request.json().catch(() => null);
-
-  // 3) La respuesta del asistente en streaming. Los errores de antes de empezar (pedido inválido, límite de uso,
-  //    conversación ajena...) se responden con su código.
+  // Todo va dentro del try: si algo falla antes de empezar (Auth caído, pedido inválido, límite de uso, conversación
+  // ajena...), el navegador recibe siempre el mismo sobre JSON con su código.
   try {
+    // 1) Solo usuarios logueados pueden usar el asistente.
+    const usuario = await authController.obtenerUsuarioActual();
+    if (!usuario) {
+      return respuestaDeErrorPublico({ codigo: "no_autenticado", mensaje: MENSAJE_SESION_VENCIDA });
+    }
+
+    // 2) El cuerpo tal cual lo mandó el navegador (si no es JSON, null): lo valida el controller con Zod.
+    const cuerpo: unknown = await request.json().catch(() => null);
+
+    // 3) La respuesta del asistente en streaming.
     return createUIMessageStreamResponse({ stream: await chatController.responder(cuerpo) });
   } catch (error) {
     return respuestaDeError(error);

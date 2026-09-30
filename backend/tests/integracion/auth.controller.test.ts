@@ -2,23 +2,26 @@
 // - describe("tema", () => {...}): agrupa tests relacionados.
 // - it("qué debería pasar", async () => {...}): un test (async porque habla con la base local de Supabase).
 // - expect(valor).toBe(esperado): compara. Otros: toEqual (mismo contenido), toMatchObject (al menos esas propiedades)...
-// - afterAll(fn): corre `fn` una vez al terminar todos los tests del archivo (acá, borra los personas de prueba).
+// - afterAll(fn): corre `fn` una vez al terminar todos los tests del archivo (acá, borra las personas de prueba).
 import { afterAll, describe, expect, it } from "vitest";
 import { AuthController } from "@/backend/controllers/auth.controller";
 import { Usuario } from "@/backend/models/dominio/usuario";
+import { AuthApiError, AuthRetryableFetchError } from "@supabase/supabase-js";
+import type { ClienteSupabase } from "@/backend/lib/supabase/server";
 import { AuthModel } from "@/backend/models/repositorios/auth.model";
+import { AuthNoRespondeError } from "@/backend/models/repositorios/erroresRepositorios";
 import { borrarUsuariosDePrueba, crearUsuarioLogueado, NavegadorDePrueba } from "../helpers/usuarioDePrueba";
 
 afterAll(borrarUsuariosDePrueba);
 
 describe("AuthController.obtenerUsuarioActual", () => {
-  it("devuelve null si el persona no inició sesión", async () => {
+  it("devuelve null si la persona no inició sesión", async () => {
     const controller = new AuthController(() => new AuthModel(new NavegadorDePrueba().crearCliente));
 
     expect(await controller.obtenerUsuarioActual()).toBeNull();
   });
 
-  it("devuelve al persona logueado con los datos que manda Google (lo que muestra 'Hola, <nombre>')", async () => {
+  it("devuelve a la persona logueada con los datos que manda Google (lo que muestra 'Hola, <nombre>')", async () => {
     const persona = await crearUsuarioLogueado({
       full_name: "Mateo Spadoni",
       avatar_url: "https://ejemplo.com/mateo.png",
@@ -100,6 +103,33 @@ describe("AuthController.completarLogin", () => {
     const ok = await controller.completarLogin("code-que-no-existe");
 
     expect(ok).toBe(false);
+    expect(await controller.obtenerUsuarioActual()).toBeNull();
+  });
+});
+
+describe("AuthController.obtenerUsuarioActual — si Supabase Auth no responde", () => {
+  /** Un cliente de Supabase cuyo getUser devuelve `error` (lo que devuelve la librería, sin lanzar). */
+  const clienteQueDevuelve = (error: unknown) => async () =>
+    ({ auth: { getUser: async () => ({ data: { user: null }, error }) } }) as unknown as ClienteSupabase;
+
+  it("sin red hacia Auth corta con AuthNoRespondeError: no es «no hay sesión»", async () => {
+    const sinRed = new AuthRetryableFetchError("fetch failed", 0);
+    const controller = new AuthController(() => new AuthModel(clienteQueDevuelve(sinRed)));
+
+    await expect(controller.obtenerUsuarioActual()).rejects.toBeInstanceOf(AuthNoRespondeError);
+  });
+
+  it("un 5xx de Auth también corta", async () => {
+    const caido = new AuthApiError("upstream error", 503, "unexpected_failure");
+    const controller = new AuthController(() => new AuthModel(clienteQueDevuelve(caido)));
+
+    await expect(controller.obtenerUsuarioActual()).rejects.toBeInstanceOf(AuthNoRespondeError);
+  });
+
+  it("una sesión vencida o inválida (4xx) no corta: no hay nadie logueado", async () => {
+    const vencida = new AuthApiError("invalid JWT", 403, "bad_jwt");
+    const controller = new AuthController(() => new AuthModel(clienteQueDevuelve(vencida)));
+
     expect(await controller.obtenerUsuarioActual()).toBeNull();
   });
 });

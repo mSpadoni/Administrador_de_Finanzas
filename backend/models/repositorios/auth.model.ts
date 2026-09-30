@@ -2,6 +2,7 @@ import "server-only";
 import { registrarError } from "@/backend/lib/registro";
 import { crearClienteServidor, type ClienteSupabase } from "@/backend/lib/supabase/server";
 import { Usuario } from "@/backend/models/dominio/usuario";
+import { lanzarSiAuthNoRespondio } from "./erroresRepositorios";
 
 /**
  * Acceso a Supabase Auth: el login con Google, la sesión (guardada en cookies) y el usuario logueado. Como los demás
@@ -42,10 +43,12 @@ export class AuthModel {
     return true;
   }
 
-  /** El usuario logueado (leído de las cookies de la sesión), o null si no hay nadie logueado. */
+  /** El usuario logueado (leído de las cookies de la sesión), o null si no hay nadie logueado. Si Auth no responde, lanza AuthNoRespondeError. */
   async usuarioActual(): Promise<Usuario | null> {
     const supabase = await this.crearCliente();
-    const { data } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getUser();
+    // Sin sesión (o vencida) es null; si Auth no respondió, corta: no es lo mismo que «tu sesión expiró».
+    lanzarSiAuthNoRespondio(error);
     // Operador ternario: `condición ? siEsVerdadero : siEsFalso`.
     return data.user ? Usuario.desdeSupabase(data.user) : null;
   }
