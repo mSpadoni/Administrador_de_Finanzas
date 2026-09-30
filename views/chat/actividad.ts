@@ -1,5 +1,5 @@
 import type { MetadatosDeRespuesta } from "@/shared/chat";
-import { formatoDuracion, formatoTokens } from "./formato";
+import { formatoTokens } from "./formato";
 
 // Qué mide el servidor de cada respuesta (ver MetadatosDeRespuesta) y cómo se cuenta en pantalla. Funciones puras.
 

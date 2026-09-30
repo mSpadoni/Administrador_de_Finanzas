@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ParteDelAsistente, AsistenteUIMessage } from "@/shared/chat";
 import MessageBubble from "@/views/chat/MessageBubble";
