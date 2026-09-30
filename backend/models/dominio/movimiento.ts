@@ -16,23 +16,31 @@ export const MONEDAS = ["ARS", "USD"] as const;
 export const MEDIOS_DE_PAGO = ["efectivo", "debito", "credito", "transferencia", "billetera_virtual"] as const;
 export const TIPOS_DE_DOLAR = ["oficial", "blue", "mep", "tarjeta"] as const;
 
+const CATEGORIAS_DE_GASTO = [
+  "supermercado",
+  "comida_afuera",
+  "transporte",
+  "servicios",
+  "vivienda",
+  "salud",
+  "educacion",
+  "ocio",
+  "ropa",
+  "suscripciones",
+] as const;
+const CATEGORIAS_DE_INGRESO = ["sueldo", "trabajo_independiente", "ventas", "regalos"] as const;
+
+/** La categoría para lo que no encaja en ninguna otra: la tienen los gastos y los ingresos. */
+const OTROS = "otros";
+
 /** Cada tipo de movimiento tiene su lista fija de categorías. */
 export const CATEGORIAS = {
-  gasto: [
-    "supermercado",
-    "comida_afuera",
-    "transporte",
-    "servicios",
-    "vivienda",
-    "salud",
-    "educacion",
-    "ocio",
-    "ropa",
-    "suscripciones",
-    "otros",
-  ],
-  ingreso: ["sueldo", "trabajo_independiente", "ventas", "regalos", "otros"],
+  gasto: [...CATEGORIAS_DE_GASTO, OTROS],
+  ingreso: [...CATEGORIAS_DE_INGRESO, OTROS],
 } as const satisfies Record<(typeof TIPOS_DE_MOVIMIENTO)[number], readonly string[]>;
+
+/** Todas las categorías, una sola vez cada una (con sus nombres exactos, para que los tipos los conozcan). */
+export const TODAS_LAS_CATEGORIAS = [...CATEGORIAS_DE_GASTO, OTROS, ...CATEGORIAS_DE_INGRESO] as const;
 
 export type TipoDeMovimiento = (typeof TIPOS_DE_MOVIMIENTO)[number];
 export type Moneda = (typeof MONEDAS)[number];

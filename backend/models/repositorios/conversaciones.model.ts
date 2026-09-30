@@ -5,6 +5,7 @@ import { datosOError } from "@/backend/lib/supabase/consultas";
 import { VENTANA_POR_DIA_MS, VENTANA_POR_MINUTO_MS, type UsoReciente } from "@/backend/models/dominio/limiteDeUso";
 import { crearClienteServidor, type ClienteSupabase } from "@/backend/lib/supabase/server";
 import type { Database, Json } from "@/backend/types/database";
+import { lanzarFalloAlCrearConversacion } from "./erroresRepositorios";
 
 type FilaConversacion = Database["public"]["Tables"]["conversaciones"]["Row"];
 
@@ -25,6 +26,21 @@ const rolDelMensaje = (rol: AsistenteUIMessage["role"]): "usuario" | "asistente"
   rol === "user" ? "usuario" : "asistente";
 const rolDeLaFila = (rol: string): AsistenteUIMessage["role"] => (rol === "usuario" ? "user" : "assistant");
 
+type Partes = AsistenteUIMessage["parts"];
+
+/**
+ * Las partes de un mensaje como las guarda la base. La columna es `jsonb` (Supabase la tipa como `Json` genérico) y las
+ * partes son un objeto tipado con funciones a lo sumo opcionales: no hay conversión que el compilador pueda comprobar,
+ * así que se hace acá, en un solo lugar. Lo que se guarda es lo que armó el propio servidor (el AI SDK).
+ */
+const partesParaLaBase = (partes: UIMessage["parts"]): NonNullable<Json> => partes as unknown as NonNullable<Json>;
+
+/**
+ * Las partes de un mensaje leídas de la base. Se confía en la forma (las guardó el propio servidor), pero si la columna
+ * no es ni una lista (una fila cargada a mano, de una versión vieja) el mensaje se muestra vacío en vez de romper la pantalla.
+ */
+const partesDeLaFila = (json: Json): Partes => (Array.isArray(json) ? (json as unknown as Partes) : []);
+
 /** Inserta los mensajes de la conversación (los que ya estaban, por id, se dejan como están). */
 async function guardarMensajes(
   supabase: ClienteSupabase,
@@ -40,7 +56,7 @@ async function guardarMensajes(
       id: mensaje.id,
       conversacion_id: conversacionId,
       rol: rolDelMensaje(mensaje.role),
-      partes: mensaje.parts as unknown as NonNullable<Json>,
+      partes: partesParaLaBase(mensaje.parts),
       creado_en: new Date(ahora + i).toISOString(),
     })),
     { onConflict: "conversacion_id,id", ignoreDuplicates: true }
@@ -65,17 +81,22 @@ export class ConversacionesModel {
   // El cliente de Supabase entra por el constructor: la app usa el del request; los tests, uno de prueba.
   constructor(private readonly crearCliente: () => Promise<ClienteSupabase> = crearClienteServidor) {}
 
-  /** Crea una conversación del usuario logueado con el id que generó el navegador. */
+  /** Crea una conversación del usuario logueado con el id que generó el navegador. Si ese id ya existe, lanza ConversacionYaExisteError. */
   async crear(id: string, titulo: string): Promise<ConversacionGuardada> {
     const supabase = await this.crearCliente();
-    return datosOError(
-      await supabase
-        .from("conversaciones")
-        .insert({ id, titulo: tituloParaLaBase(titulo) })
-        .select(COLUMNAS_CONVERSACION)
-        .single(),
-      "No se pudo crear la conversación"
-    );
+    try {
+      return datosOError(
+        await supabase
+          .from("conversaciones")
+          .insert({ id, titulo: tituloParaLaBase(titulo) })
+          .select(COLUMNAS_CONVERSACION)
+          .single(),
+        "No se pudo crear la conversación"
+      );
+    } catch (error) {
+      // Si el id ya existe (es de otra persona: RLS no la deja ver), ConversacionYaExisteError; si no, el error tal cual.
+      return lanzarFalloAlCrearConversacion(error);
+    }
   }
 
   /** La conversación con ese id, o null si no existe o es de otro usuario (RLS la oculta). */
@@ -119,8 +140,7 @@ export class ConversacionesModel {
     return filas.reverse().map((fila): AsistenteUIMessage => ({
       id: fila.id,
       role: rolDeLaFila(fila.rol),
-      // jsonb sin tipo: se confía en lo que guardó el propio servidor (los mensajes que arma el AI SDK).
-      parts: fila.partes as unknown as AsistenteUIMessage["parts"],
+      parts: partesDeLaFila(fila.partes),
     }));
   }
 

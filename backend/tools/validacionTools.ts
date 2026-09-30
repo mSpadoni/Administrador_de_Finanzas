@@ -4,6 +4,7 @@ import {
   CATEGORIAS,
   MEDIOS_DE_PAGO,
   MONEDAS,
+  TODAS_LAS_CATEGORIAS,
   TIPOS_DE_DOLAR,
   TIPOS_DE_MOVIMIENTO,
 } from "@/backend/models/dominio/movimiento";
@@ -12,9 +13,6 @@ import { FechaSchema } from "@/backend/models/dominio/validacionDominio";
 // Todo lo que el LLM le manda a una tool se valida acá, con Zod: son los `inputSchema` de cada tool. Las descripciones
 // (`.describe`) son las que lee el modelo para decidir cómo llamarlas. Lo que se hace con esos datos (registrar,
 // consultar, convertir) lo decide backend/controllers/movimientos.controller.ts.
-
-/** Todas las categorías, para que el modelo elija de la lista (que corresponda al tipo lo valida el dominio). */
-const TODAS_LAS_CATEGORIAS = [...new Set([...CATEGORIAS.gasto, ...CATEGORIAS.ingreso])] as [string, ...string[]];
 
 const PeriodoSchema = z
   .object({

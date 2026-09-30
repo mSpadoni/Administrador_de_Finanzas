@@ -107,9 +107,9 @@ export class ClienteDolar {
   async cotizacion(tipoDeDolar: TipoDeDolar): Promise<ResultadoCotizacion> {
     const resultado = await this.cotizaciones();
     if (!resultado.ok) return resultado;
-    // cotizaciones() garantiza que están todos los tipos.
-    const cotizacion = resultado.cotizaciones.find((c) => c.tipoDeDolar === tipoDeDolar)!;
-    return { ok: true, cotizacion };
+    const cotizacion = resultado.cotizaciones.find((c) => c.tipoDeDolar === tipoDeDolar);
+    // cotizaciones() garantiza que están todos los tipos; si falta uno, la respuesta no era la esperada.
+    return cotizacion ? { ok: true, cotizacion } : falloPorCuerpoInvalido(`Falta la cotización del dólar ${tipoDeDolar}.`);
   }
 
   /** Pide las cotizaciones con timeout y reintentos, y valida la respuesta. */

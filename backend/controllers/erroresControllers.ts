@@ -2,8 +2,8 @@ import "server-only";
 import { traducirError } from "@/backend/asistente/erroresAsistente";
 import { ErrorDeAplicacion } from "@/backend/erroresBackend";
 import { fallo, type Fallo, type MotivoError } from "@/backend/lib/erroresLib";
-import { esClaveDuplicada } from "@/backend/lib/supabase/erroresSupabase";
 import { ErrorDeDominio } from "@/backend/models/dominio/erroresDominio";
+import { ConversacionYaExisteError } from "@/backend/models/repositorios/erroresRepositorios";
 import type { LimiteAlcanzado } from "@/backend/models/dominio/limiteDeUso";
 
 // Todos los errores de backend/controllers: los que cortan un caso de uso (se lanzan, la ruta los responde con su
@@ -31,7 +31,7 @@ export function lanzarLimiteAlcanzado(limite: LimiteAlcanzado): never {
  * estaba, para que la ruta la responda como error interno en vez de mentir con un 404. `causa`: el error original.
  */
 export function lanzarPorFalloAlCrearConversacion(causa: unknown): never {
-  if (!esClaveDuplicada(causa)) throw causa;
+  if (!(causa instanceof ConversacionYaExisteError)) throw causa;
   throw new ErrorDeAplicacion("conversacion_no_encontrada", "No encontramos esa conversación. Empezá una nueva.", {
     cause: causa,
   });

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { redondear } from "./dinero";
-import { CATEGORIAS, MEDIOS_DE_PAGO, MONEDAS, TIPOS_DE_MOVIMIENTO, type Categoria } from "./movimiento";
+import { CATEGORIAS, MEDIOS_DE_PAGO, MONEDAS, TIPOS_DE_MOVIMIENTO, TODAS_LAS_CATEGORIAS } from "./movimiento";
 
 // Todas las validaciones con Zod de backend/models/dominio: qué datos puede tener un movimiento. Los demás archivos de
 // esta carpeta no importan zod: llaman a estos esquemas.
@@ -20,16 +20,14 @@ export const DatosDeMovimientoSchema = z
     tipo: z.enum(TIPOS_DE_MOVIMIENTO),
     monto: MontoSchema,
     moneda: z.enum(MONEDAS),
-    categoria: z.string(),
+    categoria: z.enum(TODAS_LAS_CATEGORIAS, "La categoría no existe."),
     medioDePago: z.enum(MEDIOS_DE_PAGO),
     descripcion: z.string().trim().min(1, "La descripción está vacía.").max(200),
     fecha: FechaSchema,
   })
-  .refine((datos) => (CATEGORIAS[datos.tipo] as readonly string[]).includes(datos.categoria), {
+  .refine((datos) => CATEGORIAS[datos.tipo].some((categoria) => categoria === datos.categoria), {
     message: "La categoría no corresponde al tipo de movimiento.",
     path: ["categoria"],
-  })
-  // Después del refine la categoría ya es una de la lista: se lo dice al tipo.
-  .transform((datos) => datos as typeof datos & { categoria: Categoria });
+  });
 
 export type DatosDeMovimiento = z.infer<typeof DatosDeMovimientoSchema>;

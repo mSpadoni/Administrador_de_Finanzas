@@ -36,7 +36,7 @@ export type EntradaDeMovimiento = {
   tipo: TipoDeMovimiento;
   monto: number;
   moneda: Moneda;
-  categoria: string;
+  categoria: Categoria;
   medioDePago: MedioDePago;
   descripcion: string;
   /** El día del movimiento (AAAA-MM-DD). Sin valor: hoy. */
@@ -46,7 +46,7 @@ export type EntradaDeMovimiento = {
 };
 
 /** Qué movimientos consultar: un período (sin valor, el mes actual) y, si se quiere, solo un tipo o una categoría. */
-export type ConsultaDeMovimientos = { periodo?: PedidoDePeriodo; tipo?: TipoDeMovimiento; categoria?: string };
+export type ConsultaDeMovimientos = { periodo?: PedidoDePeriodo; tipo?: TipoDeMovimiento; categoria?: Categoria };
 
 export type MovimientoRegistrado = { ok: true; movimiento: Movimiento } | FalloDeMovimientos;
 export type MovimientosConsultados =
@@ -99,8 +99,8 @@ export class MovimientosController {
     const pedidoDePeriodo = this.periodoPedido(pedido);
     if (!pedidoDePeriodo.ok) return pedidoDePeriodo;
     const { periodo } = pedidoDePeriodo;
-    // La categoría ya viene de la lista: si no corresponde al tipo, la consulta simplemente no trae nada.
-    const lista = await this.modeloMovimientos().listar(periodo, { tipo, categoria: categoria as Categoria });
+    // Si la categoría no corresponde al tipo, la consulta simplemente no trae nada.
+    const lista = await this.modeloMovimientos().listar(periodo, { tipo, categoria });
     return { ok: true, periodo, movimientos: lista, resumen: resumen(lista) };
   }
 
