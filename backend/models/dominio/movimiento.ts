@@ -5,7 +5,7 @@ export type { DatosDeMovimiento } from "./validacionDominio";
 
 // Qué es un movimiento (gasto o ingreso) y cómo se calcula su monto en pesos. Vocabulario en CONTEXT.md; por qué el
 // monto en pesos se fija con la cotización del día del registro, en docs/adr/0001. Lógica pura: sin base ni red.
-// Las listas coinciden con los check de la tabla movimientos (migración 20260929190755_movimientos.sql).
+// Las listas coinciden con los check de la tabla movimientos (migración 20260929000000_esquema_inicial.sql).
 
 export const TIPOS_DE_MOVIMIENTO = ["gasto", "ingreso"] as const;
 export const MONEDAS = ["ARS", "USD"] as const;

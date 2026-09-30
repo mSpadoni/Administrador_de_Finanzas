@@ -1,3 +1,4 @@
+import "server-only";
 import { z } from "zod";
 
 // Todas las validaciones con Zod de backend/lib/dolar: lo que responde dolarapi.com (/v1/dolares).

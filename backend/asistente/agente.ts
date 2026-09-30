@@ -65,10 +65,13 @@ function nombreDelModelo(modelo: LanguageModel): string {
   return typeof modelo === "string" ? modelo : modelo.modelId;
 }
 
-/** Una línea de log en JSON con datos útiles de cada respuesta (demora, pasos, tokens, tools usadas). */
+/**
+ * Una línea de log en JSON con datos útiles de cada respuesta (demora, pasos, tokens, tools usadas). Solo el nombre de
+ * cada tool: lo que se le pasó (montos, descripciones, fechas) son datos de la persona y no van al log.
+ */
 function registrarRespuesta(pasos: StepResult<ToolsDelAsistente>[], uso: LanguageModelUsage, inicio: number): void {
   const herramientas = pasos.flatMap((paso) =>
-    paso.toolCalls.map((llamada) => ({ nombre: llamada.toolName, entrada: llamada.input }))
+    paso.toolCalls.map((llamada) => llamada.toolName)
   );
   registrarEvento("chat.respuesta", {
     ms: Date.now() - inicio,

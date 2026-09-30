@@ -16,7 +16,7 @@ const compat = new FlatCompat({
 // `npm run lint` (y el build de Vercel) fallan con el motivo.
 
 /** El backend no depende de las rutas ni del frontend. */
-const backendNoDependeDeAppNiViews = {
+const backendNoDependeDeAppNiFrontend = {
   group: ["@/app/*", "@/app/**", "@/frontend/*", "@/frontend/**"],
   message: "El backend no depende de las rutas (app/) ni del frontend: ellas dependen de él, no al revés.",
 };
@@ -41,7 +41,7 @@ const reglasDeDependencia = [
     // Backend (menos los tests, que prueban también funciones del frontend).
     files: ["backend/**/*.ts"],
     ignores: ["backend/tests/**"],
-    rules: prohibir(backendNoDependeDeAppNiViews),
+    rules: prohibir(backendNoDependeDeAppNiFrontend),
   },
   {
     // Casos de uso, datos, asistente y errores: no saben de HTTP ni de Next. La respuesta HTTP la arman las rutas.
@@ -50,9 +50,9 @@ const reglasDeDependencia = [
       "backend/models/**/*.ts",
       "backend/asistente/**/*.ts",
       "backend/tools/**/*.ts",
-      "backend/errores.ts",
+      "backend/erroresBackend.ts",
     ],
-    rules: prohibir(backendNoDependeDeAppNiViews, {
+    rules: prohibir(backendNoDependeDeAppNiFrontend, {
       group: ["next/server", "next/headers", "next/navigation"],
       message: "Los casos de uso no manejan HTTP: devuelven datos o tiran un ErrorDeAplicacion y la ruta responde.",
     }),
@@ -65,7 +65,6 @@ const reglasDeDependencia = [
         "@supabase/*",
         "@/backend/lib/supabase/*",
         "@/backend/models/repositorios/*",
-        "@/backend/models/materialCatedra.model",
         "@/backend/asistente/agente",
       ],
       message: "Las rutas no usan Supabase, los repositorios ni el agente directamente: pasan por un controller.",
@@ -99,7 +98,7 @@ const reglasDeDependencia = [
     // Dominio: lógica pura, sin Next, Supabase, AI SDK ni infraestructura. Se permiten imports de solo tipos
     // (`import type`), que desaparecen al compilar.
     files: ["backend/models/dominio/**/*.ts"],
-    rules: prohibir(backendNoDependeDeAppNiViews, {
+    rules: prohibir(backendNoDependeDeAppNiFrontend, {
       group: [
         "next",
         "next/*",

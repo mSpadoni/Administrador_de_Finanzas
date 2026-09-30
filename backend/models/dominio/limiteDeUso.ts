@@ -5,7 +5,7 @@ import type { CodigoDeError } from "@/shared/erroresShared";
 
 export type LimitesDeUso = { porMinuto: number; porDia: number };
 
-/** Holgados para estudiar (una consulta cada 6 s sostenida es mucho), cortos para un abuso. */
+/** Holgados para el uso normal (una consulta cada 6 s sostenida es mucho), cortos para un abuso. */
 export const LIMITES_DE_USO: LimitesDeUso = { porMinuto: 10, porDia: 150 };
 
 /** Las dos ventanas en las que se cuentan los mensajes (ms). */
@@ -23,7 +23,7 @@ export function limiteAlcanzado(uso: UsoReciente, limites: LimitesDeUso = LIMITE
   if (uso.ultimoDia >= limites.porDia) {
     return {
       codigo: "limite_por_dia",
-      mensaje: `Llegaste al máximo de ${limites.porDia} mensajes por día. Mañana podés seguir practicando.`,
+      mensaje: `Llegaste al máximo de ${limites.porDia} mensajes por día. Mañana podés seguir.`,
     };
   }
   if (uso.ultimoMinuto >= limites.porMinuto) {

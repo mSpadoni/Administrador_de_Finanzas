@@ -1,3 +1,4 @@
+import "server-only";
 import { TIPOS_DE_DOLAR, type TipoDeDolar } from "@/backend/models/dominio/movimiento";
 import type { Resultado } from "../erroresLib";
 import { falloPorCuerpoInvalido, type FalloDelDolar } from "./erroresDolar";

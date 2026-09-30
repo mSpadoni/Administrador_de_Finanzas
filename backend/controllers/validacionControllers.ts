@@ -7,7 +7,7 @@ import { lanzarPedidoInvalido } from "./erroresControllers";
 // navegador llega a un model sin pasar por uno de estos esquemas. (zod `z` describe cómo tiene que ser un dato y
 // lo valida; el texto de cada regla es el error que ve el usuario.)
 // Otras validaciones viven con su dueño: las entradas de las tools (las manda el LLM) en tools/validacionTools.ts, y los
-// movimientos en el dominio (models/dominio/movimiento.ts).
+// movimientos en el dominio (models/dominio/validacionDominio.ts).
 
 /** El primer problema de una validación, con el texto que ve la persona (o `porDefecto` si no trae ninguno). */
 export function primerMensaje(error: { issues: readonly { message: string }[] }, porDefecto: string): string {
@@ -28,7 +28,7 @@ function validar<Esquema extends z.ZodType>(esquema: Esquema, datos: unknown): z
 
 const IdDeConversacionSchema = z.uuid("La conversación no es válida.");
 
-/** ¿Es un id de conversación válido? (Las conversaciones se identifican con un UUID que genera el servidor.) */
+/** ¿Es un id de conversación válido? (Las conversaciones se identifican con un UUID que genera el navegador al empezarlas.) */
 export function esIdDeConversacion(id: unknown): id is string {
   return IdDeConversacionSchema.safeParse(id).success;
 }
@@ -38,28 +38,34 @@ export function esIdDeConversacion(id: unknown): id is string {
 
 // El navegador manda solo el mensaje nuevo (en el formato del Vercel AI SDK) y el id de la conversación:
 // el historial lo lee el servidor de la base, así nadie puede inventarle al asistente una conversación.
-const PedidoDeChatSchema = z.object({
-  id: IdDeConversacionSchema,
-  mensaje: z.object(
-    {
-      id: z.string().min(1).max(100),
-      role: z.literal("user", "El mensaje tiene que ser del usuario."),
-      parts: z
-        .array(
-          z.object({
-            type: z.literal("text", "Por ahora solo se pueden mandar mensajes de texto."),
-            text: z
-              .string()
-              .trim()
-              .min(1, "El mensaje está vacío.")
-              .max(MAX_CARACTERES_MENSAJE, `Un mensaje no puede superar los ${MAX_CARACTERES_MENSAJE} caracteres.`),
-          })
-        )
-        .length(1, "El mensaje tiene que tener un solo texto."),
-    },
-    "Falta el mensaje."
-  ),
-});
+const PedidoDeChatSchema = z.object(
+  {
+    id: IdDeConversacionSchema,
+    mensaje: z.object(
+      {
+        id: z
+          .string("El mensaje no tiene id.")
+          .min(1, "El mensaje no tiene id.")
+          .max(100, "El id del mensaje es demasiado largo."),
+        role: z.literal("user", "El mensaje tiene que ser del usuario."),
+        parts: z
+          .array(
+            z.object({
+              type: z.literal("text", "Por ahora solo se pueden mandar mensajes de texto."),
+              text: z
+                .string()
+                .trim()
+                .min(1, "El mensaje está vacío.")
+                .max(MAX_CARACTERES_MENSAJE, `Un mensaje no puede superar los ${MAX_CARACTERES_MENSAJE} caracteres.`),
+            })
+          )
+          .length(1, "El mensaje tiene que tener un solo texto."),
+      },
+      "Falta el mensaje."
+    ),
+  },
+  "El pedido no es válido."
+);
 
 /** Un mensaje del usuario ya validado: a qué conversación va, el mensaje en formato del AI SDK y su texto. */
 export type PedidoDeChat = { conversacionId: string; mensaje: AsistenteUIMessage; texto: string };

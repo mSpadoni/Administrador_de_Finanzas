@@ -1,3 +1,4 @@
+import "server-only";
 import { fallo, type Fallo } from "../erroresLib";
 
 // Las fallas de dolarapi.com: no se lanzan. El cliente del dólar devuelve `{ ok: false, motivo, detalle }` para que el

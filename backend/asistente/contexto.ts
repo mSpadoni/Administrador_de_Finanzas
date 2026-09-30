@@ -1,3 +1,4 @@
+import "server-only";
 import type { AsistenteUIMessage } from "@/shared/chat";
 
 // Qué parte de la conversación ve el modelo en cada respuesta. Lógica pura.

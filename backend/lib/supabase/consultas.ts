@@ -1,3 +1,4 @@
+import "server-only";
 import { lanzarErrorDeBase } from "./erroresSupabase";
 
 // Ayudas para los repositorios: lo que se repetía en cada consulta a Supabase.

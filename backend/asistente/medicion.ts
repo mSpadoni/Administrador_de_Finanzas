@@ -1,3 +1,4 @@
+import "server-only";
 import type { LanguageModelUsage, TextStreamPart, ToolSet } from "ai";
 import type { MedicionDeHerramienta, MetadatosDeRespuesta } from "@/shared/chat";
 
