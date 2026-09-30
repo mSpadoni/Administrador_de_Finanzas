@@ -9,9 +9,9 @@ import {
   mensajeListoParaMostrar,
   TEXTO_PENSANDO,
   tituloDeLaConversacion,
-} from "@/views/chat/respuesta";
-import { TEXTOS_DE_HERRAMIENTAS } from "@/views/chat/tipos";
-import { errorParaMostrar, estaCercaDelFinal, siguienteScroll } from "@/views/chat/tipos";
+} from "@/frontend/chat/respuesta";
+import { TEXTOS_DE_HERRAMIENTAS } from "@/frontend/chat/tipos";
+import { errorParaMostrar, estaCercaDelFinal, siguienteScroll } from "@/frontend/chat/tipos";
 
 // Sin mocks: errores reales como los que arma useChat (Error con el cuerpo de la respuesta o el texto del stream).
 

@@ -1,4 +1,4 @@
-import PantallaDeAviso from "@/views/PantallaDeAviso";
+import PantallaDeAviso from "@/frontend/PantallaDeAviso";
 
 /** Lo que ve el usuario si entra a una dirección que no existe (ej. un link de conversación mal copiado). */
 export default function PaginaNoEncontrada() {

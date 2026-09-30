@@ -15,10 +15,10 @@ const compat = new FlatCompat({
 // Reglas de dependencia de la arquitectura (ver docs/ARQUITECTURA.md). Si alguien importa algo que no corresponde,
 // `npm run lint` (y el build de Vercel) fallan con el motivo.
 
-/** El backend no depende de las rutas ni de las views. */
+/** El backend no depende de las rutas ni del frontend. */
 const backendNoDependeDeAppNiViews = {
-  group: ["@/app/*", "@/app/**", "@/views/*", "@/views/**"],
-  message: "El backend no depende de las rutas (app/) ni de las views: ellas dependen de él, no al revés.",
+  group: ["@/app/*", "@/app/**", "@/frontend/*", "@/frontend/**"],
+  message: "El backend no depende de las rutas (app/) ni del frontend: ellas dependen de él, no al revés.",
 };
 
 /**
@@ -29,16 +29,16 @@ const prohibir = (...patterns) => ({ "@typescript-eslint/no-restricted-imports":
 
 const reglasDeDependencia = [
   {
-    // Views: componentes. Los datos llegan por props y las acciones como Server Actions que conecta la página.
-    files: ["views/**/*.{ts,tsx}"],
+    // Frontend (componentes, hooks, lógica de UI y sus tests). Los datos llegan por props y las acciones como Server Actions que conecta la página.
+    files: ["frontend/**/*.{ts,tsx}"],
     rules: prohibir({
       group: ["@/backend/*", "@/backend/**", "@supabase/*"],
       message:
-        "Las views no importan el backend ni Supabase: reciben los datos por props y las acciones por Server Actions.",
+        "El frontend no importa el backend ni Supabase: reciben los datos por props y las acciones por Server Actions.",
     }),
   },
   {
-    // Backend (menos los tests, que prueban también funciones de las views).
+    // Backend (menos los tests, que prueban también funciones del frontend).
     files: ["backend/**/*.ts"],
     ignores: ["backend/tests/**"],
     rules: prohibir(backendNoDependeDeAppNiViews),
@@ -73,14 +73,14 @@ const reglasDeDependencia = [
   },
   {
     // shared/: código que usan tanto el servidor como el navegador. Lógica pura: no puede importar nada del servidor
-    // (si no, lo arrastraría al navegador) ni de las views o rutas.
+    // (si no, lo arrastraría al navegador) ni del frontend o rutas.
     files: ["shared/**/*.ts"],
     rules: prohibir({
       group: [
         "@/backend/*",
         "@/backend/**",
-        "@/views/*",
-        "@/views/**",
+        "@/frontend/*",
+        "@/frontend/**",
         "@/app/*",
         "@/app/**",
         "next",
@@ -91,7 +91,7 @@ const reglasDeDependencia = [
         "server-only",
       ],
       message:
-        "shared/ es lógica pura compartida por servidor y navegador: no importa backend, views, rutas ni SDKs (solo `import type`).",
+        "shared/ es lógica pura compartida por servidor y navegador: no importa backend, frontend, rutas ni SDKs (solo `import type`).",
       allowTypeImports: true,
     }),
   },
@@ -118,7 +118,7 @@ const reglasDeDependencia = [
   },
   {
     // Tests rápidos: corren sin Docker ni internet. Lo que usa Supabase, dolarapi u OpenAI va en tests/integracion/.
-    files: ["backend/tests/rapidos/**/*.ts"],
+    files: ["backend/tests/rapidos/**/*.{ts,tsx}"],
     rules: prohibir({
       group: [
         "../helpers/usuarioDePrueba",

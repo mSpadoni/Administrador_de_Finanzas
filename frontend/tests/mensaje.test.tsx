@@ -3,7 +3,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { ParteDelAsistente, AsistenteUIMessage } from "@/shared/chat";
-import MessageBubble from "@/views/chat/MessageBubble";
+import MessageBubble from "@/frontend/chat/MessageBubble";
 
 // Cómo se muestra un mensaje del chat, renderizado en un DOM (jsdom) y leído como lo leería el usuario.
 // El texto del asistente lo escribe un LLM: puede traer HTML o links peligrosos (por una inyección en lo que mandó

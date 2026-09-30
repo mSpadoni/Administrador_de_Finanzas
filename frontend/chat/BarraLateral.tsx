@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
-import DialogoDeConfirmacion from "@/views/DialogoDeConfirmacion";
+import DialogoDeConfirmacion from "@/frontend/DialogoDeConfirmacion";
 import { useChatEnPantalla } from "./ContextoDelChat";
 import { useSidebar } from "./EstadoSidebar";
 import Icono from "./iconos";

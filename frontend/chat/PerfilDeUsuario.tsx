@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import DialogoDeConfirmacion from "@/views/DialogoDeConfirmacion";
+import DialogoDeConfirmacion from "@/frontend/DialogoDeConfirmacion";
 import Icono from "./iconos";
 import MenuDesplegable from "./MenuDesplegable";
 

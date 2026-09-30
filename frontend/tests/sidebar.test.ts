@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { conActividad, conTitulo, sinConversacion, type EstadoSidebar } from "@/views/chat/sidebar";
+import { conActividad, conTitulo, sinConversacion, type EstadoSidebar } from "@/frontend/chat/sidebar";
 
 // Sin mocks: funciones puras con los mismos datos que maneja el sidebar.
 

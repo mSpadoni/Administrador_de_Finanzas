@@ -16,7 +16,7 @@ type Props = {
   mensajesIniciales: AsistenteUIMessage[];
   /** Las estadísticas del mes en curso para el panel «Este mes» (null si no se pudieron leer). */
   estadisticasDelMes: EstadisticasDelPeriodo | null;
-  /** Server actions que conecta la página (las views no importan código del servidor). */
+  /** Server actions que conecta la página (el frontend no importa código del servidor). */
   cerrarSesion: () => Promise<void>;
   borrarConversacion: (id: string) => Promise<void>;
   /** Lee el historial de una conversación (para abrirla sin recargar la página). */

@@ -2,7 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import BienvenidaConLogin from "@/views/BienvenidaConLogin";
+import BienvenidaConLogin from "@/frontend/BienvenidaConLogin";
 
 // La pantalla que ve quien no tiene sesión: qué hace la app, el botón de Google y el aviso si falló el login.
 afterEach(cleanup);

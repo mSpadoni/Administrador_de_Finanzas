@@ -1,4 +1,4 @@
-// Los errores de views/chat que se lanzan: un componente usado donde no corresponde. Son errores del programador, no del
+// Los errores de frontend/chat que se lanzan: un componente usado donde no corresponde. Son errores del programador, no del
 // usuario (a él le muestran su aviso los componentes AvisoDeError y app/error.tsx).
 
 /** Un componente que necesita el estado del sidebar se usó fuera de <ProveedorSidebar>. */

@@ -3,7 +3,7 @@ import { VariablesDeOpenAISchema, VariablesDeSupabaseSchema, validarVariablesDeE
 // Variables de entorno, en un solo lugar y validadas con Zod (ver .env.example y validacionLib.ts).
 // - Se leen al usarlas, no al importar el módulo: los tests pueden cambiarlas y una variable que falta de un servicio
 //   no afecta a los otros (si falta la de OpenAI, el login con Supabase sigue andando).
-// - No lleva `server-only` porque también la usa el middleware (Edge). Las views no la pueden importar (regla de ESLint).
+// - No lleva `server-only` porque también la usa el middleware (Edge). El frontend no la puede importar (regla de ESLint).
 // - Es el único archivo que lee `process.env`.
 
 export const URL_API_OPENAI_POR_DEFECTO = "https://api.openai.com/v1";

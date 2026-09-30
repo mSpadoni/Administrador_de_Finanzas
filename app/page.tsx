@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { ingresarConGoogle } from "@/app/auth/actions";
 import { authController } from "@/backend/controllers/auth.controller";
-import BienvenidaConLogin from "@/views/BienvenidaConLogin";
+import BienvenidaConLogin from "@/frontend/BienvenidaConLogin";
 
 /** El valor de `?error=` con el que /auth/callback vuelve acá cuando falló el login. */
 const ERROR_DE_LOGIN = "login";

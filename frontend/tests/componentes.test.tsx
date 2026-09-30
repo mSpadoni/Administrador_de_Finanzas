@@ -8,13 +8,13 @@ import { MAX_CARACTERES_MENSAJE, type AsistenteUIMessage } from "@/shared/chat";
 import type { CodigoDeError } from "@/shared/erroresShared";
 import PaginaDeError from "@/app/error";
 import PaginaNoEncontrada from "@/app/not-found";
-import DialogoDeConfirmacion from "@/views/DialogoDeConfirmacion";
-import AvisoDeError from "@/views/chat/AvisoDeError";
-import MenuDeAtajos from "@/views/chat/MenuDeAtajos";
-import MessageInput from "@/views/chat/MessageInput";
-import PerfilDeUsuario from "@/views/chat/PerfilDeUsuario";
-import PanelDeDebug from "@/views/chat/PanelDeDebug";
-import { ATAJOS } from "@/views/chat/respuesta";
+import DialogoDeConfirmacion from "@/frontend/DialogoDeConfirmacion";
+import AvisoDeError from "@/frontend/chat/AvisoDeError";
+import MenuDeAtajos from "@/frontend/chat/MenuDeAtajos";
+import MessageInput from "@/frontend/chat/MessageInput";
+import PerfilDeUsuario from "@/frontend/chat/PerfilDeUsuario";
+import PanelDeDebug from "@/frontend/chat/PanelDeDebug";
+import { ATAJOS } from "@/frontend/chat/respuesta";
 
 // Sin mocks: los componentes reales, renderizados en un DOM (jsdom) y usados como un usuario (teclado y clicks).
 // Se buscan los elementos por su rol y su nombre accesible, igual que un lector de pantalla.

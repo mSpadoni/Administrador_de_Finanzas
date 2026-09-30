@@ -4,11 +4,11 @@ import { act, cleanup, render, screen, waitFor, within } from "@testing-library/
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AsistenteUIMessage } from "@/shared/chat";
-import BarraLateral from "@/views/chat/BarraLateral";
-import { ProveedorDelChat, useChatEnPantalla } from "@/views/chat/ContextoDelChat";
-import { ProveedorSidebar, useSidebar } from "@/views/chat/EstadoSidebar";
-import { esClickComun, idDeConversacionEnLaUrl, urlDeConversacion } from "@/views/chat/navegacion";
-import TextoEscribiendose from "@/views/chat/TextoEscribiendose";
+import BarraLateral from "@/frontend/chat/BarraLateral";
+import { ProveedorDelChat, useChatEnPantalla } from "@/frontend/chat/ContextoDelChat";
+import { ProveedorSidebar, useSidebar } from "@/frontend/chat/EstadoSidebar";
+import { esClickComun, idDeConversacionEnLaUrl, urlDeConversacion } from "@/frontend/chat/navegacion";
+import TextoEscribiendose from "@/frontend/chat/TextoEscribiendose";
 
 // Cambiar de conversación (nueva, abrir una guardada, borrar, atrás) se resuelve en el navegador, sin pedirle al servidor
 // la página entera: por eso no hay un momento en blanco y la transición se puede animar. Los componentes reales, en un DOM

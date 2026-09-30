@@ -2,7 +2,7 @@
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { useSeguirAlFinal } from "@/views/chat/hooks/useSeguirAlFinal";
+import { useSeguirAlFinal } from "@/frontend/chat/hooks/useSeguirAlFinal";
 
 // El scroll que acompaña a la conversación: baja solo cuando llega un mensaje o cambia el alto del contenido, salvo que la
 // persona haya subido a leer. jsdom no tiene layout, así que el alto del contenido y la posición del scroll se simulan en el

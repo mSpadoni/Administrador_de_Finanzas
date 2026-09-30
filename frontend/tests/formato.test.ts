@@ -9,7 +9,7 @@ import {
   nombreDelMedioDePago,
   nombreDelMes,
   textoDeVariacion,
-} from "@/views/chat/formato";
+} from "@/frontend/chat/formato";
 
 // Cómo se escriben montos, fechas y nombres en pantalla. Intl usa espacios no cortables: se comparan con espacio común.
 const igual = (texto: string) => texto.replace(/\s/g, " ");

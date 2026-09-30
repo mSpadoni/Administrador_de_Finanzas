@@ -3,10 +3,10 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import type { AsistenteUIMessage, EstadisticasDelPeriodo, MovimientoGuardado } from "@/shared/chat";
-import MessageBubble from "@/views/chat/MessageBubble";
-import PanelDelMes, { CATEGORIAS_EN_EL_PANEL } from "@/views/chat/PanelDelMes";
-import { cambioLosMovimientos } from "@/views/chat/respuesta";
-import { MAX_FILAS_EN_TABLA } from "@/views/chat/TarjetasDeResultado";
+import MessageBubble from "@/frontend/chat/MessageBubble";
+import PanelDelMes, { CATEGORIAS_EN_EL_PANEL } from "@/frontend/chat/PanelDelMes";
+import { cambioLosMovimientos } from "@/frontend/chat/respuesta";
+import { MAX_FILAS_EN_TABLA } from "@/frontend/chat/TarjetasDeResultado";
 
 // Lo que ve la persona cuando el asistente usa una tool: las tarjetas, la tabla, las barras y el panel «Este mes».
 // Componentes reales en un DOM (jsdom), leídos por rol y nombre accesible. Los resultados son los que devuelven las tools.

@@ -5,14 +5,14 @@ import userEvent from "@testing-library/user-event";
 import { useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AsistenteUIMessage, EstadisticasDelPeriodo } from "@/shared/chat";
-import BarraLateral from "@/views/chat/BarraLateral";
-import CajonDelBalance from "@/views/chat/CajonDelBalance";
-import ChatWindow from "@/views/chat/ChatWindow";
-import { ProveedorDelChat } from "@/views/chat/ContextoDelChat";
-import EncabezadoDeLaApp from "@/views/chat/EncabezadoDeLaApp";
-import { ProveedorSidebar } from "@/views/chat/EstadoSidebar";
-import { useDeslizarAlBajar } from "@/views/chat/hooks/useDeslizarAlBajar";
-import { PanelDeDebugDelChat } from "@/views/chat/PanelDeDebug";
+import BarraLateral from "@/frontend/chat/BarraLateral";
+import CajonDelBalance from "@/frontend/chat/CajonDelBalance";
+import ChatWindow from "@/frontend/chat/ChatWindow";
+import { ProveedorDelChat } from "@/frontend/chat/ContextoDelChat";
+import EncabezadoDeLaApp from "@/frontend/chat/EncabezadoDeLaApp";
+import { ProveedorSidebar } from "@/frontend/chat/EstadoSidebar";
+import { useDeslizarAlBajar } from "@/frontend/chat/hooks/useDeslizarAlBajar";
+import { PanelDeDebugDelChat } from "@/frontend/chat/PanelDeDebug";
 
 // El modo celular: el encabezado con la hamburguesa, el balance y el perfil; los cajones que se abren desde ahí; y el campo
 // de texto que está en el medio mientras la conversación está vacía y baja con el primer mensaje. Componentes reales en un

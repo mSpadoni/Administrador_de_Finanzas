@@ -4,7 +4,7 @@ import { borrarConversacion, leerConversacion, retitularConversacion } from "@/a
 import { authController } from "@/backend/controllers/auth.controller";
 import { pantallaController } from "@/backend/controllers/pantalla.controller";
 import { esIdDeConversacion } from "@/backend/controllers/validacionControllers";
-import PantallaDeChat from "@/views/chat/PantallaDeChat";
+import PantallaDeChat from "@/frontend/chat/PantallaDeChat";
 
 /** En Next 15 los parámetros de la URL llegan como Promise: `/conversacion/abc` → `{ id: "abc" }`. */
 type Props = { params: Promise<{ id: string }> };

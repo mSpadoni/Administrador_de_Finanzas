@@ -1,7 +1,7 @@
 // "use client": Next exige que la página de error sea un Client Component (para poder reintentar).
 "use client";
 
-import PantallaDeAviso from "@/views/PantallaDeAviso";
+import PantallaDeAviso from "@/frontend/PantallaDeAviso";
 
 /**
  * Lo que ve el usuario si una página falla al cargarse (ej. la base no responde al abrir una conversación).

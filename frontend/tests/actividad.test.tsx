@@ -3,10 +3,10 @@ import "@testing-library/jest-dom/vitest";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AsistenteUIMessage, MetadatosDeRespuesta } from "@/shared/chat";
-import { duracionDeLaTool, lineasDeUso } from "@/views/chat/actividad";
-import EstadoEnVivo from "@/views/chat/EstadoEnVivo";
-import { formatoDuracion, formatoTokens } from "@/views/chat/formato";
-import MessageBubble from "@/views/chat/MessageBubble";
+import { duracionDeLaTool, lineasDeUso } from "@/frontend/chat/actividad";
+import EstadoEnVivo from "@/frontend/chat/EstadoEnVivo";
+import { formatoDuracion, formatoTokens } from "@/frontend/chat/formato";
+import MessageBubble from "@/frontend/chat/MessageBubble";
 
 // Lo que se ve de la actividad del asistente mientras responde: cada tool con lo que tardó y el contador en vivo. Los datos son los que mide el servidor (ver medicion.test.ts).
 afterEach(cleanup);

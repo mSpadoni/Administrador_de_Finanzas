@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { AsistenteUIMessage } from "@/shared/chat";
-import { comoTextoDeDebug, respuestasParaDebug, totalesDeDebug } from "@/views/chat/debug";
+import { comoTextoDeDebug, respuestasParaDebug, totalesDeDebug } from "@/frontend/chat/debug";
 
 // Lo que muestra el panel de debug: por cada respuesta, qué decidió hacer el modelo, cuánto tardó y cuántos tokens gastó.
 

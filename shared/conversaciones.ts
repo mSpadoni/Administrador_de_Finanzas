@@ -1,4 +1,4 @@
-// Código compartido entre el servidor (backend/) y el navegador (views/): lógica pura, sin Next, Supabase ni SDKs.
+// Código compartido entre el servidor (backend/) y el navegador (frontend/): lógica pura, sin Next, Supabase ni SDKs.
 // Así las dos puntas calculan lo mismo con la misma función (ESLint impide que acá se importe algo del servidor).
 
 /** Lo único de una conversación que necesita la barra lateral para dibujarla. */

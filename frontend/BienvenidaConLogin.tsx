@@ -1,7 +1,7 @@
 import LoginButton from "./LoginButton";
 
 type Props = {
-  /** Server action que arranca el login con Google (la conecta la página: las views no importan código del servidor). */
+  /** Server action que arranca el login con Google (la conecta la página: el frontend no importa código del servidor). */
   ingresar: () => Promise<void>;
   /** ¿Falló el login? (la página lo sabe por la URL: `/?error=login`). */
   falloElLogin: boolean;

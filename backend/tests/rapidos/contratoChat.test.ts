@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { describe, expect, expectTypeOf, it } from "vitest";
 import { crearToolsAsistente } from "@/backend/tools/asistente.tools";
 import type { NombreDeHerramienta } from "@/shared/chat";
-import { TEXTOS_DE_HERRAMIENTAS } from "@/views/chat/tipos";
+import { TEXTOS_DE_HERRAMIENTAS } from "@/frontend/chat/tipos";
 
 // El contrato entre /api/chat y la vista sale de un solo lugar (shared/chat.ts, derivado de las tools reales).
 // Sin mocks: se arman las tools de verdad y se leen los archivos del proyecto.
@@ -35,7 +35,7 @@ describe("los límites del chat se definen una sola vez", () => {
     });
 
   it("MAX_CARACTERES_MENSAJE y MAX_MENSAJES_CONTEXTO solo se declaran en shared/chat.ts", () => {
-    const declaraciones = ["app", "backend", "shared", "views"]
+    const declaraciones = ["app", "backend", "shared", "frontend"]
       .flatMap(archivos)
       .filter((ruta) => /const MAX_(CARACTERES_MENSAJE|MENSAJES_CONTEXTO)\b/.test(readFileSync(ruta, "utf8")));
 
