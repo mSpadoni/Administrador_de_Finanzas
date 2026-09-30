@@ -7,7 +7,7 @@ import { crearToolsAsistente } from "@/backend/tools/asistente.tools";
 import { Agente } from "@/backend/asistente/agente";
 import { MAX_MENSAJES_CONTEXTO, type AsistenteUIMessage } from "@/shared/chat";
 import { tituloDesde } from "@/shared/conversaciones";
-import { lanzarConversacionNoEncontrada, lanzarErrorDelModelo, lanzarLimiteAlcanzado } from "./erroresControllers";
+import { lanzarErrorDelModelo, lanzarLimiteAlcanzado, lanzarPorFalloAlCrearConversacion } from "./erroresControllers";
 import { movimientosController, type MovimientosController } from "./movimientos.controller";
 import { validarPedidoDeChat, type PedidoDeChat } from "./validacionControllers";
 
@@ -104,8 +104,8 @@ export class ChatController {
   private async asegurarConversacion({ conversacionId, texto }: PedidoDeChat): Promise<void> {
     const conversaciones = this.modeloConversaciones();
     if (await conversaciones.obtener(conversacionId)) return;
-    // Si falla, el id ya existe pero es de otro usuario (RLS no se la deja ver).
-    await conversaciones.crear(conversacionId, tituloDesde(texto)).catch(lanzarConversacionNoEncontrada);
+    // Si falla porque el id ya existe, es de otro usuario (RLS no se la deja ver); cualquier otra falla sigue de largo.
+    await conversaciones.crear(conversacionId, tituloDesde(texto)).catch(lanzarPorFalloAlCrearConversacion);
   }
 
   /** El historial (sin el mensaje nuevo, por si es un reintento y ya estaba guardado). */

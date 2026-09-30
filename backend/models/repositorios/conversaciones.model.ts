@@ -25,6 +25,37 @@ const rolDelMensaje = (rol: AsistenteUIMessage["role"]): "usuario" | "asistente"
   rol === "user" ? "usuario" : "asistente";
 const rolDeLaFila = (rol: string): AsistenteUIMessage["role"] => (rol === "usuario" ? "user" : "assistant");
 
+/** Inserta los mensajes de la conversación (los que ya estaban, por id, se dejan como están). */
+async function guardarMensajes(
+  supabase: ClienteSupabase,
+  conversacionId: string,
+  mensajes: readonly UIMessage[]
+): Promise<void> {
+  // Cada mensaje con 1 ms de diferencia: así el orden queda fijo aunque se guarden en el mismo insert.
+  const ahora = Date.now();
+  // upsert con ignoreDuplicates = "insertá, y si ya existe ese id, no hagas nada": al reintentar después de un
+  // error, el navegador vuelve a mandar el mismo mensaje del usuario y no tiene que quedar dos veces.
+  const guardado = await supabase.from("mensajes").upsert(
+    mensajes.map((mensaje, i) => ({
+      id: mensaje.id,
+      conversacion_id: conversacionId,
+      rol: rolDelMensaje(mensaje.role),
+      partes: mensaje.parts as unknown as NonNullable<Json>,
+      creado_en: new Date(ahora + i).toISOString(),
+    })),
+    { onConflict: "conversacion_id,id", ignoreDuplicates: true }
+  );
+  datosOError(guardado, "No se pudieron guardar los mensajes");
+}
+
+/** Marca la conversación como la más reciente (sube en la lista del costado). */
+async function marcarActividad(supabase: ClienteSupabase, conversacionId: string): Promise<void> {
+  datosOError(
+    await supabase.from("conversaciones").update({ actualizado_en: new Date().toISOString() }).eq("id", conversacionId),
+    "No se pudo actualizar la conversación"
+  );
+}
+
 /**
  * Acceso a las tablas conversaciones y mensajes.
  * No filtra por usuario a mano: las políticas RLS ya limitan todo al usuario logueado.
@@ -97,29 +128,8 @@ export class ConversacionesModel {
   async agregarMensajes(conversacionId: string, mensajes: readonly UIMessage[]): Promise<void> {
     if (mensajes.length === 0) return;
     const supabase = await this.crearCliente();
-    // Cada mensaje con 1 ms de diferencia: así el orden queda fijo aunque se guarden en el mismo insert.
-    const ahora = Date.now();
-    // upsert con ignoreDuplicates = "insertá, y si ya existe ese id, no hagas nada": al reintentar después de un
-    // error, el navegador vuelve a mandar el mismo mensaje del usuario y no tiene que quedar dos veces.
-    const guardado = await supabase.from("mensajes").upsert(
-      mensajes.map((mensaje, i) => ({
-        id: mensaje.id,
-        conversacion_id: conversacionId,
-        rol: rolDelMensaje(mensaje.role),
-        partes: mensaje.parts as unknown as NonNullable<Json>,
-        creado_en: new Date(ahora + i).toISOString(),
-      })),
-      { onConflict: "conversacion_id,id", ignoreDuplicates: true }
-    );
-    datosOError(guardado, "No se pudieron guardar los mensajes");
-
-    datosOError(
-      await supabase
-        .from("conversaciones")
-        .update({ actualizado_en: new Date().toISOString() })
-        .eq("id", conversacionId),
-      "No se pudo actualizar la conversación"
-    );
+    await guardarMensajes(supabase, conversacionId, mensajes);
+    await marcarActividad(supabase, conversacionId);
   }
 
   /** Cambia el título de la conversación. Devuelve false si no existe o es de otro usuario (RLS no la deja tocar). */

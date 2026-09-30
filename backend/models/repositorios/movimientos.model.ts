@@ -33,7 +33,6 @@ function aMovimiento(fila: FilaMovimiento): Movimiento | null {
     descripcion: fila.descripcion,
     fecha: fila.fecha,
   });
-  const tipoDeDolar = TIPOS_DE_DOLAR.find((tipo) => tipo === fila.tipo_de_dolar);
   if (!datos.success) {
     console.warn(`Movimiento ${fila.id} inválido: se omite.`, datos.error.issues[0]?.message);
     return null;
@@ -42,8 +41,14 @@ function aMovimiento(fila: FilaMovimiento): Movimiento | null {
     ...datos.data,
     id: fila.id,
     montoEnPesos: fila.monto_en_pesos,
-    cotizacion: tipoDeDolar && fila.cotizacion !== null ? { tipoDeDolar, valor: fila.cotizacion } : null,
+    cotizacion: cotizacionDeLaFila(fila),
   };
+}
+
+/** La cotización con la que se pasó a pesos el movimiento, o null si es en pesos. */
+function cotizacionDeLaFila(fila: FilaMovimiento): CotizacionUsada | null {
+  const tipoDeDolar = TIPOS_DE_DOLAR.find((tipo) => tipo === fila.tipo_de_dolar);
+  return tipoDeDolar && fila.cotizacion !== null ? { tipoDeDolar, valor: fila.cotizacion } : null;
 }
 
 /**

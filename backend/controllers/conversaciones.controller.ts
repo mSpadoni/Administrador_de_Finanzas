@@ -1,7 +1,11 @@
 import "server-only";
 import type { LanguageModel } from "ai";
 import type { AsistenteUIMessage } from "@/shared/chat";
-import { MAX_MENSAJES_PARA_TITULAR, titulador as tituladorDeLaApp, type Titulador } from "@/backend/asistente/titulador";
+import {
+  MAX_MENSAJES_PARA_TITULAR,
+  titulador as tituladorDeLaApp,
+  type Titulador,
+} from "@/backend/asistente/titulador";
 import { crearModeloOpenAI } from "@/backend/lib/openai";
 import {
   conversacionesModel,
@@ -53,23 +57,38 @@ export class ConversacionesController {
    */
   async retitular(id: unknown): Promise<string | null> {
     if (!esIdDeConversacion(id)) return null;
-    const conversacion = await this.modeloConversaciones().obtener(id);
-    if (!conversacion) return null;
-    const mensajes = await this.modeloConversaciones().mensajes(id, MAX_MENSAJES_PARA_TITULAR);
-    // Hasta que el asistente no respondió no hay de qué hablar: alcanza con el título provisional.
-    if (!mensajes.some((mensaje) => mensaje.role === "assistant")) return null;
+    const paraTitular = await this.leerParaTitular(id);
+    if (!paraTitular) return null;
+    const modelo = this.crearModeloParaTitular();
+    if (!modelo) return null;
 
-    let modelo: LanguageModel;
-    try {
-      modelo = this.crearModelo();
-    } catch (error) {
-      console.error("No se pudo crear el modelo para titular la conversación:", error);
-      return null;
-    }
+    const { conversacion, mensajes } = paraTitular;
     const titulo = await this.titulador.proponer({ modelo, tituloActual: conversacion.titulo, mensajes });
     if (!titulo) return null;
     if (titulo !== conversacion.titulo) await this.modeloConversaciones().actualizarTitulo(id, titulo);
     return titulo;
+  }
+
+  /**
+   * La conversación con los últimos mensajes, si ya hay de qué hablar; `null` si no existe (o es de otro usuario) o si el
+   * asistente todavía no respondió: hasta entonces alcanza con el título provisional.
+   */
+  private async leerParaTitular(id: string) {
+    const conversacion = await this.modeloConversaciones().obtener(id);
+    if (!conversacion) return null;
+    const mensajes = await this.modeloConversaciones().mensajes(id, MAX_MENSAJES_PARA_TITULAR);
+    if (!mensajes.some((mensaje) => mensaje.role === "assistant")) return null;
+    return { conversacion, mensajes };
+  }
+
+  /** El modelo con el que se pone el título, o `null` si no se pudo crear (ej. falta la clave): el título es un extra. */
+  private crearModeloParaTitular(): LanguageModel | null {
+    try {
+      return this.crearModelo();
+    } catch (error) {
+      console.error("No se pudo crear el modelo para titular la conversación:", error);
+      return null;
+    }
   }
 
   /** Borra una conversación del usuario. Devuelve false si el id no es válido, no existía o no era suya. */

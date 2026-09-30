@@ -1,9 +1,8 @@
 import "server-only";
 import { clienteDolar, type ClienteDolar } from "@/backend/lib/dolar";
-import { redondear } from "@/backend/models/dominio/dinero";
+import { convertirMonto, monedaDestino } from "@/backend/models/dominio/conversion";
 import { estadisticas, resumen, type Estadisticas, type Resumen } from "@/backend/models/dominio/estadisticas";
 import {
-  montoEnPesos,
   valorDeCotizacion,
   type Categoria,
   type CotizacionUsada,
@@ -123,16 +122,14 @@ export class MovimientosController {
     const resultado = await this.dolar.cotizacion(tipoDeDolar);
     if (!resultado.ok) return resultado;
     const { compra, venta, actualizada } = resultado.cotizacion;
-    const convertirCon = (valor: number) =>
-      de === "USD" ? montoEnPesos({ monto, moneda: "USD" }, { tipoDeDolar, valor }) : redondear(monto / valor);
     return {
       ok: true,
       monto,
       de,
-      a: de === "USD" ? "ARS" : "USD",
+      a: monedaDestino(de),
       tipoDeDolar,
-      conCompra: convertirCon(compra),
-      conVenta: convertirCon(venta),
+      conCompra: convertirMonto(monto, de, tipoDeDolar, compra),
+      conVenta: convertirMonto(monto, de, tipoDeDolar, venta),
       actualizada,
     };
   }

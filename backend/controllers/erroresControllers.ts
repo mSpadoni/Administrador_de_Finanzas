@@ -2,6 +2,7 @@ import "server-only";
 import { traducirError } from "@/backend/asistente/erroresAsistente";
 import { ErrorDeAplicacion } from "@/backend/erroresBackend";
 import { fallo, type Fallo, type MotivoError } from "@/backend/lib/erroresLib";
+import { esClaveDuplicada } from "@/backend/lib/supabase/erroresSupabase";
 import type { LimiteAlcanzado } from "@/backend/models/dominio/limiteDeUso";
 
 // Todos los errores de backend/controllers: los que cortan un caso de uso (se lanzan, la ruta los responde con su
@@ -23,8 +24,13 @@ export function lanzarLimiteAlcanzado(limite: LimiteAlcanzado): never {
   throw new ErrorDeAplicacion(limite.codigo, limite.mensaje);
 }
 
-/** La conversación no existe o es de otra persona (RLS no se la deja ver). `causa`: el error original, para el log. */
-export function lanzarConversacionNoEncontrada(causa: unknown): never {
+/**
+ * No se pudo crear la conversación. Si es porque ese id ya existe, pero la persona no la ve, es de otra persona (RLS se la
+ * oculta): se responde como conversación no encontrada. Cualquier otra falla (la base caída, un bug) sigue de largo como
+ * estaba, para que la ruta la responda como error interno en vez de mentir con un 404. `causa`: el error original.
+ */
+export function lanzarPorFalloAlCrearConversacion(causa: unknown): never {
+  if (!esClaveDuplicada(causa)) throw causa;
   throw new ErrorDeAplicacion("conversacion_no_encontrada", "No encontramos esa conversación. Empezá una nueva.", {
     cause: causa,
   });

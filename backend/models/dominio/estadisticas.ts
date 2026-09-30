@@ -33,25 +33,38 @@ export function resumen(movimientos: readonly Movimiento[]): Resumen {
 
 /** Los totales por tipo y categoría: primero los gastos y después los ingresos, cada grupo de mayor a menor. */
 export function totalesPorCategoria(movimientos: readonly Movimiento[]): TotalPorCategoria[] {
-  const centavos = new Map<string, { tipo: TipoDeMovimiento; categoria: Categoria; total: number }>();
-  for (const m of movimientos) {
-    const clave = `${m.tipo}/${m.categoria}`;
-    const actual = centavos.get(clave) ?? { tipo: m.tipo, categoria: m.categoria, total: 0 };
-    actual.total += aCentavos(m.montoEnPesos);
-    centavos.set(clave, actual);
-  }
   const totalDelTipo = {
     gasto: totalEnCentavos(movimientos, "gasto"),
     ingreso: totalEnCentavos(movimientos, "ingreso"),
   };
-  return [...centavos.values()]
-    .sort((a, b) => (a.tipo === b.tipo ? b.total - a.total : a.tipo === "gasto" ? -1 : 1))
+  return sumarPorCategoria(movimientos)
+    .sort(gastosPrimeroYDeMayorAMenor)
     .map(({ tipo, categoria, total }) => ({
       tipo,
       categoria,
       total: aPesos(total),
       porcentaje: redondear((total * 100) / totalDelTipo[tipo]),
     }));
+}
+
+type CategoriaEnCentavos = { tipo: TipoDeMovimiento; categoria: Categoria; total: number };
+
+/** Suma en centavos el monto en pesos de cada par tipo + categoría. */
+function sumarPorCategoria(movimientos: readonly Movimiento[]): CategoriaEnCentavos[] {
+  const sumas = new Map<string, CategoriaEnCentavos>();
+  for (const m of movimientos) {
+    const clave = `${m.tipo}/${m.categoria}`;
+    const actual = sumas.get(clave) ?? { tipo: m.tipo, categoria: m.categoria, total: 0 };
+    actual.total += aCentavos(m.montoEnPesos);
+    sumas.set(clave, actual);
+  }
+  return [...sumas.values()];
+}
+
+/** Orden de los totales: primero los gastos y después los ingresos; dentro de cada tipo, de mayor a menor. */
+function gastosPrimeroYDeMayorAMenor(a: CategoriaEnCentavos, b: CategoriaEnCentavos): number {
+  if (a.tipo === b.tipo) return b.total - a.total;
+  return a.tipo === "gasto" ? -1 : 1;
 }
 
 /**

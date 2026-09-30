@@ -10,7 +10,7 @@ import {
   falloSinRespuesta,
   type Fallo,
 } from "./erroresLib";
-import { validarRespuestaDeDolarapi } from "./validacionLib";
+import { validarRespuestaDeDolarapi, type CasaDeDolarapi } from "./validacionLib";
 
 // Cliente de dolarapi.com: las cotizaciones del dólar en Argentina. Es la API externa del asistente. No necesita
 // API key. Un solo pedido (/v1/dolares) trae todos los tipos de dólar; se guarda 5 minutos.
@@ -48,6 +48,10 @@ export type OpcionesDolar = {
   /** La hora actual en ms (los tests la controlan para probar el caché). */
   reloj?: () => number;
 };
+
+/** Qué hacer con la respuesta de un intento de pedido. */
+type Veredicto =
+  { tipo: "listo" } | { tipo: "reintentar"; fallo: Fallo; esperaMs: number } | { tipo: "cortar"; fallo: Fallo };
 
 const esperar = (ms: number) => new Promise((listo) => setTimeout(listo, ms));
 
@@ -118,23 +122,28 @@ export class ClienteDolar {
         ultimoError = respuesta;
         continue;
       }
-      // 429: demasiados pedidos. Si Retry-After pide una espera corta, se espera y se reintenta.
-      if (respuesta.status === 429) {
-        ultimoError = falloPorLimite();
-        const esperaMs = this.esperaDeUn429(respuesta);
-        if (esperaMs > this.maxEsperaReintentoMs) break;
-        if (intento < this.reintentos) await esperar(esperaMs);
-        continue;
-      }
-      // 5xx: caído o saturado. Se reintenta.
-      if (respuesta.status >= 500) {
-        ultimoError = falloDelServicio(respuesta.status);
-        continue;
-      }
-      if (!respuesta.ok) return falloPorRespuestaInesperada(respuesta.status);
-      return aCotizaciones(await respuesta.text());
+      const veredicto = this.veredictoDe(respuesta);
+      if (veredicto.tipo === "listo") return aCotizaciones(await respuesta.text());
+      ultimoError = veredicto.fallo;
+      if (veredicto.tipo === "cortar") break;
+      if (intento < this.reintentos && veredicto.esperaMs > 0) await esperar(veredicto.esperaMs);
     }
     return ultimoError;
+  }
+
+  /** Qué hacer con la respuesta de un intento: usarla, reintentar (esperando `esperaMs`) o darse por vencido. */
+  private veredictoDe(respuesta: Response): Veredicto {
+    // 429: demasiados pedidos. Si Retry-After pide una espera corta, se espera y se reintenta.
+    if (respuesta.status === 429) {
+      const esperaMs = this.esperaDeUn429(respuesta);
+      return esperaMs > this.maxEsperaReintentoMs
+        ? { tipo: "cortar", fallo: falloPorLimite() }
+        : { tipo: "reintentar", fallo: falloPorLimite(), esperaMs };
+    }
+    // 5xx: caído o saturado. Se reintenta enseguida.
+    if (respuesta.status >= 500) return { tipo: "reintentar", fallo: falloDelServicio(respuesta.status), esperaMs: 0 };
+    if (!respuesta.ok) return { tipo: "cortar", fallo: falloPorRespuestaInesperada(respuesta.status) };
+    return { tipo: "listo" };
   }
 
   /** Un intento de pedido: la respuesta del servicio, o el fallo si no se pudo conectar o se venció el tiempo. */
@@ -161,15 +170,21 @@ export class ClienteDolar {
 
 /** Valida el cuerpo de un 200 y lo pasa a las cotizaciones de la app. Tienen que estar todos los tipos de dólar. */
 function aCotizaciones(cuerpo: string): ResultadoCotizaciones {
-  let json: unknown;
-  try {
-    json = JSON.parse(cuerpo);
-  } catch {
-    return falloPorCuerpoInvalido();
-  }
-  const casas = validarRespuestaDeDolarapi(json);
-  if (!casas) return falloPorCuerpoInvalido();
+  const casas = validarRespuestaDeDolarapi(leerJson(cuerpo));
+  return casas ? cotizacionesDeLasCasas(casas) : falloPorCuerpoInvalido();
+}
 
+/** El JSON del texto, o `undefined` si no es un JSON (la validación que sigue lo rechaza igual). */
+function leerJson(texto: string): unknown {
+  try {
+    return JSON.parse(texto);
+  } catch {
+    return undefined;
+  }
+}
+
+/** Las cotizaciones de la app a partir de las casas de dolarapi; falla si falta alguno de los tipos de dólar. */
+function cotizacionesDeLasCasas(casas: CasaDeDolarapi[]): ResultadoCotizaciones {
   const cotizaciones: Cotizacion[] = [];
   for (const tipoDeDolar of TIPOS_DE_DOLAR) {
     const casa = casas.find((c) => c.casa === CASA_DE[tipoDeDolar]);
