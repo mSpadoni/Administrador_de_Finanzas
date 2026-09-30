@@ -105,7 +105,7 @@ export class ClienteDolar {
         continue;
       }
       const veredicto = this.veredictoDe(respuesta);
-      if (veredicto.tipo === "listo") return aCotizaciones(await respuesta.text());
+      if (veredicto.tipo === "listo") return this.leerCuerpo(respuesta);
       ultimoError = veredicto.fallo;
       if (veredicto.tipo === "cortar") break;
       if (intento < this.reintentos && veredicto.esperaMs > 0) await esperar(veredicto.esperaMs);
@@ -128,6 +128,24 @@ export class ClienteDolar {
     return { tipo: "listo" };
   }
 
+  /**
+   * Lee y valida el cuerpo de un 200. El tiempo del pedido también corre mientras llega el cuerpo: si el servicio se cuelga
+   * a mitad de la respuesta, o se corta la conexión, es un fallo (no un error que se escapa).
+   */
+  private async leerCuerpo(respuesta: Response): Promise<ResultadoCotizaciones> {
+    try {
+      return aCotizaciones(await respuesta.text());
+    } catch (error) {
+      return this.falloDeRed(error);
+    }
+  }
+
+  /** El fallo que corresponde a un error de red: se venció el tiempo, o no se pudo conectar (o se cortó la conexión). */
+  private falloDeRed(error: unknown): FalloDelDolar {
+    // AbortSignal.timeout corta con un error de nombre "TimeoutError"; cualquier otro es de conexión.
+    return error instanceof Error && error.name === "TimeoutError" ? falloPorTiempo(this.timeoutMs) : falloDeConexion();
+  }
+
   /** Un intento de pedido: la respuesta del servicio, o el fallo si no se pudo conectar o se venció el tiempo. */
   private async pedirUnaVez(): Promise<Response | FalloDelDolar> {
     try {
@@ -136,10 +154,7 @@ export class ClienteDolar {
         signal: AbortSignal.timeout(this.timeoutMs),
       });
     } catch (error) {
-      // AbortSignal.timeout corta con un error de nombre "TimeoutError"; cualquier otro es de conexión.
-      return error instanceof Error && error.name === "TimeoutError"
-        ? falloPorTiempo(this.timeoutMs)
-        : falloDeConexion();
+      return this.falloDeRed(error);
     }
   }
 

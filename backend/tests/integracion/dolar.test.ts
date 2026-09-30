@@ -75,6 +75,10 @@ describe("ClienteDolar — caché", () => {
     await dolar.cotizacion("blue");
     expect(servidor!.pedidos()).toBe(1);
 
+    ahora = 5 * 60_000; // justo en el límite: todavía vale
+    await dolar.cotizaciones();
+    expect(servidor!.pedidos()).toBe(1);
+
     ahora = 5 * 60_000 + 1;
     await dolar.cotizaciones();
     expect(servidor!.pedidos()).toBe(2);
@@ -112,11 +116,75 @@ describe("ClienteDolar — reintentos", () => {
     expect(servidor!.pedidos()).toBe(2);
   });
 
+  it("un 429 que pide esperar poco (Retry-After) espera, reintenta y devuelve las cotizaciones", async () => {
+    const dolar = await clienteContra([{ status: 429, headers: { "retry-after": "1" } }, OK], {
+      maxEsperaReintentoMs: 1500,
+    });
+
+    expect(await dolar.cotizaciones()).toMatchObject({ ok: true });
+    expect(servidor!.pedidos()).toBe(2);
+  });
+
+  it("un 429 sin Retry-After espera lo configurado y reintenta", async () => {
+    const dolar = await clienteContra([{ status: 429 }, OK], { esperaSinRetryAfterMs: 10 });
+
+    expect(await dolar.cotizaciones()).toMatchObject({ ok: true });
+    expect(servidor!.pedidos()).toBe(2);
+  });
+
+  it("un 4xx que no es 429 (ej. 404) no se reintenta: la respuesta no es la esperada", async () => {
+    const dolar = await clienteContra([{ status: 404 }]);
+
+    expect(await dolar.cotizaciones()).toEqual({
+      ok: false,
+      motivo: "respuesta_invalida",
+      detalle: "El servicio respondió HTTP 404.",
+    });
+    expect(servidor!.pedidos()).toBe(1);
+  });
+
   it("un 429 que pide esperar más de lo aceptable no se reintenta", async () => {
     const dolar = await clienteContra([{ status: 429, headers: { "retry-after": "60" } }]);
 
     expect(await dolar.cotizaciones()).toMatchObject({ ok: false, motivo: "limite" });
     expect(servidor!.pedidos()).toBe(1);
+  });
+});
+
+describe("ClienteDolar — tiempo y conexión", () => {
+  it("si el servicio no contesta a tiempo, avisa que no respondió (y reintenta una vez)", async () => {
+    const dolar = await clienteContra([{ ...OK, demoraMs: 500 }], { timeoutMs: 50 });
+
+    expect(await dolar.cotizaciones()).toEqual({
+      ok: false,
+      motivo: "tiempo",
+      detalle: "El servicio de cotizaciones no respondió en 0.05 s.",
+    });
+    expect(servidor!.pedidos()).toBe(2);
+  });
+
+  it("si no se puede conectar (nadie escucha en ese puerto), avisa que el servicio falló", async () => {
+    const dolar = new ClienteDolar({ endpoint: "http://127.0.0.1:1", reintentos: 0 });
+
+    expect(await dolar.cotizaciones()).toEqual({
+      ok: false,
+      motivo: "servicio",
+      detalle: "No se pudo conectar con el servicio de cotizaciones.",
+    });
+  });
+
+  it("si manda las cabeceras y se cuelga con el cuerpo, no lanza: avisa que no respondió a tiempo", async () => {
+    const dolar = await clienteContra([{ ...OK, demoraDelCuerpoMs: 500 }], { timeoutMs: 50, reintentos: 0 });
+
+    await expect(dolar.cotizaciones()).resolves.toMatchObject({ ok: false, motivo: "tiempo" });
+  });
+
+  it("ese fallo tampoco queda en el caché: la consulta siguiente vuelve a pedir y funciona", async () => {
+    const dolar = await clienteContra([{ ...OK, demoraDelCuerpoMs: 500 }, OK], { timeoutMs: 50, reintentos: 0 });
+
+    await dolar.cotizaciones();
+    expect(await dolar.cotizaciones()).toMatchObject({ ok: true });
+    expect(servidor!.pedidos()).toBe(2);
   });
 });
 

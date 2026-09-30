@@ -24,10 +24,12 @@ export class CacheDeCotizaciones {
     const resultado = pedir();
     const entrada = { desde: ahora, resultado };
     this.guardado = entrada;
-    // Si falló, se olvida (salvo que ya lo haya reemplazado otro pedido): la próxima consulta vuelve a intentar.
-    void resultado.then((r) => {
-      if (!r.ok && this.guardado === entrada) this.guardado = null;
-    });
+    // Si falló (o, por un bug, lanzó), se olvida, salvo que ya lo haya reemplazado otro pedido: la próxima consulta vuelve
+    // a intentar. El segundo handler además evita que un rechazo quede sin atender.
+    const olvidar = () => {
+      if (this.guardado === entrada) this.guardado = null;
+    };
+    void resultado.then((r) => (r.ok ? undefined : olvidar()), olvidar);
     return resultado;
   }
 }
