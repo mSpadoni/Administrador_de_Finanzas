@@ -1,12 +1,14 @@
 import { randomUUID } from "node:crypto";
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, describe, expect, it, vi } from "vitest";
 import { ChatController } from "@/backend/controllers/chat.controller";
+import { MovimientosController } from "@/backend/controllers/movimientos.controller";
 import { ErrorDeAplicacion } from "@/backend/erroresBackend";
 import { ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
+import { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
 import { MAX_MENSAJES_CONTEXTO, type AsistenteUIMessage } from "@/shared/chat";
 import { borrarUsuariosDePrueba, crearUsuarioLogueado } from "../helpers/usuarioDePrueba";
 import { usuarioConChat, codigoDelError, conversar, herramientas, mensajesGuardados } from "../helpers/chatDePrueba";
-import { errorDeLaApi, modeloQueFalla, modeloQueResponde } from "../helpers/modeloDePrueba";
+import { errorDeLaApi, modeloQueFalla, modeloQueLlamaTool, modeloQueResponde } from "../helpers/modeloDePrueba";
 import { conVariablesAsync } from "../helpers/variablesDeEntorno";
 
 // NUESTRA orquestación del chat (guardar, errores, timeout, streaming, historial) contra la Supabase local,
@@ -168,5 +170,122 @@ describe("ChatController.responder — errores", () => {
       codigo: "conversacion_no_encontrada",
     });
     expect(await duenio.conversaciones.mensajes(id)).toHaveLength(2);
+  });
+});
+
+describe("ChatController.responder — tools que pide el modelo", () => {
+  /** La parte de la tool en el mensaje guardado del asistente. */
+  const parteDeLaTool = (mensaje: AsistenteUIMessage, nombre: string) =>
+    mensaje.parts.find((parte) => parte.type === `tool-${nombre}`) as { state: string; output?: unknown } | undefined;
+
+  it("el modelo pide registrar un gasto: la tool lo guarda en la base y su resultado queda en la respuesta", async () => {
+    const { modelo, llamadas } = modeloQueLlamaTool("registrar_movimiento", {
+      tipo: "gasto",
+      monto: 5000,
+      moneda: "ARS",
+      categoria: "supermercado",
+      medioDePago: "debito",
+      descripcion: "Súper",
+    });
+    const { usuario, conversaciones, controller } = await usuarioConChat({ crearModelo: () => modelo });
+    const id = randomUUID();
+
+    await conversar(controller, id, "Gasté 5000 en el súper con débito");
+
+    const [, respuesta] = await mensajesGuardados(conversaciones, id);
+    expect(parteDeLaTool(respuesta, "registrar_movimiento")).toMatchObject({
+      state: "output-available",
+      output: { ok: true, movimiento: { monto: 5000, categoria: "supermercado", montoEnPesos: 5000 } },
+    });
+    expect(llamadas()).toBe(2); // pidió la tool y, con su resultado, respondió
+    const guardados = await new MovimientosModel(usuario.navegador.crearCliente).listar({
+      desde: "2000-01-01",
+      hasta: "2100-12-31",
+    });
+    expect(guardados).toHaveLength(1);
+  });
+
+  it("si el modelo manda datos que no pasan el inputSchema, la tool no se ejecuta y no se guarda nada", async () => {
+    const { modelo } = modeloQueLlamaTool("registrar_movimiento", {
+      tipo: "gasto",
+      monto: -5,
+      moneda: "ARS",
+      categoria: "supermercado",
+      medioDePago: "debito",
+      descripcion: "Súper",
+    });
+    const { usuario, conversaciones, controller } = await usuarioConChat({ crearModelo: () => modelo });
+    const id = randomUUID();
+
+    await conversar(controller, id, "Gasté -5");
+
+    const [, respuesta] = await mensajesGuardados(conversaciones, id);
+    expect(parteDeLaTool(respuesta, "registrar_movimiento")?.state).toBe("output-error");
+    const guardados = await new MovimientosModel(usuario.navegador.crearCliente).listar({
+      desde: "2000-01-01",
+      hasta: "2100-12-31",
+    });
+    expect(guardados).toEqual([]);
+  });
+
+  it("si la tool falla por dentro (ej. se cae la base), devuelve un fallo en vez de romper la respuesta", async () => {
+    const { modelo } = modeloQueLlamaTool("registrar_movimiento", {
+      tipo: "gasto",
+      monto: 5000,
+      moneda: "ARS",
+      categoria: "supermercado",
+      medioDePago: "debito",
+      descripcion: "Súper",
+    });
+    const baseCaida = { registrar: () => Promise.reject(new Error("connection refused")) } as unknown as MovimientosModel;
+    const { conversaciones, controller } = await usuarioConChat({
+      crearModelo: () => modelo,
+      movimientos: () => new MovimientosController(() => baseCaida),
+    });
+    const id = randomUUID();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    const eventos = await conversar(controller, id, "Gasté 5000 en el súper con débito");
+
+    expect(codigoDelError(eventos)).toBeUndefined(); // la respuesta no se corta
+    const [, respuesta] = await mensajesGuardados(conversaciones, id);
+    expect(parteDeLaTool(respuesta, "registrar_movimiento")).toMatchObject({
+      state: "output-available",
+      output: { ok: false, motivo: "error_interno" },
+    });
+    vi.restoreAllMocks();
+  });
+});
+
+describe("ChatController.responder — límite de uso", () => {
+  it("con el límite por minuto alcanzado corta con «limite_por_minuto» y no guarda el mensaje", async () => {
+    const { conversaciones, controller } = await usuarioConChat({
+      crearModelo: () => modeloQueResponde("Ok."),
+      limites: { porMinuto: 2, porDia: 100 },
+    });
+    const id = randomUUID();
+    await conversar(controller, id, "Uno");
+    await conversar(controller, id, "Dos");
+
+    await expect(conversar(controller, id, "Tres")).rejects.toMatchObject({
+      constructor: ErrorDeAplicacion,
+      codigo: "limite_por_minuto",
+    });
+    expect(await conversaciones.mensajes(id)).toHaveLength(4); // dos preguntas y dos respuestas, sin la tercera
+  });
+
+  it("con el límite por día alcanzado corta con «limite_por_dia»", async () => {
+    const { controller } = await usuarioConChat({
+      crearModelo: () => modeloQueResponde("Ok."),
+      limites: { porMinuto: 1000, porDia: 2 },
+    });
+    const id = randomUUID();
+    await conversar(controller, id, "Uno");
+    await conversar(controller, id, "Dos");
+
+    await expect(conversar(controller, id, "Tres")).rejects.toMatchObject({
+      constructor: ErrorDeAplicacion,
+      codigo: "limite_por_dia",
+    });
   });
 });

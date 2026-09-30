@@ -1,6 +1,7 @@
 import "server-only";
 import { tool } from "ai";
 import { movimientosController, type MovimientosController } from "@/backend/controllers/movimientos.controller";
+import { ejecutarSinLanzar } from "./ejecutarSinLanzar";
 import { EntradaBorrarMovimientoSchema } from "./validacionTools";
 
 /** La tool borrar_movimiento: borra un movimiento de la persona por su id, después de confirmarlo con ella. */
@@ -10,6 +11,6 @@ export function crearToolBorrarMovimiento(movimientos: MovimientosController = m
       "Borra un movimiento de la persona por su id (sacalo de consultar_movimientos). Antes de borrar, confirmá " +
       "con la persona cuál es (descripción, monto y fecha).",
     inputSchema: EntradaBorrarMovimientoSchema,
-    execute: ({ id }) => movimientos.borrar(id),
+    execute: ejecutarSinLanzar("borrar_movimiento", ({ id }) => movimientos.borrar(id)),
   });
 }

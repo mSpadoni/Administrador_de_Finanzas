@@ -35,7 +35,9 @@ export const EntradaRegistrarMovimientoSchema = z.object({
     .describe(
       `Gastos: ${CATEGORIAS.gasto.join(", ")}. Ingresos: ${CATEGORIAS.ingreso.join(", ")}. Solo si lo que compró la define sin dudas; si es ambigua (ej. "hot dogs"), preguntá. "otros" es solo para lo que no encaja en ninguna, no para salir del paso.`
     ),
-  medioDePago: z.enum(MEDIOS_DE_PAGO).describe("Nunca lo asumas: si la persona no lo dijo, preguntáselo antes de registrar."),
+  medioDePago: z
+    .enum(MEDIOS_DE_PAGO)
+    .describe("Nunca lo asumas: si la persona no lo dijo, preguntáselo antes de registrar."),
   descripcion: z.string().describe("Corta, en palabras de la persona (ej. 'Súper Coto', 'Sueldo de septiembre')."),
   fecha: FechaSchema.optional().describe("El día del movimiento (AAAA-MM-DD). Sin valor: hoy."),
   tipoDeDolar: z

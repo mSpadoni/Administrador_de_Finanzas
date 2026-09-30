@@ -1,6 +1,7 @@
 import "server-only";
 import { tool } from "ai";
 import { movimientosController, type MovimientosController } from "@/backend/controllers/movimientos.controller";
+import { ejecutarSinLanzar } from "./ejecutarSinLanzar";
 import { EntradaRegistrarMovimientoSchema } from "./validacionTools";
 
 /** La tool registrar_movimiento: el asistente guarda un gasto o un ingreso de la persona. */
@@ -12,6 +13,6 @@ export function crearToolRegistrarMovimiento(movimientos: MovimientosController 
       "compra en cuotas es un solo gasto por el total. Si falta un dato que la persona no dijo (el monto, si fue " +
       "gasto o ingreso, el medio de pago, o la categoría cuando es ambigua), preguntalo antes de registrar: no lo asumas.",
     inputSchema: EntradaRegistrarMovimientoSchema,
-    execute: (entrada) => movimientos.registrar(entrada),
+    execute: ejecutarSinLanzar("registrar_movimiento", (entrada) => movimientos.registrar(entrada)),
   });
 }

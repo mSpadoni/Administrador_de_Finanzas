@@ -4,7 +4,7 @@ import { MockLanguageModelV4, simulateReadableStream } from "ai/test";
 // Modelos de lenguaje de prueba para probar NUESTRA orquestación del chat (guardar, límites, errores, timeout,
 // streaming, historial) sin depender de internet ni de lo que decida un LLM real. Usan MockLanguageModelV4, el
 // doble oficial del AI SDK, que cumple el mismo contrato que un proveedor real (OpenAI).
-// La conducta del modelo real (qué tool elige) se prueba aparte, en externos/.
+// La conducta del modelo real (qué tool elige) no se prueba: depende del LLM y no es determinista.
 
 const USO = {
   inputTokens: { total: 120, noCache: 120, cacheRead: 0, cacheWrite: 0 },
@@ -33,6 +33,38 @@ export function modeloQueResponde(texto: string) {
       }),
     }),
   });
+}
+
+/**
+ * Un modelo que primero pide una tool (`nombre` con `entrada`) y, cuando le llega el resultado, responde `textoFinal`.
+ * Así se prueba el camino completo: el SDK valida la entrada con el inputSchema, ejecuta la tool, guarda su resultado en
+ * el mensaje y vuelve a llamar al modelo. `llamadas` cuenta cuántas veces se le pidió respuesta.
+ */
+export function modeloQueLlamaTool(nombre: string, entrada: unknown, textoFinal = "Listo.") {
+  let llamadas = 0;
+  const modelo = new MockLanguageModelV4({
+    modelId: "modelo-de-prueba",
+    doStream: async () => {
+      llamadas += 1;
+      if (llamadas > 1) return (await modeloQueResponde(textoFinal).doStream({ prompt: [] })) as never;
+      return {
+        stream: simulateReadableStream({
+          initialDelayInMs: null,
+          chunkDelayInMs: 0,
+          chunks: [
+            { type: "stream-start" as const, warnings: [] },
+            { type: "tool-call" as const, toolCallId: "llamada-1", toolName: nombre, input: JSON.stringify(entrada) },
+            {
+              type: "finish" as const,
+              usage: USO,
+              finishReason: { unified: "tool-calls" as const, raw: "tool_calls" },
+            },
+          ],
+        }),
+      };
+    },
+  });
+  return { modelo, llamadas: () => llamadas };
 }
 
 /** Un error real de la API de OpenAI (la misma clase que arma el SDK al recibir una respuesta con error). */
