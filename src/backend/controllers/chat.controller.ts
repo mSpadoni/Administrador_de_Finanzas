@@ -1,6 +1,5 @@
 import "server-only";
 import { safeValidateUIMessages, type InferUIMessageChunk, type LanguageModel } from "ai";
-import { crearModeloOpenAI } from "@/backend/lib/openai";
 import { registrarError } from "@/backend/lib/registro";
 import { LIMITES_DE_USO, limiteAlcanzado, type LimitesDeUso } from "@/backend/models/dominio/limiteDeUso";
 import { conversacionesModel, type ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
@@ -10,7 +9,7 @@ import { crearToolsAsistente, type ToolsDelAsistente } from "@/backend/tools/asi
 import { Agente } from "@/backend/asistente/agente";
 import { MAX_MENSAJES_CONTEXTO, type AsistenteUIMessage } from "@/shared/chat";
 import { tituloDesde } from "@/shared/conversaciones";
-import { lanzarErrorDelModelo, lanzarLimiteAlcanzado, lanzarPorFalloAlCrearConversacion } from "./erroresControllers";
+import { lanzarLimiteAlcanzado, lanzarPorFalloAlCrearConversacion } from "./erroresControllers";
 import { movimientosServicio, type MovimientosServicio } from "@/backend/servicios/movimientos.servicio";
 import { validarPedidoDeChat, type PedidoDeChat } from "./validacionControllers";
 
@@ -19,7 +18,7 @@ import { validarPedidoDeChat, type PedidoDeChat } from "./validacionControllers"
  * Todas llevan `?`: son opcionales y, si no se pasan, se usan las reales.
  */
 type Dependencias = {
-  /** Crea el modelo de lenguaje (OpenAI): distinto de los modelos de datos, que hablan con la base. */
+  /** El modelo de lenguaje que usa el agente. Sin valor, el de la app (backend/lib/openai.ts); los tests pasan uno falso. */
   crearModelo?: () => LanguageModel;
   modeloConversaciones?: () => ConversacionesModel;
   /** La cuota de uso del asistente (cuántos mensajes por minuto y por día). */
@@ -41,7 +40,6 @@ type Dependencias = {
  * Lo del LLM (prompt, tools, streaming) está en el agente; lo que ve el usuario si falla, en backend/asistente/erroresAsistente.ts.
  */
 export class ChatController {
-  private readonly crearModelo: () => LanguageModel;
   private readonly modeloConversaciones: () => ConversacionesModel;
   private readonly modeloUso: () => UsoModel;
   private readonly movimientos: () => MovimientosServicio;
@@ -51,7 +49,7 @@ export class ChatController {
   // Recibe UN objeto y lo desestructura en el momento: cada propiedad con su valor por defecto (`= ...`).
   // `: Dependencias = {}` → el objeto entero es opcional: `new ChatController()` usa todo lo real.
   constructor({
-    crearModelo = () => crearModeloOpenAI(),
+    crearModelo,
     modeloConversaciones = () => conversacionesModel,
     modeloUso = () => usoModel,
     movimientos = () => movimientosServicio,
@@ -60,12 +58,11 @@ export class ChatController {
     temperatura,
     limites = LIMITES_DE_USO,
   }: Dependencias = {}) {
-    this.crearModelo = crearModelo;
     this.modeloConversaciones = modeloConversaciones;
     this.modeloUso = modeloUso;
     this.movimientos = movimientos;
     // El agente se configura una vez (timeout y ritmo del texto); sin valores, usa los suyos.
-    this.agente = new Agente({ timeoutMs, pausaEntrePalabrasMs, temperatura });
+    this.agente = new Agente({ modelo: crearModelo, timeoutMs, pausaEntrePalabrasMs, temperatura });
     this.limites = limites;
   }
 
@@ -79,7 +76,7 @@ export class ChatController {
     // Lo que manda el navegador se valida primero: si no es válido, se corta acá (pedido_invalido).
     const pedido = validarPedidoDeChat(cuerpo);
     // El modelo de lenguaje primero: si falta configuración (ej. OPENAI_API_KEY), se corta antes de guardar nada.
-    const modelo = this.crearModeloOCortar();
+    this.agente.verificarConfiguracion();
     await this.verificarLimiteDeUso();
     await this.asegurarConversacion(pedido);
     const tools = crearToolsAsistente({ movimientos: this.movimientos() });
@@ -87,20 +84,10 @@ export class ChatController {
     await this.modeloConversaciones().agregarMensajes(pedido.conversacionId, [pedido.mensaje]);
 
     return this.agente.responder({
-      modelo,
       mensajes: conversacion,
       tools,
       alTerminar: (respuesta) => this.guardarRespuesta(pedido.conversacionId, respuesta),
     });
-  }
-
-  /** Crea el modelo de lenguaje; si no se puede, corta con el mensaje de siempre en vez de un 500 genérico. */
-  private crearModeloOCortar(): LanguageModel {
-    try {
-      return this.crearModelo();
-    } catch (error) {
-      return lanzarErrorDelModelo(error);
-    }
   }
 
   /** El límite de uso: cada mensaje gasta crédito. Se revisa antes de guardar nada. */

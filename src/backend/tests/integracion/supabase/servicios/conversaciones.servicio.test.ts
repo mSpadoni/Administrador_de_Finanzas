@@ -79,8 +79,7 @@ describe("ConversacionesServicio.retitular", () => {
     const { modelo, pedidos } = modeloQueGenera(titulo);
     const servicio = new ConversacionesServicio(
       () => model,
-      new Titulador(),
-      () => modelo,
+      new Titulador({ modelo: () => modelo }),
       () => new UsoModel(usuario.navegador.crearCliente)
     );
     const id = randomUUID();
@@ -123,8 +122,7 @@ describe("ConversacionesServicio.retitular", () => {
     const model = new ConversacionesModel(usuario.navegador.crearCliente);
     const servicio = new ConversacionesServicio(
       () => model,
-      new Titulador(),
-      () => modeloQueFalla(new Error("sin saldo")),
+      new Titulador({ modelo: () => modeloQueFalla(new Error("sin saldo")) }),
       () => new UsoModel(usuario.navegador.crearCliente)
     );
     const id = randomUUID();
@@ -141,10 +139,11 @@ describe("ConversacionesServicio.retitular", () => {
     const model = new ConversacionesModel(usuario.navegador.crearCliente);
     const servicio = new ConversacionesServicio(
       () => model,
-      new Titulador(),
-      () => {
-        throw new Error("Falta OPENAI_API_KEY");
-      },
+      new Titulador({
+        modelo: () => {
+          throw new Error("Falta OPENAI_API_KEY");
+        },
+      }),
       () => new UsoModel(usuario.navegador.crearCliente)
     );
     const id = randomUUID();
@@ -160,8 +159,7 @@ describe("ConversacionesServicio.retitular", () => {
     const modelo = modeloQueGenera("Robado");
     const servicioDelIntruso = new ConversacionesServicio(
       () => new ConversacionesModel(intruso.navegador.crearCliente),
-      new Titulador(),
-      () => modelo.modelo,
+      new Titulador({ modelo: () => modelo.modelo }),
       () => new UsoModel(intruso.navegador.crearCliente)
     );
 
@@ -179,8 +177,7 @@ describe("ConversacionesServicio.retitular — cuota de títulos", () => {
     const { modelo, pedidos } = modeloQueGenera("Título nuevo");
     const servicio = new ConversacionesServicio(
       () => model,
-      new Titulador(),
-      () => modelo,
+      new Titulador({ modelo: () => modelo }),
       () => new UsoModel(usuario.navegador.crearCliente),
       { porMinuto: 1, porDia: 100 }
     );

@@ -69,6 +69,10 @@ sesión) y `src/app/conversacion/actions.ts` (leer, borrar y titular una convers
   `consumir_cuota` de la base, en un solo paso y con un candado por persona, sobre la tabla `uso_del_asistente`, que la
   persona no puede leer ni borrar. Así no se recupera cuota borrando conversaciones y varios pedidos a la vez no se pasan
   del límite (`UsoModel`).
+- **Modelo de lenguaje:** se crea en un solo lugar, `lib/openai.ts` (`modeloDeOpenAI`): la primera vez que se pide, con
+  las variables de entorno, y después se reusa. Lo piden solo el agente y el titulador (`asistente/`); controllers y
+  servicios no saben de OpenAI. El controller del chat llama a `agente.verificarConfiguracion()` antes de guardar nada,
+  así una clave faltante corta el pedido con un error claro.
 - **Respuestas firmadas:** la persona puede insertar filas en `mensajes` de sus conversaciones (el servidor guarda con su
   sesión). Para que no pueda inventarle al modelo respuestas «del asistente», el servidor las firma con una clave que solo
   conoce él (`FIRMA_DE_MENSAJES`, HMAC sobre el contenido) y, al armar lo que ve el modelo, descarta las que no tienen firma

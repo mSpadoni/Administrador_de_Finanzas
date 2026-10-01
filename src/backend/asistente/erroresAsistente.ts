@@ -77,3 +77,8 @@ export function traducirError(error: unknown): ErrorDeAplicacion {
   const motivo = RECONOCEDORES.find((reconocedor) => reconocedor.coincide(causa))?.motivo ?? "noDisponible";
   return errorDelAsistente(motivo, error);
 }
+
+/** El modelo no se pudo crear (ej. falta OPENAI_API_KEY): se corta con el error traducido, antes de guardar nada. */
+export function lanzarErrorDeConfiguracion(error: unknown): never {
+  throw traducirError(error);
+}

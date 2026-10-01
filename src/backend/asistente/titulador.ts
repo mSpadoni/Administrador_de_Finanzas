@@ -1,5 +1,6 @@
 import "server-only";
 import { generateText, type LanguageModel } from "ai";
+import { modeloDeOpenAI } from "@/backend/lib/openai";
 import { registrarError } from "@/backend/lib/registro";
 import { textoDe, type AsistenteUIMessage } from "@/shared/chat";
 import { MAX_CARACTERES_TITULO_DEL_ASISTENTE, recortarConPuntosSuspensivos } from "@/shared/conversaciones";
@@ -53,20 +54,32 @@ export function limpiarTitulo(texto: string): string | null {
 
 /** Ponerle título a una conversación con el modelo. Se configura una vez (cuánto esperar) y lo usan todas las conversaciones. */
 export class Titulador {
-  constructor(private readonly timeoutMs: number = TIMEOUT_DEL_TITULADOR_MS) {}
+  private readonly modelo: () => LanguageModel;
+  private readonly timeoutMs: number;
+
+  /**
+   * `modelo`: de dónde sale el modelo de lenguaje; sin valor, el de la app (backend/lib/openai.ts). Los tests pasan uno
+   * falso. `timeoutMs`: cuánto esperar el título.
+   */
+  constructor({
+    modelo = modeloDeOpenAI,
+    timeoutMs = TIMEOUT_DEL_TITULADOR_MS,
+  }: { modelo?: () => LanguageModel; timeoutMs?: number } = {}) {
+    this.modelo = modelo;
+    this.timeoutMs = timeoutMs;
+  }
 
   /**
    * El título que propone el modelo para la conversación, o `null` si no se pudo (el modelo falló, tardó de más o no
-   * dijo nada útil). `tituloActual` se le muestra para que lo mantenga si sigue valiendo.
+   * dijo nada útil, o no se pudo crear el modelo: falta la clave). `tituloActual` se le muestra para que lo mantenga si
+   * sigue valiendo. Ponerle título es un extra: nunca lanza.
    */
-  async proponer(pedido: {
-    modelo: LanguageModel;
-    tituloActual: string;
-    mensajes: AsistenteUIMessage[];
-  }): Promise<string | null> {
+  async proponer(pedido: { tituloActual: string; mensajes: AsistenteUIMessage[] }): Promise<string | null> {
+    const modelo = this.modeloOnull();
+    if (!modelo) return null;
     try {
       const { text } = await generateText({
-        model: pedido.modelo,
+        model: modelo,
         system: INSTRUCCIONES,
         prompt: armarPedidoDeTitulo(pedido.tituloActual, pedido.mensajes),
         maxOutputTokens: MAX_TOKENS_DEL_TITULO,
@@ -77,6 +90,16 @@ export class Titulador {
       return limpiarTitulo(text);
     } catch (error) {
       registrarError("titulador.proponer", error);
+      return null;
+    }
+  }
+
+  /** El modelo, o `null` si no se pudo crear (ej. falta la clave): el título es un extra y no corta nada. */
+  private modeloOnull(): LanguageModel | null {
+    try {
+      return this.modelo();
+    } catch (error) {
+      registrarError("titulador.crear_modelo", error);
       return null;
     }
   }

@@ -1,5 +1,4 @@
 import "server-only";
-import { traducirError } from "@/backend/asistente/erroresAsistente";
 import { ErrorDeAplicacion } from "@/backend/erroresBackend";
 import { ConversacionYaExisteError } from "@/backend/models/repositorios/erroresRepositorios";
 import type { LimiteAlcanzado } from "@/backend/models/dominio/limiteDeUso";
@@ -10,11 +9,6 @@ import type { LimiteAlcanzado } from "@/backend/models/dominio/limiteDeUso";
 /** Lo que manda el navegador no pasó su esquema: la ruta responde 400 (pedido_invalido). */
 export function lanzarPedidoInvalido(mensaje: string): never {
   throw new ErrorDeAplicacion("pedido_invalido", mensaje);
-}
-
-/** El modelo de lenguaje no se pudo crear (ej. falta OPENAI_API_KEY): se corta con el error traducido, sin guardar nada. */
-export function lanzarErrorDelModelo(error: unknown): never {
-  throw traducirError(error);
 }
 
 /** La persona ya llegó a su límite de mensajes (por minuto o por día). */

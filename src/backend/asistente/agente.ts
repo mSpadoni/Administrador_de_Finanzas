@@ -13,7 +13,8 @@ import { armarSystemPrompt } from "@/backend/asistente/systemPrompt";
 import { registrarError, registrarEvento } from "@/backend/lib/registro";
 import { hoyEnArgentina } from "@/backend/models/dominio/periodo";
 import type { ToolsDelAsistente } from "@/backend/tools/asistente.tools";
-import { traducirError } from "@/backend/asistente/erroresAsistente";
+import { lanzarErrorDeConfiguracion, traducirError } from "@/backend/asistente/erroresAsistente";
+import { modeloDeOpenAI } from "@/backend/lib/openai";
 import type { AsistenteUIMessage, MetadatosDeRespuesta } from "@/shared/chat";
 import { leerErrorPublico } from "@/shared/erroresShared";
 import { mensajesParaElModelo } from "./contexto";
@@ -43,6 +44,8 @@ const TIMEOUT_DEL_AGENTE_MS = 45_000;
 
 /** Cómo responde el asistente: se configura una vez, al crear el agente. */
 type ConfiguracionDelAgente = {
+  /** De dónde sale el modelo de lenguaje. Sin valor, el de la app (backend/lib/openai.ts); los tests pasan uno falso. */
+  modelo?: () => LanguageModel;
   /** Cuánto puede tardar una respuesta completa (ms). */
   timeoutMs?: number;
   /** Pausa entre palabras al mostrar la respuesta (ms). 0 = tan rápido como llega del modelo. */
@@ -51,9 +54,8 @@ type ConfiguracionDelAgente = {
   temperatura?: number;
 };
 
-/** Lo que cambia en cada respuesta: el modelo, la conversación, las tools del pedido y qué hacer al terminar. */
+/** Lo que cambia en cada respuesta: la conversación, las tools del pedido y qué hacer al terminar. */
 type PedidoAlAgente = {
-  modelo: LanguageModel;
   /** La conversación hasta ahora, con el mensaje nuevo del usuario al final. */
   mensajes: AsistenteUIMessage[];
   tools: ToolsDelAsistente;
@@ -71,9 +73,7 @@ function nombreDelModelo(modelo: LanguageModel): string {
  * cada tool: lo que se le pasó (montos, descripciones, fechas) son datos de la persona y no van al log.
  */
 function registrarRespuesta(pasos: StepResult<ToolsDelAsistente>[], uso: LanguageModelUsage, inicio: number): void {
-  const herramientas = pasos.flatMap((paso) =>
-    paso.toolCalls.map((llamada) => llamada.toolName)
-  );
+  const herramientas = pasos.flatMap((paso) => paso.toolCalls.map((llamada) => llamada.toolName));
   registrarEvento("chat.respuesta", {
     ms: Date.now() - inicio,
     pasos: pasos.length,
@@ -88,18 +88,33 @@ function registrarRespuesta(pasos: StepResult<ToolsDelAsistente>[], uso: Languag
  * no sabe de conversaciones ni de la base: recibe los mensajes y avisa cuando termina la respuesta.
  */
 export class Agente {
+  private readonly modelo: () => LanguageModel;
   private readonly timeoutMs: number;
   private readonly pausaEntrePalabrasMs: number;
   private readonly temperatura: number | undefined;
 
   constructor({
+    modelo = modeloDeOpenAI,
     timeoutMs = TIMEOUT_DEL_AGENTE_MS,
     pausaEntrePalabrasMs = PAUSA_ENTRE_PALABRAS_MS,
     temperatura,
   }: ConfiguracionDelAgente = {}) {
+    this.modelo = modelo;
     this.timeoutMs = timeoutMs;
     this.pausaEntrePalabrasMs = pausaEntrePalabrasMs;
     this.temperatura = temperatura;
+  }
+
+  /**
+   * Comprueba que el modelo se pueda crear (ej. que esté la clave de OpenAI). Se llama antes de guardar nada: si falta
+   * configuración, el pedido se corta con un error claro en vez de quedar a medias.
+   */
+  verificarConfiguracion(): void {
+    try {
+      this.modelo();
+    } catch (error) {
+      lanzarErrorDeConfiguracion(error);
+    }
   }
 
   /**
@@ -109,12 +124,13 @@ export class Agente {
    */
   async responder(pedido: PedidoAlAgente) {
     const inicio = Date.now();
-    const respuestaDelModelo = await this.pedirAlModelo(pedido, inicio);
-    return this.comoStreamDeMensajes(respuestaDelModelo, pedido, inicio);
+    const modelo = this.modelo();
+    const respuestaDelModelo = await this.pedirAlModelo(modelo, pedido, inicio);
+    return this.comoStreamDeMensajes(respuestaDelModelo, modelo, pedido, inicio);
   }
 
   /** Paso 1: le manda al modelo la conversación y las tools, con los límites (pasos, tokens, tiempo) configurados. */
-  private async pedirAlModelo({ modelo, mensajes, tools }: PedidoAlAgente, inicio: number) {
+  private async pedirAlModelo(modelo: LanguageModel, { mensajes, tools }: PedidoAlAgente, inicio: number) {
     return streamText({
       model: modelo,
       system: armarSystemPrompt(hoyEnArgentina(new Date())),
@@ -141,7 +157,8 @@ export class Agente {
   /** Paso 2: convierte lo que responde el modelo en mensajes para el navegador, con sus errores traducidos. */
   private comoStreamDeMensajes(
     respuestaDelModelo: Awaited<ReturnType<Agente["pedirAlModelo"]>>,
-    { modelo, mensajes, alTerminar }: PedidoAlAgente,
+    modelo: LanguageModel,
+    { mensajes, alTerminar }: PedidoAlAgente,
     inicio: number
   ) {
     const medir = medidorDeRespuesta(nombreDelModelo(modelo), inicio);

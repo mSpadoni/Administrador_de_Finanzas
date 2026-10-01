@@ -15,8 +15,7 @@ afterEach(() => vi.restoreAllMocks());
 /** Le pide una respuesta al agente con un modelo que falla con `error` y devuelve el error que llegó en el stream. */
 async function errorEnElStream(error: unknown) {
   const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
-  const stream = await new Agente({ pausaEntrePalabrasMs: 0 }).responder({
-    modelo: modeloQueFalla(error),
+  const stream = await new Agente({ pausaEntrePalabrasMs: 0, modelo: () => modeloQueFalla(error) }).responder({
     mensajes: [{ id: randomUUID(), role: "user", parts: [{ type: "text", text: "Hola" }] }],
     tools: crearToolsAsistente(),
     alTerminar: async () => undefined,

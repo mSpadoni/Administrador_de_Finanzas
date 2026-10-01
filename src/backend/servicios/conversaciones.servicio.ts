@@ -1,15 +1,12 @@
 import "server-only";
-import type { LanguageModel } from "ai";
 import type { AsistenteUIMessage } from "@/shared/chat";
 import {
   MAX_MENSAJES_PARA_TITULAR,
   titulador as tituladorDeLaApp,
   type Titulador,
 } from "@/backend/asistente/titulador";
-import { crearModeloOpenAI } from "@/backend/lib/openai";
 import { LIMITES_DE_USO, type LimitesDeUso } from "@/backend/models/dominio/limiteDeUso";
 import { usoModel, type UsoModel } from "@/backend/models/repositorios/uso.model";
-import { registrarError } from "@/backend/lib/registro";
 import {
   conversacionesModel,
   type ConversacionesModel,
@@ -31,9 +28,8 @@ export class ConversacionesServicio {
   // Convención de controllers y servicios: el modelo se llama `modelo<Entidad>` (modeloConversaciones, modeloMovimientos, modeloAuth).
   constructor(
     private readonly modeloConversaciones: () => ConversacionesModel = () => conversacionesModel,
+    /** Le pone título a las conversaciones con el modelo de lenguaje (los tests le pasan uno con un modelo de prueba). */
     private readonly titulador: Titulador = tituladorDeLaApp,
-    /** Crea el modelo de lenguaje con el que se pone título (los tests le pasan uno de prueba). */
-    private readonly crearModelo: () => LanguageModel = () => crearModeloOpenAI(),
     /** La cuota de uso: ponerle título también gasta crédito, así que tiene su propio límite. */
     private readonly modeloUso: () => UsoModel = () => usoModel,
     private readonly limites: LimitesDeUso = LIMITES_DE_USO
@@ -65,11 +61,9 @@ export class ConversacionesServicio {
     if (!paraTitular) return null;
     // Si se pasó de la cuota de títulos, se queda el que había: el título es un extra.
     if (await this.modeloUso().consumir("titulo", this.limites)) return null;
-    const modelo = this.crearModeloParaTitular();
-    if (!modelo) return null;
 
     const { conversacion, mensajes } = paraTitular;
-    const titulo = await this.titulador.proponer({ modelo, tituloActual: conversacion.titulo, mensajes });
+    const titulo = await this.titulador.proponer({ tituloActual: conversacion.titulo, mensajes });
     if (!titulo) return null;
     if (titulo !== conversacion.titulo) await this.modeloConversaciones().actualizarTitulo(id, titulo);
     return titulo;
@@ -85,16 +79,6 @@ export class ConversacionesServicio {
     const mensajes = await this.modeloConversaciones().mensajes(id, MAX_MENSAJES_PARA_TITULAR);
     if (!mensajes.some((mensaje) => mensaje.role === "assistant")) return null;
     return { conversacion, mensajes };
-  }
-
-  /** El modelo con el que se pone el título, o `null` si no se pudo crear (ej. falta la clave): el título es un extra. */
-  private crearModeloParaTitular(): LanguageModel | null {
-    try {
-      return this.crearModelo();
-    } catch (error) {
-      registrarError("titulador.crear_modelo", error);
-      return null;
-    }
   }
 
   /** Borra una conversación del usuario. Devuelve false si no existía o no era suya. */
