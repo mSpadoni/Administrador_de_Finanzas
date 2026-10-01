@@ -34,6 +34,7 @@ export default defineConfig({
       OPENAI_API_KEY: "sk-test-invalida",
       OPENAI_BASE_URL: "http://127.0.0.1:9/v1",
       OPENAI_MODEL: "modelo-de-prueba",
+      FIRMA_DE_MENSAJES: "clave-de-firma-solo-para-los-tests-0123456789",
     },
     projects: [
       {

@@ -28,6 +28,7 @@ function conversacionesFalsas(cambios: Partial<Record<keyof ConversacionesModel,
   const modelo = {
     obtener: async () => ({ id: "c", titulo: "t", creado_en: "", actualizado_en: "" }),
     mensajes: async () => [],
+    mensajesConfiables: async () => [],
     agregarMensajes: async (_id: string, mensajes: AsistenteUIMessage[]) => void guardados.push(...mensajes),
     ...cambios,
   } as unknown as ConversacionesModel;

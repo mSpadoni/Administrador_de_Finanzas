@@ -1,4 +1,9 @@
-import { VariablesDeOpenAISchema, VariablesDeSupabaseSchema, validarVariablesDeEntorno } from "./validacionLib";
+import {
+  VariablesDeFirmaSchema,
+  VariablesDeOpenAISchema,
+  VariablesDeSupabaseSchema,
+  validarVariablesDeEntorno,
+} from "./validacionLib";
 
 // Variables de entorno, en un solo lugar y validadas con Zod (ver .env.example y validacionLib.ts).
 // - Se leen al usarlas, no al importar el módulo: los tests pueden cambiarlas y una variable que falta de un servicio
@@ -23,4 +28,10 @@ export function envOpenAI(): { apiKey: string; baseURL: string; modelo: string }
     baseURL: variables.OPENAI_BASE_URL ?? URL_API_OPENAI_POR_DEFECTO,
     modelo: variables.OPENAI_MODEL ?? MODELO_OPENAI_POR_DEFECTO,
   };
+}
+
+/** La clave secreta con la que el servidor firma las respuestas del asistente (ver backend/lib/firma.ts). */
+export function envFirma(): { clave: string } {
+  const variables = validarVariablesDeEntorno("la firma de mensajes", VariablesDeFirmaSchema, process.env);
+  return { clave: variables.FIRMA_DE_MENSAJES };
 }

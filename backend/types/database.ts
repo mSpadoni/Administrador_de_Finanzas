@@ -31,6 +31,7 @@ export type Database = {
         Row: {
           conversacion_id: string;
           creado_en: string;
+          firma: string | null;
           id: string;
           partes: NonNullable<Json>;
           rol: string;
@@ -38,6 +39,7 @@ export type Database = {
         Insert: {
           conversacion_id: string;
           creado_en?: string;
+          firma?: string | null;
           id: string;
           partes: NonNullable<Json>;
           rol: string;
@@ -45,6 +47,7 @@ export type Database = {
         Update: {
           conversacion_id?: string;
           creado_en?: string;
+          firma?: string | null;
           id?: string;
           partes?: NonNullable<Json>;
           rol?: string;

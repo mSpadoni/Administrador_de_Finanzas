@@ -1,12 +1,12 @@
 import "server-only";
-import type { InferUIMessageChunk, LanguageModel } from "ai";
+import { safeValidateUIMessages, type InferUIMessageChunk, type LanguageModel } from "ai";
 import { crearModeloOpenAI } from "@/backend/lib/openai";
 import { registrarError } from "@/backend/lib/registro";
 import { LIMITES_DE_USO, limiteAlcanzado, type LimitesDeUso } from "@/backend/models/dominio/limiteDeUso";
 import { conversacionesModel, type ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
 import { usoModel, type UsoModel } from "@/backend/models/repositorios/uso.model";
 import { ConversacionYaExisteError } from "@/backend/models/repositorios/erroresRepositorios";
-import { crearToolsAsistente } from "@/backend/tools/asistente.tools";
+import { crearToolsAsistente, type ToolsDelAsistente } from "@/backend/tools/asistente.tools";
 import { Agente } from "@/backend/asistente/agente";
 import { MAX_MENSAJES_CONTEXTO, type AsistenteUIMessage } from "@/shared/chat";
 import { tituloDesde } from "@/shared/conversaciones";
@@ -82,13 +82,14 @@ export class ChatController {
     const modelo = this.crearModeloOCortar();
     await this.verificarLimiteDeUso();
     await this.asegurarConversacion(pedido);
-    const conversacion = await this.conversacionParaElModelo(pedido);
+    const tools = crearToolsAsistente({ movimientos: this.movimientos() });
+    const conversacion = await this.conversacionParaElModelo(pedido, tools);
     await this.modeloConversaciones().agregarMensajes(pedido.conversacionId, [pedido.mensaje]);
 
     return this.agente.responder({
       modelo,
       mensajes: conversacion,
-      tools: crearToolsAsistente({ movimientos: this.movimientos() }),
+      tools,
       alTerminar: (respuesta) => this.guardarRespuesta(pedido.conversacionId, respuesta),
     });
   }
@@ -135,9 +136,15 @@ export class ChatController {
    * La conversación que ve el modelo: lo guardado y el mensaje nuevo al final. En un reintento el mensaje ya estaba
    * guardado: queda en su lugar, con lo que el asistente haya alcanzado a responder después. Así el modelo no lo lee como
    * un pedido nuevo ni repite lo que ya hizo (por ejemplo, registrar dos veces el mismo gasto).
+   * Solo va lo confiable: las respuestas del asistente que escribió el servidor (firmadas) y, de todo, lo que tiene la forma
+   * que espera el AI SDK.
    */
-  private async conversacionParaElModelo({ conversacionId, mensaje }: PedidoDeChat): Promise<AsistenteUIMessage[]> {
-    const guardados = await this.modeloConversaciones().mensajes(conversacionId, MAX_MENSAJES_CONTEXTO);
+  private async conversacionParaElModelo(
+    { conversacionId, mensaje }: PedidoDeChat,
+    tools: ToolsDelAsistente
+  ): Promise<AsistenteUIMessage[]> {
+    const confiables = await this.modeloConversaciones().mensajesConfiables(conversacionId, MAX_MENSAJES_CONTEXTO);
+    const guardados = await soloLosBienFormados(confiables, tools);
     return guardados.some((guardado) => guardado.id === mensaje.id) ? guardados : [...guardados, mensaje];
   }
 
@@ -149,6 +156,20 @@ export class ChatController {
         registrarError("chat.guardar_respuesta", error);
       });
   }
+}
+
+/**
+ * Los mensajes con la forma que espera el AI SDK (texto, y cada tool con datos que pasan su inputSchema). Un mensaje roto
+ * (una fila vieja o cargada a mano) no le llega al modelo, en vez de romper la respuesta entera.
+ */
+async function soloLosBienFormados(
+  mensajes: AsistenteUIMessage[],
+  tools: ToolsDelAsistente
+): Promise<AsistenteUIMessage[]> {
+  const validos = await Promise.all(
+    mensajes.map(async (mensaje) => (await safeValidateUIMessages({ messages: [mensaje], tools })).success)
+  );
+  return mensajes.filter((_, indice) => validos[indice]);
 }
 
 /** Instancia única lista para usar desde la ruta /api/chat. */

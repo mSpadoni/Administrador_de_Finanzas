@@ -27,6 +27,13 @@ export const VariablesDeOpenAISchema = z.object({
   OPENAI_MODEL: opcional(z.string()),
 });
 
+/** La clave con la que el servidor firma las respuestas del asistente: secreta y larga (al menos 32 caracteres). */
+export const VariablesDeFirmaSchema = z.object({
+  FIRMA_DE_MENSAJES: requerida("FIRMA_DE_MENSAJES").pipe(
+    z.string().min(32, "FIRMA_DE_MENSAJES tiene que tener al menos 32 caracteres")
+  ),
+});
+
 /** Valida las variables de un servicio; si algo falla, un solo error con todos los problemas. */
 export function validarVariablesDeEntorno<T extends z.ZodType>(
   servicio: string,

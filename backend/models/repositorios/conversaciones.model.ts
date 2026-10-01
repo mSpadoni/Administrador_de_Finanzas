@@ -1,6 +1,7 @@
 import "server-only";
 import type { UIMessage } from "ai";
 import type { AsistenteUIMessage } from "@/shared/chat";
+import { firmaValida, firmar } from "@/backend/lib/firma";
 import { datosOError } from "@/backend/lib/supabase/consultas";
 import { crearClienteServidor, type ClienteSupabase } from "@/backend/lib/supabase/server";
 import type { Database, Json } from "@/backend/types/database";
@@ -40,6 +41,13 @@ const partesParaLaBase = (partes: UIMessage["parts"]): NonNullable<Json> => part
  */
 const partesDeLaFila = (json: Json): Partes => (Array.isArray(json) ? (json as unknown as Partes) : []);
 
+/** Una fila de la tabla mensajes como mensaje del AI SDK. */
+const aMensaje = (fila: { id: string; rol: string; partes: Json }): AsistenteUIMessage => ({
+  id: fila.id,
+  role: rolDeLaFila(fila.rol),
+  parts: partesDeLaFila(fila.partes),
+});
+
 /** Inserta los mensajes de la conversación (los que ya estaban, por id, se dejan como están). */
 async function guardarMensajes(
   supabase: ClienteSupabase,
@@ -51,13 +59,19 @@ async function guardarMensajes(
   // upsert con ignoreDuplicates = "insertá, y si ya existe ese id, no hagas nada": al reintentar después de un
   // error, el navegador vuelve a mandar el mismo mensaje del usuario y no tiene que quedar dos veces.
   const guardado = await supabase.from("mensajes").upsert(
-    mensajes.map((mensaje, i) => ({
-      id: mensaje.id,
-      conversacion_id: conversacionId,
-      rol: rolDelMensaje(mensaje.role),
-      partes: partesParaLaBase(mensaje.parts),
-      creado_en: new Date(ahora + i).toISOString(),
-    })),
+    mensajes.map((mensaje, i) => {
+      const rol = rolDelMensaje(mensaje.role);
+      const partes = partesParaLaBase(mensaje.parts);
+      return {
+        id: mensaje.id,
+        conversacion_id: conversacionId,
+        rol,
+        partes,
+        // Las respuestas del asistente van firmadas: así se distinguen de una fila que haya insertado la persona.
+        firma: rol === "asistente" ? firmar({ conversacionId, id: mensaje.id, rol, partes }) : null,
+        creado_en: new Date(ahora + i).toISOString(),
+      };
+    }),
     { onConflict: "conversacion_id,id", ignoreDuplicates: true }
   );
   datosOError(guardado, "No se pudieron guardar los mensajes");
@@ -125,22 +139,39 @@ export class ConversacionesModel {
    * en el formato del AI SDK: "usuario" → user y "asistente" → assistant.
    */
   async mensajes(conversacionId: string, limite = 200): Promise<AsistenteUIMessage[]> {
+    return (await this.leerFilas(conversacionId, limite)).map(aMensaje);
+  }
+
+  /**
+   * Los últimos `limite` mensajes que se le pueden mostrar al modelo: los de la persona y las respuestas del asistente que
+   * escribió el servidor (con firma válida). Una respuesta «del asistente» sin firma la insertó otra cosa (por ejemplo, la
+   * persona directo en la base, para hacerle creer al modelo algo que no pasó): se descarta.
+   */
+  async mensajesConfiables(conversacionId: string, limite = 200): Promise<AsistenteUIMessage[]> {
+    const filas = await this.leerFilas(conversacionId, limite);
+    return filas
+      .filter(
+        (fila) =>
+          fila.rol === "usuario" ||
+          firmaValida({ conversacionId, id: fila.id, rol: fila.rol, partes: fila.partes }, fila.firma)
+      )
+      .map(aMensaje);
+  }
+
+  /** Las últimas `limite` filas de mensajes de la conversación, en orden (la más vieja primero). */
+  private async leerFilas(conversacionId: string, limite: number) {
     const supabase = await this.crearCliente();
-    // Se piden los más nuevos primero (para quedarse con los últimos) y después se da vuelta la lista.
+    // Se piden las más nuevas primero (para quedarse con las últimas) y después se da vuelta la lista.
     const filas = datosOError(
       await supabase
         .from("mensajes")
-        .select("id, rol, partes")
+        .select("id, rol, partes, firma")
         .eq("conversacion_id", conversacionId)
         .order("creado_en", { ascending: false })
         .limit(limite),
       "No se pudieron leer los mensajes"
     );
-    return filas.reverse().map((fila): AsistenteUIMessage => ({
-      id: fila.id,
-      role: rolDeLaFila(fila.rol),
-      parts: partesDeLaFila(fila.partes),
-    }));
+    return filas.reverse();
   }
 
   /** Guarda mensajes en la conversación y la marca como la más reciente. */
