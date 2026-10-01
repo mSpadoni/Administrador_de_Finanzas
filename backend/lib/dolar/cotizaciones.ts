@@ -2,7 +2,7 @@ import "server-only";
 import { TIPOS_DE_DOLAR, type TipoDeDolar } from "@/backend/models/dominio/movimiento";
 import type { Resultado } from "../erroresLib";
 import { falloPorCuerpoInvalido, type FalloDelDolar } from "./erroresDolar";
-import { validarRespuestaDeDolarapi, type CasaDeDolarapi } from "./validacionDolar";
+import { validarCasa, validarListaDeCasas } from "./validacionDolar";
 
 // Las cotizaciones de la app y cómo salen de lo que responde dolarapi.com.
 
@@ -17,7 +17,7 @@ export type ResultadoCotizacion = Resultado<{ cotizacion: Cotizacion }, FalloDel
 
 /** Valida el cuerpo de un 200 y lo pasa a las cotizaciones de la app. Tienen que estar todos los tipos de dólar. */
 export function aCotizaciones(cuerpo: string): ResultadoCotizaciones {
-  const casas = validarRespuestaDeDolarapi(leerJson(cuerpo));
+  const casas = validarListaDeCasas(leerJson(cuerpo));
   return casas ? cotizacionesDeLasCasas(casas) : falloPorCuerpoInvalido();
 }
 
@@ -30,12 +30,15 @@ function leerJson(texto: string): unknown {
   }
 }
 
-/** Las cotizaciones de la app a partir de las casas de dolarapi; falla si falta alguno de los tipos de dólar. */
-function cotizacionesDeLasCasas(casas: CasaDeDolarapi[]): ResultadoCotizaciones {
+/**
+ * Las cotizaciones de la app a partir de las casas de dolarapi; falla si falta alguno de los tipos de dólar o si viene
+ * con datos imposibles. Solo se validan las casas que usa la app.
+ */
+function cotizacionesDeLasCasas(casas: { casa: string }[]): ResultadoCotizaciones {
   const cotizaciones: Cotizacion[] = [];
   for (const tipoDeDolar of TIPOS_DE_DOLAR) {
-    const casa = casas.find((c) => c.casa === CASA_DE[tipoDeDolar]);
-    if (!casa) return falloPorCuerpoInvalido(`Falta la cotización del dólar ${tipoDeDolar}.`);
+    const casa = validarCasa(casas.find((c) => c.casa === CASA_DE[tipoDeDolar]));
+    if (!casa) return falloPorCuerpoInvalido(`La cotización del dólar ${tipoDeDolar} falta o no es válida.`);
     cotizaciones.push({ tipoDeDolar, compra: casa.compra, venta: casa.venta, actualizada: casa.fechaActualizacion });
   }
   return { ok: true, cotizaciones };

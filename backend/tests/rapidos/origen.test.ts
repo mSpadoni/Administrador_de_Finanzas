@@ -22,6 +22,8 @@ describe("origenDeLaPeticion", () => {
   it("sin Origin ni datos de Vercel, usa el host: https salvo que sea local", () => {
     expect(origenDeLaPeticion(cabeceras({ host: "mi-app.com" }))).toBe("https://mi-app.com");
     expect(origenDeLaPeticion(cabeceras({ host: "localhost:3001" }))).toBe("http://localhost:3001");
+    expect(origenDeLaPeticion(cabeceras({ host: "127.0.0.1:3000" }))).toBe("http://127.0.0.1:3000");
+    expect(origenDeLaPeticion(cabeceras({ host: "[::1]:3000" }))).toBe("http://[::1]:3000");
   });
 
   it("sin ninguna pista (desarrollo), vuelve a localhost:3000", () => {

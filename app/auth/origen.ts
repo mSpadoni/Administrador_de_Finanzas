@@ -2,7 +2,7 @@
 const ORIGEN_LOCAL = "http://localhost:3000";
 
 /** Solo para los hosts que no traen protocolo (no hay `Origin` ni `x-forwarded-proto`): local es http, el resto https. */
-const PREFIJO_LOCAL = "localhost";
+const HOSTS_LOCALES = ["localhost", "127.0.0.1", "[::1]"];
 
 type Cabeceras = Pick<Headers, "get">;
 
@@ -23,6 +23,7 @@ export function origenDeLaPeticion(cabeceras: Cabeceras): string {
   const host = cabeceras.get("x-forwarded-host") ?? cabeceras.get("host");
   if (!host) return ORIGEN_LOCAL;
 
-  const protocolo = cabeceras.get("x-forwarded-proto") ?? (host.startsWith(PREFIJO_LOCAL) ? "http" : "https");
+  const esLocal = HOSTS_LOCALES.some((local) => host === local || host.startsWith(`${local}:`));
+  const protocolo = cabeceras.get("x-forwarded-proto") ?? (esLocal ? "http" : "https");
   return `${protocolo}://${host}`;
 }

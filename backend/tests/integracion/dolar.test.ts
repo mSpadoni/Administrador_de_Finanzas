@@ -202,6 +202,20 @@ describe("ClienteDolar — respuestas inválidas", () => {
     expect(await dolar.cotizaciones()).toMatchObject({ ok: false, motivo: "respuesta_invalida" });
   });
 
+  it("una casa que la app no usa con datos raros no importa: las que sí usa llegan igual", async () => {
+    const conCriptoRara = DOLARES.map((d) => (d.casa === "cripto" ? { ...d, compra: null, venta: "?" } : d));
+    const dolar = await clienteContra([{ status: 200, headers: comoJson, cuerpo: JSON.stringify(conCriptoRara) }]);
+
+    expect(await dolar.cotizaciones()).toMatchObject({ ok: true });
+  });
+
+  it("si una de las casas que usa la app viene sin compra, no se acepta", async () => {
+    const blueSinCompra = DOLARES.map((d) => (d.casa === "blue" ? { ...d, compra: undefined } : d));
+    const dolar = await clienteContra([{ status: 200, headers: comoJson, cuerpo: JSON.stringify(blueSinCompra) }]);
+
+    expect(await dolar.cotizaciones()).toMatchObject({ ok: false, motivo: "respuesta_invalida" });
+  });
+
   it("si falta alguno de los tipos de dólar que usa la app, no se acepta", async () => {
     const sinTarjeta = DOLARES.filter((d) => d.casa !== "tarjeta");
     const dolar = await clienteContra([{ status: 200, headers: comoJson, cuerpo: JSON.stringify(sinTarjeta) }]);

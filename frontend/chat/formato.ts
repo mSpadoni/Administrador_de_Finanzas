@@ -116,9 +116,10 @@ export function textoDeVariacion(porcentaje: number | null): string {
 export function formatoDuracion(ms: number): string {
   const segundos = ms / 1000;
   if (segundos < 10) return `${new Intl.NumberFormat("es-AR", { maximumFractionDigits: 1 }).format(segundos)} s`;
-  if (segundos < 60) return `${Math.round(segundos)} s`;
-  const minutos = Math.floor(segundos / 60);
-  return `${minutos} min ${Math.round(segundos - minutos * 60)} s`;
+  // Primero se redondea y después se reparte en minutos: así 59,6 s es «1 min 0 s» y nunca «60 s» ni «1 min 60 s».
+  const enteros = Math.round(segundos);
+  if (enteros < 60) return `${enteros} s`;
+  return `${Math.floor(enteros / 60)} min ${enteros % 60} s`;
 }
 
 /** Una cantidad de tokens con punto de miles: 1230 → «1.230». */

@@ -25,8 +25,9 @@ export class Usuario {
     return new Usuario(
       user.id,
       user.email ?? "",
-      // Encadenado: prueba full_name, si no hay prueba name, y si tampoco hay queda null.
-      metadata.full_name ?? metadata.name ?? null,
+      // Encadenado: prueba full_name, si no hay prueba name, y si tampoco hay queda null. Un nombre vacío (o solo
+      // espacios) cuenta como que no hay nombre: `||` pasa al plan B también con "".
+      String(metadata.full_name ?? metadata.name ?? "").trim() || null,
       metadata.avatar_url ?? metadata.picture ?? null
     );
   }

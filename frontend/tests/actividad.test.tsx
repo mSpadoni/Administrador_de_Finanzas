@@ -17,6 +17,10 @@ describe("formato de duraciones y tokens", () => {
     expect(formatoDuracion(3400)).toBe("3,4 s");
     expect(formatoDuracion(12_400)).toBe("12 s");
     expect(formatoDuracion(65_000)).toBe("1 min 5 s");
+    // Bordes: lo que redondea a 60 s ya es un minuto (nunca «60 s» ni «1 min 60 s»).
+    expect(formatoDuracion(59_400)).toBe("59 s");
+    expect(formatoDuracion(59_600)).toBe("1 min 0 s");
+    expect(formatoDuracion(119_600)).toBe("2 min 0 s");
   });
 
   it("los tokens llevan punto de miles", () => {

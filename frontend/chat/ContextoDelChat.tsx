@@ -83,6 +83,9 @@ export function ProveedorDelChat({ conversacionId, mensajesIniciales, leerConver
   const [menuAbierto, setMenuAbierto] = useState(false); // Los paneles laterales del celular, también.
   const [balanceAbierto, setBalanceAbierto] = useState(false);
   const idActualRef = useRef(sesion.id); // Para el evento de «atrás», que no ve el estado de este render.
+  // Cada cambio de conversación tiene un número: si mientras se abre una la persona elige otra cosa, la lectura que llega
+  // tarde ya no es la última y se descarta (si no, pisaría lo que eligió después).
+  const ultimoCambioRef = useRef(0);
 
   useEffect(() => {
     idActualRef.current = sesion.id;
@@ -90,6 +93,8 @@ export function ProveedorDelChat({ conversacionId, mensajesIniciales, leerConver
 
   /** Muestra otra conversación: vacía el campo, vuelve al final y (salvo si viene de «atrás») actualiza la dirección. */
   function cambiarA(nueva: Sesion, actualizarUrl: boolean) {
+    ultimoCambioRef.current += 1;
+    setAbriendo(false);
     setSesion(nueva);
     setBorrador("");
     volverAlFinal();
@@ -107,14 +112,17 @@ export function ProveedorDelChat({ conversacionId, mensajesIniciales, leerConver
 
   async function abrirConversacion(id: string, actualizarUrl = true) {
     if (id === sesion.id) return;
+    const cambio = (ultimoCambioRef.current += 1);
+    const sigueSiendoLaUltima = () => cambio === ultimoCambioRef.current;
     setAbriendo(true);
     try {
-      cambiarA({ id, mensajes: await leerConversacion(id) }, actualizarUrl);
+      const mensajes = await leerConversacion(id);
+      if (sigueSiendoLaUltima()) cambiarA({ id, mensajes }, actualizarUrl);
     } catch {
       // Si no se pudo leer sin recargar, se abre de la forma de siempre (la página la pide al servidor).
-      window.location.assign(urlDeConversacion(id));
+      if (sigueSiendoLaUltima()) window.location.assign(urlDeConversacion(id));
     } finally {
-      setAbriendo(false);
+      if (sigueSiendoLaUltima()) setAbriendo(false);
     }
   }
 

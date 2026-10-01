@@ -49,6 +49,7 @@ describe("las direcciones de las conversaciones", () => {
     expect(esClickComun({ ...click, metaKey: true })).toBe(false);
     expect(esClickComun({ ...click, shiftKey: true })).toBe(false);
     expect(esClickComun({ ...click, button: 1 })).toBe(false);
+    expect(esClickComun({ ...click, altKey: true })).toBe(false);
   });
 });
 
@@ -105,6 +106,20 @@ const abierta = () => screen.getByText(/^Abierta:/).textContent;
 
 describe("cambiar de conversación sin recargar", () => {
   beforeEach(() => window.history.replaceState(null, "", urlDeConversacion(ID_A)));
+
+  it("si se elige otra cosa mientras una conversación se está abriendo, gana lo último que se eligió", async () => {
+    // Regresión: antes, la lectura que terminaba última pisaba la pantalla aunque la persona ya hubiera elegido otra cosa.
+    let terminarDeLeer: (mensajes: AsistenteUIMessage[]) => void = () => undefined;
+    const leer = vi.fn(() => new Promise<AsistenteUIMessage[]>((listo) => (terminarDeLeer = listo)));
+    pantalla({ leer });
+
+    await userEvent.click(screen.getByRole("link", { name: "Dólar" })); // B empieza a abrirse (lento)
+    await userEvent.click(screen.getByRole("link", { name: "Nueva conversación" })); // y la persona pide una nueva
+    await act(async () => terminarDeLeer(CHARLA_B)); // recién ahí llega B
+
+    expect(abierta()).toMatch(/Abierta: [0-9a-f-]{36} con 0 mensajes/);
+    expect(abierta()).not.toContain(ID_B);
+  });
 
   it("«Nueva conversación» abre una vacía, con otra dirección, sin pedirle nada al servidor", async () => {
     const { leer } = pantalla();
