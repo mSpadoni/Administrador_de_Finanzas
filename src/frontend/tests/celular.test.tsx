@@ -107,8 +107,23 @@ describe("la hamburguesa (a la izquierda) abre las conversaciones", () => {
     await userEvent.click(hamburguesa);
 
     expect(hamburguesa).toHaveAttribute("aria-expanded", "true");
-    // El cajón pasa a mostrarse encima (en celular la barra está oculta hasta que se abre).
-    expect(screen.getByRole("navigation", { name: "Menú principal" })).toHaveClass("fixed");
+    // El cajón pasa a mostrarse encima (en celular la barra está oculta hasta que se abre), como un diálogo modal.
+    expect(screen.getByRole("dialog", { name: "Menú principal" })).toHaveClass("fixed");
+  });
+
+  it("abierto, es modal: el resto de la página queda inerte (el foco no se escapa) y vuelve al cerrar", async () => {
+    pantalla();
+    await userEvent.click(screen.getByRole("button", { name: "Conversaciones" }));
+
+    // El chat y el encabezado quedan detrás, inertes: no se pueden enfocar ni los lee el lector de pantalla.
+    expect(screen.getByRole("textbox", { name: "Tu mensaje" }).closest("[inert]")).not.toBeNull();
+    // El fondo oscuro no queda inerte: tocarlo cierra el cajón.
+    expect(document.querySelector("[data-fondo-del-modal]")?.closest("[inert]")).toBeNull();
+
+    await userEvent.keyboard("{Escape}");
+
+    expect(screen.getByRole("textbox", { name: "Tu mensaje" }).closest("[inert]")).toBeNull();
+    expect(document.querySelectorAll("[inert]")).toHaveLength(0);
   });
 
   it("Escape cierra el menú y el foco vuelve a la hamburguesa", async () => {
@@ -138,7 +153,7 @@ describe("la hamburguesa (a la izquierda) abre las conversaciones", () => {
     await userEvent.click(hamburguesa);
 
     await userEvent.click(
-      within(screen.getByRole("navigation", { name: "Menú principal" })).getByRole("link", { name: "Dólar" })
+      within(screen.getByRole("dialog", { name: "Menú principal" })).getByRole("link", { name: "Dólar" })
     );
 
     await waitFor(() => expect(hamburguesa).toHaveAttribute("aria-expanded", "false"));
@@ -154,8 +169,12 @@ describe("el botón del balance (a la derecha) abre el balance del mes", () => {
 
     await userEvent.click(boton);
 
-    const cajon = screen.getByRole("complementary", { name: "Este mes" });
-    expect(boton).toHaveAttribute("aria-expanded", "true");
+    // Abierto es un diálogo modal: el botón del encabezado queda detrás, inerte (por eso se lo busca entre lo oculto).
+    const cajon = screen.getByRole("dialog", { name: "Este mes" });
+    expect(screen.getByRole("button", { name: "Balance del mes", hidden: true })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    );
     expect(cajon).toHaveTextContent("septiembre de 2026");
     expect(cajon).toHaveTextContent(/Balance\s*\$\s750\.000/);
   });

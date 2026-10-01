@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import DialogoDeConfirmacion from "@/frontend/compartidos/DialogoDeConfirmacion";
+import { FONDO_DEL_MODAL, useModal } from "@/frontend/compartidos/useModal";
 import { useChatEnPantalla } from "../estado/ContextoDelChat";
 import { usePaneles } from "../estado/ContextoDePaneles";
 import { useSidebar } from "./EstadoSidebar";
@@ -44,6 +45,9 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
   const [errorAlBorrar, setErrorAlBorrar] = useState<string | null>(null);
   const [borrando, iniciarBorrado] = useTransition();
   const primerLinkRef = useRef<HTMLAnchorElement>(null);
+  const barraRef = useRef<HTMLElement>(null);
+  // En celular, abierta es un cajón encima de todo: el resto de la página queda inerte (el foco no se escapa).
+  useModal(barraRef, abierto);
 
   // Al abrir el Drawer, el foco va adentro; con Escape se cierra y el foco vuelve a la hamburguesa del encabezado.
   useEffect(() => {
@@ -90,6 +94,7 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
       {/* Fondo oscuro detrás del Drawer en mobile: tocarlo lo cierra. */}
       {abierto && (
         <div
+          {...FONDO_DEL_MODAL}
           aria-hidden="true"
           onClick={() => setAbierto(false)}
           className="fixed inset-0 z-20 bg-slate-900/40 md:hidden"
@@ -97,8 +102,12 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
       )}
 
       <nav
+        ref={barraRef}
         id="barra-lateral"
         aria-label="Menú principal"
+        // Como cajón (celular, abierta) es un diálogo modal; fija al costado (tablet y compu), un landmark de navegación.
+        role={abierto ? "dialog" : undefined}
+        aria-modal={abierto || undefined}
         className={`${
           abierto ? "fixed inset-y-0 left-0 z-30 flex w-72 shadow-xl" : "hidden"
         } flex-col border-r border-borde bg-fondo md:static md:flex md:w-72 md:shrink-0 md:shadow-none`}

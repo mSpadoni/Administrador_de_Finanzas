@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type KeyboardEvent } from "react";
 import type { EstadisticasDelPeriodo } from "@/shared/chat";
+import { FONDO_DEL_MODAL, useModal } from "@/frontend/compartidos/useModal";
 import { usePaneles } from "../estado/ContextoDePaneles";
 import Icono from "../compartidos/iconos";
 import { ContenidoDelMes } from "./PanelDelMes";
@@ -14,6 +15,9 @@ type Props = {
 
 function Cajon({ estadisticas, onCerrar }: Props) {
   const cerrarRef = useRef<HTMLButtonElement>(null);
+  const cajonRef = useRef<HTMLElement>(null);
+  // Encima de todo: mientras está abierto, el resto de la página queda inerte (el foco no se escapa).
+  useModal(cajonRef, true);
 
   // Al abrir, el foco va al botón de cerrar; al cerrar, vuelve al botón del encabezado que lo abrió.
   useEffect(() => {
@@ -30,8 +34,11 @@ function Cajon({ estadisticas, onCerrar }: Props) {
     // lg:hidden: en pantallas grandes el balance ya está fijo a la derecha, este cajón no hace falta.
     <div className="lg:hidden">
       {/* Fondo oscuro detrás del cajón: tocarlo lo cierra. */}
-      <div aria-hidden="true" onClick={onCerrar} className="fixed inset-0 z-20 bg-slate-900/40" />
+      <div {...FONDO_DEL_MODAL} aria-hidden="true" onClick={onCerrar} className="fixed inset-0 z-20 bg-slate-900/40" />
       <aside
+        ref={cajonRef}
+        role="dialog"
+        aria-modal="true"
         id="panel-balance"
         aria-labelledby="titulo-balance"
         onKeyDown={alPresionarTecla}

@@ -7,6 +7,8 @@ import { usePaneles } from "../estado/ContextoDePaneles";
 import { respuestasParaDebug, totalesDeDebug, type HerramientaDeDebug, type RespuestaDeDebug } from "./debug";
 import { formatoDuracion, formatoTokens } from "../compartidos/formato";
 import Icono from "../compartidos/iconos";
+import { useCoincideConLaPantalla } from "@/frontend/compartidos/useCoincideConLaPantalla";
+import { useModal } from "@/frontend/compartidos/useModal";
 import type { AsistenteUIMessage } from "@/shared/chat";
 
 type Props = {
@@ -78,6 +80,10 @@ function Respuesta({ respuesta, numero }: { respuesta: RespuestaDeDebug; numero:
 
 function ContenidoDelPanel({ mensajes, onCerrar }: Omit<Props, "abierto">) {
   const cerrarRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
+  // En celular el panel tapa toda la pantalla: es un modal. En compu queda al costado y se puede seguir chateando.
+  const ocupaLaPantalla = useCoincideConLaPantalla("(max-width: 639px)");
+  useModal(panelRef, ocupaLaPantalla);
   const respuestas = respuestasParaDebug(mensajes);
   const totales = totalesDeDebug(respuestas);
 
@@ -94,7 +100,10 @@ function ContenidoDelPanel({ mensajes, onCerrar }: Omit<Props, "abierto">) {
 
   return (
     <aside
+      ref={panelRef}
       aria-label="Panel de debug"
+      role={ocupaLaPantalla ? "dialog" : undefined}
+      aria-modal={ocupaLaPantalla || undefined}
       onKeyDown={alPresionarTecla}
       className="fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-borde bg-superficie shadow-2xl sm:w-[28rem]"
     >

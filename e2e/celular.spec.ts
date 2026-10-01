@@ -18,6 +18,26 @@ test("la hamburguesa abre las conversaciones y Escape las cierra, con el foco de
   await expect(hamburguesa).toBeFocused();
 });
 
+test("con el menú abierto, Tab no se escapa del cajón: el resto de la página queda inerte", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Conversaciones" }).click();
+  const cajon = page.getByRole("dialog", { name: "Menú principal" });
+  await expect(cajon).toBeVisible();
+
+  // Como con un <dialog> nativo, pasado el último botón el foco sale al navegador (o al overlay de desarrollo de
+  // Next), pero nunca cae en el chat ni en el encabezado que quedaron detrás.
+  for (let i = 0; i < 10; i++) {
+    await page.keyboard.press("Tab");
+    const fueraDelCajon = await page.evaluate(() => {
+      const enfocado = document.activeElement;
+      if (!enfocado || enfocado === document.body || enfocado.tagName === "NEXTJS-PORTAL") return null;
+      return enfocado.closest('[role="dialog"]') ? null : enfocado.outerHTML.slice(0, 80);
+    });
+    expect(fueraDelCajon).toBeNull();
+  }
+  expect(await page.locator("main").evaluate((nodo) => nodo.closest("[inert]") !== null)).toBe(true);
+});
+
 test("el balance del mes se abre desde el encabezado y se cierra con Escape", async ({ page }) => {
   await page.goto("/");
 

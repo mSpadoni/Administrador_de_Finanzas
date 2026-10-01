@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCoincideConLaPantalla } from "@/frontend/compartidos/useCoincideConLaPantalla";
 import { lanzarPanelesSinProveedor } from "./erroresEstado";
 
 /** Qué paneles de la pantalla están abiertos: el menú lateral y el balance (en celular) y el panel de debug. */
@@ -27,6 +28,15 @@ export function ProveedorDePaneles({ children }: { children: ReactNode }) {
   const [menuAbierto, setMenuAbierto] = useState(false);
   const [balanceAbierto, setBalanceAbierto] = useState(false);
   const [debugAbierto, setDebugAbierto] = useState(false);
+  // En tablet y compu la barra lateral está fija (md) y en compu también el balance (lg): ahí sus cajones no existen.
+  const barraFija = useCoincideConLaPantalla("(min-width: 768px)");
+  const balanceFijo = useCoincideConLaPantalla("(min-width: 1024px)");
+  useEffect(() => {
+    if (barraFija) setMenuAbierto(false);
+  }, [barraFija]);
+  useEffect(() => {
+    if (balanceFijo) setBalanceAbierto(false);
+  }, [balanceFijo]);
   const valor = useMemo<Paneles>(
     () => ({
       menuAbierto,
