@@ -30,7 +30,7 @@ const prohibir = (...patterns) => ({ "@typescript-eslint/no-restricted-imports":
 const reglasDeDependencia = [
   {
     // Frontend (componentes, hooks, lógica de UI y sus tests). Los datos llegan por props y las acciones como Server Actions que conecta la página.
-    files: ["frontend/**/*.{ts,tsx}"],
+    files: ["src/frontend/**/*.{ts,tsx}"],
     rules: prohibir({
       group: ["@/backend/*", "@/backend/**", "@supabase/*"],
       message:
@@ -39,18 +39,18 @@ const reglasDeDependencia = [
   },
   {
     // Backend (menos los tests, que prueban también funciones del frontend).
-    files: ["backend/**/*.ts"],
-    ignores: ["backend/tests/**"],
+    files: ["src/backend/**/*.ts"],
+    ignores: ["src/backend/tests/**"],
     rules: prohibir(backendNoDependeDeAppNiFrontend),
   },
   {
     // Casos de uso, datos, asistente y errores: no saben de HTTP ni de Next. La respuesta HTTP la arman las rutas.
     files: [
-      "backend/controllers/**/*.ts",
-      "backend/models/**/*.ts",
-      "backend/asistente/**/*.ts",
-      "backend/tools/**/*.ts",
-      "backend/erroresBackend.ts",
+      "src/backend/controllers/**/*.ts",
+      "src/backend/models/**/*.ts",
+      "src/backend/asistente/**/*.ts",
+      "src/backend/tools/**/*.ts",
+      "src/backend/erroresBackend.ts",
     ],
     rules: prohibir(backendNoDependeDeAppNiFrontend, {
       group: ["next/server", "next/headers", "next/navigation"],
@@ -59,7 +59,7 @@ const reglasDeDependencia = [
   },
   {
     // Rutas: delegan en controllers; no tocan Supabase ni los repositorios directamente.
-    files: ["app/**/*.{ts,tsx}"],
+    files: ["src/app/**/*.{ts,tsx}"],
     rules: prohibir({
       group: [
         "@supabase/*",
@@ -71,9 +71,9 @@ const reglasDeDependencia = [
     }),
   },
   {
-    // shared/: código que usan tanto el servidor como el navegador. Lógica pura: no puede importar nada del servidor
+    // src/shared/: código que usan tanto el servidor como el navegador. Lógica pura: no puede importar nada del servidor
     // (si no, lo arrastraría al navegador) ni del frontend o rutas.
-    files: ["shared/**/*.ts"],
+    files: ["src/shared/**/*.ts"],
     rules: prohibir({
       group: [
         "@/backend/*",
@@ -90,14 +90,14 @@ const reglasDeDependencia = [
         "server-only",
       ],
       message:
-        "shared/ es lógica pura compartida por servidor y navegador: no importa backend, frontend, rutas ni SDKs (solo `import type`).",
+        "src/shared/ es lógica pura compartida por servidor y navegador: no importa backend, frontend, rutas ni SDKs (solo `import type`).",
       allowTypeImports: true,
     }),
   },
   {
     // Dominio: lógica pura, sin Next, Supabase, AI SDK ni infraestructura. Se permiten imports de solo tipos
     // (`import type`), que desaparecen al compilar.
-    files: ["backend/models/dominio/**/*.ts"],
+    files: ["src/backend/models/dominio/**/*.ts"],
     rules: prohibir(backendNoDependeDeAppNiFrontend, {
       group: [
         "next",
@@ -117,7 +117,7 @@ const reglasDeDependencia = [
   },
   {
     // Tests rápidos: corren sin Docker ni internet. Lo que usa Supabase, dolarapi u OpenAI va en tests/integracion/.
-    files: ["backend/tests/rapidos/**/*.{ts,tsx}"],
+    files: ["src/backend/tests/rapidos/**/*.{ts,tsx}"],
     rules: prohibir({
       group: [
         "../helpers/usuarioDePrueba",
@@ -127,7 +127,7 @@ const reglasDeDependencia = [
         "@/backend/lib/supabase/*",
       ],
       message:
-        "Los tests rápidos no usan Supabase, dolarapi ni OpenAI (solo `import type`): este test va en backend/tests/integracion/.",
+        "Los tests rápidos no usan Supabase, dolarapi ni OpenAI (solo `import type`): este test va en src/backend/tests/integracion/.",
       allowTypeImports: true,
     }),
   },

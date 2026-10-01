@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   // Carpetas que revisa ESLint en `npm run lint` y en el build (por defecto Next solo mira app/, pages/, lib/...):
   // así las reglas de arquitectura de eslint.config.mjs se aplican a todo el código.
   eslint: {
-    dirs: ["app", "backend", "frontend", "shared"],
+    dirs: ["src/app", "src/backend", "src/frontend", "src/shared"],
   },
 };
 

@@ -1,15 +1,16 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
-// Configuración de Vitest. Dos grupos de tests; los del backend van en backend/tests/ y los del frontend en frontend/tests/:
-// - rapidos: lógica pura y componentes (backend/tests/rapidos y frontend/tests). Sin Docker ni internet.
-// - integracion: contra la copia local de Supabase (Docker): repositorios, RLS, auth, middleware. Sin internet.
+// Configuración de Vitest. Los tests viven en src/backend/tests/ y src/frontend/tests/:
+// - rapidos: lógica pura y componentes. Sin Docker ni internet.
+// - integracion-supabase: copia local de Supabase (Docker), RLS, auth y middleware.
+// - integracion-http-local: adaptadores contra servidores HTTP locales, sin Docker ni internet.
 // Ningún test depende de internet ni de un LLM real: `npm test` corre los dos grupos.
 
 /** Lo que comparten los grupos que usan la base local. */
 const conSupabaseLocal = {
   // Busca la Supabase local antes de empezar (y avisa si Docker no está corriendo).
-  globalSetup: ["backend/tests/setup/supabaseLocal.setup.ts"],
+  globalSetup: ["src/backend/tests/setup/supabaseLocal.setup.ts"],
   // Cada test habla por HTTP con la base local: más margen que los 5 s por defecto.
   testTimeout: 30_000,
   hookTimeout: 30_000,
@@ -21,7 +22,7 @@ export default defineConfig({
   // Hace que el atajo `@/` en los imports apunte a la raíz del proyecto, igual que en tsconfig.json.
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL(".", import.meta.url)),
+      "@": fileURLToPath(new URL("src/", import.meta.url)),
       // `server-only` tira un error si se importa fuera del servidor de Next (condición "react-server").
       // Los tests corren en Node, que es servidor: se usa el mismo archivo vacío que usa Next en el servidor.
       "server-only": fileURLToPath(new URL("node_modules/server-only/empty.js", import.meta.url)),
@@ -41,14 +42,26 @@ export default defineConfig({
         extends: true, // usa el alias y las variables de arriba (de mentira)
         test: {
           name: "rapidos",
-          include: ["backend/tests/rapidos/**/*.test.{ts,tsx}", "frontend/tests/**/*.test.{ts,tsx}"],
+          include: ["src/backend/tests/rapidos/**/*.test.{ts,tsx}", "src/frontend/tests/**/*.test.{ts,tsx}"],
           // Los tests de componentes con jsdom tardan en importar: más margen que los 5 s por defecto.
           testTimeout: 20_000,
         },
       },
       {
         extends: true,
-        test: { name: "integracion", include: ["backend/tests/integracion/**/*.test.ts"], ...conSupabaseLocal },
+        test: {
+          name: "integracion-supabase",
+          include: ["src/backend/tests/integracion/supabase/**/*.test.ts"],
+          ...conSupabaseLocal,
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: "integracion-http-local",
+          include: ["src/backend/tests/integracion/http-local/**/*.test.ts"],
+          testTimeout: 30_000,
+        },
       },
     ],
   },
