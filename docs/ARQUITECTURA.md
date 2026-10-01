@@ -141,7 +141,7 @@ los repositorios.
 
 ## Tests
 
-- **Unitarios e integración (Vitest):** los del backend en `src/backend/tests/` (`rapidos/`, sin Docker ni internet;
+- **Unitarios e integración (Vitest):** los del backend en `src/backend/tests/` (`unitarios/`, sin Docker ni internet;
   `integracion/supabase/`, contra la Supabase local de Docker; `integracion/http-local/`, contra servidores HTTP falsos en
   esta máquina) y los del frontend en `src/frontend/tests/`. `npm test`.
 - **De punta a punta (Playwright):** en `e2e/*.spec.ts`, solo los flujos críticos. Levantan su propio Next (puerto 3100,

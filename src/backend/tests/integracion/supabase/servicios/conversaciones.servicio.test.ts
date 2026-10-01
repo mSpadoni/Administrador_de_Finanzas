@@ -9,7 +9,7 @@ import { modeloQueFalla, modeloQueGenera } from "@/backend/tests/helpers/asisten
 import { borrarUsuariosDePrueba, crearUsuarioLogueado } from "@/backend/tests/helpers/supabase/usuarioDePrueba";
 
 // Sin mocks: contra la base local de Supabase, con usuarios reales logueados. Que un id inválido no llegue al servicio
-// lo prueba el controller (rapidos/infraestructura/idsDeLaUrl.test.ts).
+// lo prueba el controller (unitarios/infraestructura/idsDeLaUrl.test.ts).
 afterAll(borrarUsuariosDePrueba);
 
 const mensaje = (texto: string): UIMessage => ({

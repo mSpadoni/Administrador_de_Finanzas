@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 // Configuración de Vitest. Los tests viven en src/backend/tests/ y src/frontend/tests/:
-// - rapidos: lógica pura y componentes. Sin Docker ni internet.
+// - unitarios: lógica pura y componentes. Sin Docker ni internet.
 // - integracion-supabase: copia local de Supabase (Docker), RLS, auth y middleware.
 // - integracion-http-local: adaptadores contra servidores HTTP locales, sin Docker ni internet.
 // Ningún test depende de internet ni de un LLM real: `npm test` corre los dos grupos.
@@ -41,8 +41,8 @@ export default defineConfig({
       {
         extends: true, // usa el alias y las variables de arriba (de mentira)
         test: {
-          name: "rapidos",
-          include: ["src/backend/tests/rapidos/**/*.test.{ts,tsx}", "src/frontend/tests/**/*.test.{ts,tsx}"],
+          name: "unitarios",
+          include: ["src/backend/tests/unitarios/**/*.test.{ts,tsx}", "src/frontend/tests/**/*.test.{ts,tsx}"],
           // Los tests de componentes con jsdom tardan en importar: más margen que los 5 s por defecto.
           testTimeout: 20_000,
         },

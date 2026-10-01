@@ -130,8 +130,8 @@ const reglasDeDependencia = [
     }),
   },
   {
-    // Tests rápidos: corren sin Docker ni internet. Lo que usa Supabase, dolarapi u OpenAI va en tests/integracion/.
-    files: ["src/backend/tests/rapidos/**/*.{ts,tsx}"],
+    // Tests unitarios: corren sin Docker ni internet. Lo que usa Supabase, dolarapi u OpenAI va en tests/integracion/.
+    files: ["src/backend/tests/unitarios/**/*.{ts,tsx}"],
     rules: prohibir({
       group: [
         "../helpers/usuarioDePrueba",
@@ -141,7 +141,7 @@ const reglasDeDependencia = [
         "@/backend/lib/supabase/*",
       ],
       message:
-        "Los tests rápidos no usan Supabase, dolarapi ni OpenAI (solo `import type`): este test va en src/backend/tests/integracion/.",
+        "Los tests unitarios no usan Supabase, dolarapi ni OpenAI (solo `import type`): este test va en src/backend/tests/integracion/.",
       allowTypeImports: true,
     }),
   },
