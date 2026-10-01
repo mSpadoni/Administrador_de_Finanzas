@@ -1,5 +1,5 @@
 import type { AsistenteUIMessage, EstadisticasDelPeriodo } from "@/shared/chat";
-import BarraLateral from "./sidebar/BarraLateral";
+import BarraLateral from "./sidebar/barraLateral/BarraLateral";
 import ChatWindow from "./conversacion/ChatWindow";
 import EncabezadoDeLaApp from "./compartidos/EncabezadoDeLaApp";
 import { ProveedorDelChat } from "./estado/ContextoDelChat";

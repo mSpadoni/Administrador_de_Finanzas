@@ -4,7 +4,7 @@ import { act, cleanup, render, screen, waitFor, within } from "@testing-library/
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AsistenteUIMessage } from "@/shared/chat";
-import BarraLateral from "@/frontend/chat/sidebar/BarraLateral";
+import BarraLateral from "@/frontend/chat/sidebar/barraLateral/BarraLateral";
 import { ProveedorDelChat, useChatEnPantalla } from "@/frontend/chat/estado/ContextoDelChat";
 import { ProveedorSidebar, useSidebar } from "@/frontend/chat/sidebar/EstadoSidebar";
 import { esClickComun } from "@/frontend/chat/compartidos/navegacion";

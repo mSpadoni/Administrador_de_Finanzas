@@ -1,7 +1,7 @@
 "use client";
 
-import Icono from "../compartidos/iconos";
-import { ATAJOS, type Atajo } from "../conversacion/respuesta";
+import Icono from "../../compartidos/iconos";
+import { ATAJOS, type Atajo } from "../../conversacion/respuesta";
 import { ITEM_DE_LA_BARRA } from "./estilos";
 
 type Props = {

@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { FONDO_DEL_MODAL } from "@/frontend/compartidos/useModal";
-import { useChatEnPantalla } from "../estado/ContextoDelChat";
-import { usePaneles } from "../estado/ContextoDePaneles";
-import Icono from "../compartidos/iconos";
+import { useChatEnPantalla } from "../../estado/ContextoDelChat";
+import { usePaneles } from "../../estado/ContextoDePaneles";
+import Icono from "../../compartidos/iconos";
 import { RUTAS } from "@/shared/rutas";
-import { esClickComun } from "../compartidos/navegacion";
-import PerfilDeUsuario from "./PerfilDeUsuario";
-import type { Atajo } from "../conversacion/respuesta";
+import { esClickComun } from "../../compartidos/navegacion";
+import PerfilDeUsuario from "../PerfilDeUsuario";
+import type { Atajo } from "../../conversacion/respuesta";
 import AtajosDelMenu from "./AtajosDelMenu";
 import { ITEM_DE_LA_BARRA } from "./estilos";
 import ListaDeConversaciones from "./ListaDeConversaciones";

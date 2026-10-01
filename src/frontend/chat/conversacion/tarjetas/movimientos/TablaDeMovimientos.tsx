@@ -1,7 +1,7 @@
 import type { ResultadoExitoso } from "@/shared/chat";
-import { fechaCorta, formatoMonto, formatoPesos, nombreDeCategoria } from "../../compartidos/formato";
-import { tarjeta } from "./estilos";
-import ResumenDeMontos from "./ResumenDeMontos";
+import { fechaCorta, formatoMonto, formatoPesos, nombreDeCategoria } from "../../../compartidos/formato";
+import { tarjeta } from "../estilos";
+import ResumenDeMontos from "../ResumenDeMontos";
 
 /** Máximo de filas que muestra la tabla en el chat; el resto se avisa (el detalle completo lo cuenta el asistente). */
 export const MAX_FILAS_EN_TABLA = 15;

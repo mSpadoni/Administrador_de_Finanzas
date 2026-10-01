@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { useRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AsistenteUIMessage, EstadisticasDelPeriodo } from "@/shared/chat";
-import BarraLateral from "@/frontend/chat/sidebar/BarraLateral";
+import BarraLateral from "@/frontend/chat/sidebar/barraLateral/BarraLateral";
 import CajonDelBalance from "@/frontend/chat/resumen/CajonDelBalance";
 import ChatWindow from "@/frontend/chat/conversacion/ChatWindow";
 import { ProveedorDelChat } from "@/frontend/chat/estado/ContextoDelChat";

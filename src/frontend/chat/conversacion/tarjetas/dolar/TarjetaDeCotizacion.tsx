@@ -1,6 +1,6 @@
 import type { ResultadoExitoso } from "@/shared/chat";
-import { formatoPesos, horaDeActualizacion, nombreDelTipoDeDolar } from "../../compartidos/formato";
-import { tarjeta } from "./estilos";
+import { formatoPesos, horaDeActualizacion, nombreDelTipoDeDolar } from "../../../compartidos/formato";
+import { tarjeta } from "../estilos";
 
 /** La cotización de cada tipo de dólar pedido: compra, venta y cuándo se actualizó. */
 export function TarjetaDeCotizacion({

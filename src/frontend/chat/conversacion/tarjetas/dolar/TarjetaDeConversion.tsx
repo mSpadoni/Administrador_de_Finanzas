@@ -1,6 +1,6 @@
 import type { ResultadoExitoso } from "@/shared/chat";
-import { formatoMonto, horaDeActualizacion, nombreDelTipoDeDolar } from "../../compartidos/formato";
-import { tarjeta } from "./estilos";
+import { formatoMonto, horaDeActualizacion, nombreDelTipoDeDolar } from "../../../compartidos/formato";
+import { tarjeta } from "../estilos";
 
 /** Lo que da una conversión de pesos a dólares (o al revés) con la cotización del día. */
 export function TarjetaDeConversion({ conversion }: { conversion: ResultadoExitoso<"convertir"> }) {

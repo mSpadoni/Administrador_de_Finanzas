@@ -1,5 +1,5 @@
 import type { EstadisticasDelPeriodo } from "@/shared/chat";
-import { formatoPesos, formatoPorcentaje, nombreDeCategoria } from "../../compartidos/formato";
+import { formatoPesos, formatoPorcentaje, nombreDeCategoria } from "../../../compartidos/formato";
 
 /** Las barras de los gastos por categoría: el ancho es el porcentaje, y el número va siempre escrito al lado. */
 export function BarrasDeCategorias({ porCategoria }: { porCategoria: EstadisticasDelPeriodo["porCategoria"] }) {

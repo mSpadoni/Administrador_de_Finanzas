@@ -1,8 +1,8 @@
 import type { EstadisticasDelPeriodo } from "@/shared/chat";
-import { fechaCorta, formatoPesos, textoDeVariacion } from "../../compartidos/formato";
-import { tarjeta } from "./estilos";
+import { fechaCorta, formatoPesos, textoDeVariacion } from "../../../compartidos/formato";
+import { tarjeta } from "../estilos";
 import { BarrasDeCategorias } from "./BarrasDeCategorias";
-import ResumenDeMontos from "./ResumenDeMontos";
+import ResumenDeMontos from "../ResumenDeMontos";
 
 /** Las estadísticas de un período: resumen, promedio diario, variación y barras por categoría. */
 export function TarjetaDeEstadisticas({ estadisticas }: { estadisticas: EstadisticasDelPeriodo }) {

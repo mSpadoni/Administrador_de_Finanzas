@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { rutaDeConversacion } from "@/shared/rutas";
-import Icono from "../compartidos/iconos";
-import { esClickComun } from "../compartidos/navegacion";
-import type { ItemConversacion } from "./sidebar";
+import Icono from "../../compartidos/iconos";
+import { esClickComun } from "../../compartidos/navegacion";
+import type { ItemConversacion } from "../sidebar";
 
 type Props = {
   conversacion: ItemConversacion;

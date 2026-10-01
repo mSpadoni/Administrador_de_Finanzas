@@ -2,10 +2,10 @@
 
 import { useState, useTransition } from "react";
 import DialogoDeConfirmacion from "@/frontend/compartidos/DialogoDeConfirmacion";
-import { useChatEnPantalla } from "../estado/ContextoDelChat";
-import { useSidebar } from "./EstadoSidebar";
+import { useChatEnPantalla } from "../../estado/ContextoDelChat";
+import { useSidebar } from "../EstadoSidebar";
 import ItemDeConversacion from "./ItemDeConversacion";
-import type { ItemConversacion } from "./sidebar";
+import type { ItemConversacion } from "../sidebar";
 
 type Props = {
   /** Server action que borra una conversación del usuario. */

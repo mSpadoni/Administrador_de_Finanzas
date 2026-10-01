@@ -6,8 +6,8 @@ import {
   nombreDeCategoria,
   nombreDelMedioDePago,
   nombreDelTipoDeDolar,
-} from "../../compartidos/formato";
-import { tarjeta } from "./estilos";
+} from "../../../compartidos/formato";
+import { tarjeta } from "../estilos";
 
 /** El movimiento que acaba de registrar el asistente. */
 export function TarjetaDeMovimiento({ movimiento }: { movimiento: MovimientoGuardado }) {

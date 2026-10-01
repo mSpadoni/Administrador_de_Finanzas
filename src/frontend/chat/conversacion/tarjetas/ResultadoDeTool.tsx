@@ -1,10 +1,10 @@
 import { isStaticToolUIPart } from "ai";
 import type { ParteDelAsistente } from "@/shared/chat";
-import { TablaDeMovimientos } from "./TablaDeMovimientos";
-import { TarjetaDeConversion } from "./TarjetaDeConversion";
-import { TarjetaDeCotizacion } from "./TarjetaDeCotizacion";
-import { TarjetaDeEstadisticas } from "./TarjetaDeEstadisticas";
-import { TarjetaDeMovimiento } from "./TarjetaDeMovimiento";
+import { TablaDeMovimientos } from "./movimientos/TablaDeMovimientos";
+import { TarjetaDeConversion } from "./dolar/TarjetaDeConversion";
+import { TarjetaDeCotizacion } from "./dolar/TarjetaDeCotizacion";
+import { TarjetaDeEstadisticas } from "./estadisticas/TarjetaDeEstadisticas";
+import { TarjetaDeMovimiento } from "./movimientos/TarjetaDeMovimiento";
 
 // Lo que ve la persona cuando el asistente usa una tool: una tarjeta con el detalle, una tabla, barras por categoría
 // o la cotización. Los números salen del resultado de la tool (de la base o de dolarapi), nunca del texto del modelo.

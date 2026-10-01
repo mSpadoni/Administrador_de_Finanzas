@@ -7,7 +7,7 @@ import type { AsistenteUIMessage, EstadisticasDelPeriodo, MovimientoGuardado } f
 import MessageBubble from "@/frontend/chat/conversacion/MessageBubble";
 import PanelDelMes, { CATEGORIAS_EN_EL_PANEL } from "@/frontend/chat/resumen/PanelDelMes";
 import { cambioLosMovimientos } from "@/frontend/chat/conversacion/respuesta";
-import { MAX_FILAS_EN_TABLA } from "@/frontend/chat/conversacion/tarjetas/TablaDeMovimientos";
+import { MAX_FILAS_EN_TABLA } from "@/frontend/chat/conversacion/tarjetas/movimientos/TablaDeMovimientos";
 
 // Lo que ve la persona cuando el asistente usa una tool: las tarjetas, la tabla, las barras y el panel «Este mes».
 // Componentes reales en un DOM (jsdom), leídos por rol y nombre accesible. Los resultados son los que devuelven las tools.
