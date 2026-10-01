@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { textoDe, type AsistenteUIMessage } from "@/shared/chat";
 import { tituloDesde } from "@/shared/conversaciones";
+import { CODIGOS_DE_ERROR } from "@/shared/erroresShared";
 import {
   anuncioDeRespuesta,
   ATAJOS,
@@ -20,6 +21,23 @@ describe("errorParaMostrar (qué error ve el usuario y con qué código)", () =>
     const cuerpo = { error: { codigo: "no_autenticado", mensaje: "Tu sesión expiró." } };
 
     expect(errorParaMostrar(new Error(JSON.stringify(cuerpo)))).toEqual(cuerpo.error);
+  });
+
+  it("cada código del contrato con el servidor se reconoce", () => {
+    for (const codigo of CODIGOS_DE_ERROR) {
+      expect(errorParaMostrar(new Error(JSON.stringify({ error: { codigo, mensaje: "m" } })))).toEqual({
+        codigo,
+        mensaje: "m",
+      });
+    }
+  });
+
+  it("el formato viejo ({ error: texto }) y un código que no está en el contrato no se muestran: es «sin_conexion»", () => {
+    const formatoViejo = new Error(JSON.stringify({ error: "Tu sesión expiró" }));
+    const codigoInventado = new Error(JSON.stringify({ error: { codigo: "inventado", mensaje: "m" } }));
+
+    expect(errorParaMostrar(formatoViejo).codigo).toBe("sin_conexion");
+    expect(errorParaMostrar(codigoInventado).codigo).toBe("sin_conexion");
   });
 
   it("un error de red, uno desconocido o ninguno es «sin_conexion», sin mostrar el texto crudo", () => {
@@ -125,7 +143,11 @@ describe("al terminar una respuesta (respuesta.ts)", () => {
   });
 
   it("los atajos son consultas que se ejecutan directo: ninguno termina esperando que la persona complete un dato", () => {
-    expect(ATAJOS.map((atajo) => atajo.id)).toEqual(["resumen-del-mes", "gastos-por-categoria", "cotizacion-del-dolar"]);
+    expect(ATAJOS.map((atajo) => atajo.id)).toEqual([
+      "resumen-del-mes",
+      "gastos-por-categoria",
+      "cotizacion-del-dolar",
+    ]);
     for (const atajo of ATAJOS) expect(atajo.mensaje.trimEnd()).not.toMatch(/:$/);
   });
 
@@ -195,7 +217,9 @@ describe("la línea de estado cita la API que se está consultando", () => {
   });
 
   it("registrar un movimiento en dólares también busca la cotización en dolarapi.com; en pesos no", () => {
-    expect(estado(enCurso("tool-registrar_movimiento", { moneda: "USD" }))).toBe("Registrando el movimiento en dolarapi.com…");
+    expect(estado(enCurso("tool-registrar_movimiento", { moneda: "USD" }))).toBe(
+      "Registrando el movimiento en dolarapi.com…"
+    );
     expect(estado(enCurso("tool-registrar_movimiento", { moneda: "ARS" }))).toBe("Registrando el movimiento…");
     expect(estado(enCurso("tool-registrar_movimiento"))).toBe("Registrando el movimiento…"); // los datos todavía no llegaron
   });
@@ -203,11 +227,19 @@ describe("la línea de estado cita la API que se está consultando", () => {
   it("lo que trabaja solo con los datos de la persona no cita ninguna API", () => {
     expect(estado(enCurso("tool-consultar_movimientos", {}))).toBe(TEXTOS_DE_HERRAMIENTAS.consultar_movimientos.usando);
     expect(estado(enCurso("tool-estadisticas", {}))).toBe(TEXTOS_DE_HERRAMIENTAS.estadisticas.usando);
-    expect(estado(enCurso("tool-borrar_movimiento", { id: "x" }))).toBe(TEXTOS_DE_HERRAMIENTAS.borrar_movimiento.usando);
+    expect(estado(enCurso("tool-borrar_movimiento", { id: "x" }))).toBe(
+      TEXTOS_DE_HERRAMIENTAS.borrar_movimiento.usando
+    );
   });
 
   it("un texto que solo trae espacios no cuenta como respuesta que ya está llegando", () => {
-    const terminada = { type: "tool-estadisticas", toolCallId: "t", state: "output-available", input: {}, output: { ok: true } };
+    const terminada = {
+      type: "tool-estadisticas",
+      toolCallId: "t",
+      state: "output-available",
+      input: {},
+      output: { ok: true },
+    };
 
     expect(estado(terminada, { type: "text", text: "  \n" })).toBe(TEXTO_PENSANDO);
   });
@@ -215,7 +247,13 @@ describe("la línea de estado cita la API que se está consultando", () => {
 
 describe("mensajeListoParaMostrar (la respuesta se muestra cuando se hizo todo)", () => {
   const delAsistente = (...partes: unknown[]) => ({ id: "a", role: "assistant", parts: partes }) as AsistenteUIMessage;
-  const tool = (id: string, state: string) => ({ type: "tool-estadisticas", toolCallId: id, state, input: {}, output: { ok: true } });
+  const tool = (id: string, state: string) => ({
+    type: "tool-estadisticas",
+    toolCallId: id,
+    state,
+    input: {},
+    output: { ok: true },
+  });
   const texto = (text: string) => ({ type: "text" as const, text });
 
   it("una respuesta que ya terminó, o del usuario, se muestra siempre", () => {
@@ -230,7 +268,9 @@ describe("mensajeListoParaMostrar (la respuesta se muestra cuando se hizo todo)"
 
   it("mientras una herramienta trabaja no se muestra", () => {
     expect(mensajeListoParaMostrar(delAsistente(tool("t1", "input-available")), true)).toBe(false);
-    expect(mensajeListoParaMostrar(delAsistente(tool("t1", "output-available"), tool("t2", "input-available")), true)).toBe(false);
+    expect(
+      mensajeListoParaMostrar(delAsistente(tool("t1", "output-available"), tool("t2", "input-available")), true)
+    ).toBe(false);
   });
 
   it("terminadas las herramientas, espera a que llegue el texto que sigue", () => {
@@ -239,16 +279,24 @@ describe("mensajeListoParaMostrar (la respuesta se muestra cuando se hizo todo)"
   });
 
   it("cuando terminaron todas y llegó el texto de la respuesta, se muestra", () => {
-    const lista = delAsistente(tool("t1", "output-available"), tool("t2", "output-available"), texto("Este mes gastaste"));
+    const lista = delAsistente(
+      tool("t1", "output-available"),
+      tool("t2", "output-available"),
+      texto("Este mes gastaste")
+    );
 
     expect(mensajeListoParaMostrar(lista, true)).toBe(true);
   });
 
   it("el texto de antes de la herramienta («Voy a ver») no cuenta como la respuesta", () => {
-    expect(mensajeListoParaMostrar(delAsistente(texto("Voy a ver."), tool("t1", "output-available")), true)).toBe(false);
+    expect(mensajeListoParaMostrar(delAsistente(texto("Voy a ver."), tool("t1", "output-available")), true)).toBe(
+      false
+    );
   });
 
   it("una herramienta que falló también cuenta como terminada", () => {
-    expect(mensajeListoParaMostrar(delAsistente(tool("t1", "output-error"), texto("No pude consultarlo.")), true)).toBe(true);
+    expect(mensajeListoParaMostrar(delAsistente(tool("t1", "output-error"), texto("No pude consultarlo.")), true)).toBe(
+      true
+    );
   });
 });

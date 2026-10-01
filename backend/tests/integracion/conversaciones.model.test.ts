@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
 import type { UIMessage } from "ai";
 import { afterAll, describe, expect, it } from "vitest";
+import { ErrorDeBase } from "@/backend/lib/supabase/erroresSupabase";
 import { ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
+import { ConversacionYaExisteError } from "@/backend/models/repositorios/erroresRepositorios";
 import { borrarUsuariosDePrueba, crearUsuarioLogueado, NavegadorDePrueba } from "../helpers/usuarioDePrueba";
 
 // Sin mocks: contra la base local de Supabase, con usuarios reales logueados (las políticas RLS se aplican de verdad).
@@ -113,12 +115,22 @@ describe("ConversacionesModel — cada usuario solo ve lo suyo (RLS)", () => {
     const id = randomUUID();
     await duenio.conversaciones.crear(id, "Original");
 
-    await expect(otro.conversaciones.crear(id, "Copia")).rejects.toThrow("No se pudo crear la conversación");
+    const error = await otro.conversaciones.crear(id, "Copia").catch((e: unknown) => e);
+
+    expect(error).toBeInstanceOf(ConversacionYaExisteError);
+    // La causa es el error de la base: clave duplicada (23505).
+    expect((error as Error).cause).toBeInstanceOf(ErrorDeBase);
+    expect(((error as Error).cause as ErrorDeBase).codigo).toBe("23505");
   });
 
   it("sin sesión no se puede crear una conversación", async () => {
     const sinSesion = new ConversacionesModel(new NavegadorDePrueba().crearCliente);
 
-    await expect(sinSesion.crear(randomUUID(), "Anónima")).rejects.toThrow("No se pudo crear la conversación");
+    const error = await sinSesion.crear(randomUUID(), "Anónima").catch((e: unknown) => e);
+
+    // No es «ya existe»: es RLS (42501), y sigue de largo como error de la base.
+    expect(error).toBeInstanceOf(ErrorDeBase);
+    expect(error).not.toBeInstanceOf(ConversacionYaExisteError);
+    expect((error as ErrorDeBase).codigo).toBe("42501");
   });
 });
