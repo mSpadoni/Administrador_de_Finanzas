@@ -23,7 +23,7 @@ export function ContenidoDelMes({ estadisticas }: Props) {
   const top = porCategoria.filter((c) => c.tipo === "gasto").slice(0, CATEGORIAS_EN_EL_PANEL);
   return (
     <>
-      <p className="text-xs text-tinta-suave capitalize">{nombreDelMes(periodo.desde)}</p>
+      <p className="text-xs text-tinta-suave first-letter:uppercase">{nombreDelMes(periodo.desde)}</p>
       <AvisoDeActualizacion />
       <dl className="mt-2 space-y-1 text-sm">
         <div className="flex justify-between gap-2">

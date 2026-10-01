@@ -5,45 +5,57 @@ MVC sobre Next.js (App Router) + Supabase, con reglas de dependencia que se hace
 
 ## Estructura de código
 
-El código de la aplicación vive bajo `src/`; las configuraciones de Next.js, TypeScript, Vitest, ESLint y npm permanecen en
-la raíz del repositorio.
+El código de la aplicación vive bajo `src/`; las configuraciones de Next.js, TypeScript, Vitest, Playwright, ESLint y npm
+permanecen en la raíz del repositorio.
 
 ```text
 src/
 ├── app/       # Rutas, Route Handlers y Server Actions de Next.js
-├── backend/   # Controllers, dominio, repositorios, asistente e infraestructura
-├── frontend/  # Componentes React y lógica de presentación
+├── backend/   # Controllers, dominio, repositorios, asistente, tools e infraestructura (+ sus tests en backend/tests/)
+├── frontend/  # Componentes React y lógica de presentación (+ sus tests en frontend/tests/)
 ├── shared/    # Contratos y lógica pura compartida
 └── middleware.ts
+e2e/           # Tests de punta a punta (Playwright) y los servidores falsos que usan
 ```
 
 La raíz conserva los archivos que Next.js, npm, TypeScript y las herramientas del repositorio esperan allí: `package.json`,
-`package-lock.json`, configuraciones (`next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `vitest.config.mts`),
-`next-env.d.ts`, `.env.example`, `README.md` y archivos de agentes (`CLAUDE.md`, `REGLAS-SKILLS.md`, `skills-lock.json`).
-`CONTEXT.md` permanece en la raíz para que las skills de dominio lo encuentren con la convención actual.
+`package-lock.json`, configuraciones (`next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `vitest.config.mts`,
+`playwright.config.ts`), `next-env.d.ts`, `.env.example`, `README.md` y archivos de agentes (`CLAUDE.md`,
+`REGLAS-SKILLS.md`, `skills-lock.json`). `CONTEXT.md` (el glosario del dominio) permanece en la raíz para que las skills de
+dominio lo encuentren con la convención actual.
 
 `docs/` agrupa arquitectura y ADRs. Los archivos de configuración y entorno no se mueven a `docs/` ni a `src/`.
 
 ## Capas
 
-| Capa            | Carpeta                                                                                 | Qué hace                                                                                                                                                       | Puede usar                             |
-| --------------- | --------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
-| Rutas           | `src/app/`                                                                              | Páginas, Route Handlers y Server Actions. Finas: sesión, validación de entrada, delegar.                                                                       | controllers, dominio, frontend          |
-| Controllers     | `src/backend/controllers/`                                                              | Casos de uso: deciden qué pedirle a los modelos (repositorios), al dominio y al asistente. `MovimientosController` es el que usan las tools y el panel «Este mes». No saben de HTTP (salvo el stream del chat, que es el contrato del AI SDK). | repositorios, dominio, tools, lib      |
-| Repositorios    | `src/backend/models/repositorios/` (conversaciones, movimientos, auth)                  | Únicos que hablan con Supabase (con `datosOError` de `lib/supabase/consultas.ts`; `AuthModel` con Supabase Auth). Sin interfaces: una sola implementación y los tests usan la base local real. | lib/supabase                           |
-| Dominio         | `src/backend/models/dominio/` (movimiento, periodo, estadisticas, usuario, limiteDeUso) | Lógica pura: qué es un movimiento, los períodos, el balance y las estadísticas.                                                                                | Zod, **solo tipos** de otras librerías |
-| Asistente (LLM) | `src/backend/asistente/`, `src/backend/tools/`, `src/backend/lib/openai.ts`             | `asistente/agente.ts`: la llamada al modelo (prompt, tools, pasos, streaming, log). `asistente/erroresAsistente.ts`: qué ve la persona si falla (diccionario de errores). | controllers, dominio, lib              |
-| Infraestructura | `src/backend/lib/` (env, supabase, openai, dolar)                                       | Clientes y adaptadores de servicios externos, incluido `dolarapi.com` en `lib/dolar/`.                                                                        | —                                      |
-| Frontend        | `src/frontend/`                                                                         | Componentes React y lógica de presentación. Los datos llegan por props y las acciones como Server Actions. La lógica pura va en archivos `.ts` (testeables sin navegador). | otras vistas                           |
-| Compartido      | `src/shared/`                                                                           | Lógica pura que usan el servidor y el navegador (ej. el tipo de los mensajes del chat).                                                                        | solo tipos de otras librerías          |
+| Capa            | Carpeta                                                                     | Qué hace                                                                                                                                                                                                                                                                                                                                                                                                                                                      | Puede usar                                     |
+| --------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| Rutas           | `src/app/`                                                                  | Páginas, Route Handlers y Server Actions. Finas: sesión, validación de entrada, delegar. `api/respuestaDeError.ts` es el único lugar que traduce un error a HTTP.                                                                                                                                                                                                                                                                                             | controllers, dominio, frontend, `lib/registro` |
+| Controllers     | `src/backend/controllers/`                                                  | Casos de uso. `ChatController` (un mensaje del chat), `ConversacionesController` (lista, abrir, borrar, título), `MovimientosController` (lo que piden las tools y el panel «Este mes»), `CotizacionesController` (el dólar), `PantallaController` (lo que lee la página de una conversación) y `AuthController`. No saben de HTTP (salvo el stream del chat, que es el contrato del AI SDK) ni de Postgres.                                                  | repositorios, dominio, tools, lib              |
+| Repositorios    | `src/backend/models/repositorios/` (conversaciones, movimientos, uso, auth) | Únicos que hablan con Supabase (con `datosOError` de `lib/supabase/consultas.ts`; `AuthModel` con Supabase Auth). Traducen lo de la base a errores propios (`erroresRepositorios.ts`: `ConversacionYaExisteError`, `AuthNoRespondeError`) para que los controllers no conozcan códigos de Postgres. Sin interfaces: una sola implementación.                                                                                                                  | lib/supabase, lib/firma                        |
+| Dominio         | `src/backend/models/dominio/`                                               | Lógica pura: qué es un movimiento (`movimiento`, `validacionDominio`), la plata (`dinero`, `moneda` con una estrategia por moneda, `conversion`), los períodos (`periodo`, con una estrategia por unidad), el balance y las estadísticas, el usuario y los límites de uso.                                                                                                                                                                                    | Zod, **solo tipos** de otras librerías         |
+| Asistente (LLM) | `src/backend/asistente/`, `src/backend/tools/`, `src/backend/lib/openai.ts` | `agente.ts`: la llamada al modelo (prompt, tools, pasos, streaming). `contexto.ts`: qué parte de la conversación ve el modelo. `medicion.ts`: modelo, tools, tokens y demora de cada respuesta. `streams.ts`: cómo viajan los errores por el stream. `erroresAsistente.ts`: qué ve la persona si falla. `titulador.ts`: el título de cada conversación. `systemPrompt.ts`. Cada tool en su archivo (`<nombre>.tool.ts`), registradas en `asistente.tools.ts`. | controllers, dominio, lib                      |
+| Infraestructura | `src/backend/lib/` (env, supabase, openai, dolar, firma, registro)          | Clientes y adaptadores de servicios externos: `dolar/` (cliente de dolarapi.com con reintentos, caché, validación y fallos), `firma.ts` (firma de las respuestas del asistente), `registro.ts` (log en JSON).                                                                                                                                                                                                                                                 | dominio (solo su vocabulario)                  |
+| Frontend        | `src/frontend/`                                                             | Componentes React y lógica de presentación, por tema: `autenticacion/`, `compartidos/` y `chat/` (`conversacion/`, `estado/`, `sidebar/`, `resumen/`, `debug/`, `compartidos/`). Los datos llegan por props y las acciones como Server Actions. La lógica pura va en archivos `.ts` (testeables sin navegador).                                                                                                                                               | otras vistas                                   |
+| Compartido      | `src/shared/`                                                               | Lógica pura que usan el servidor y el navegador (ej. el tipo de los mensajes del chat, el contrato de errores).                                                                                                                                                                                                                                                                                                                                               | solo tipos de otras librerías                  |
 
 ## Autenticación, autorización y datos
 
 - **Autenticación:** Supabase Auth (Google). `AuthController` es un envoltorio fino; no hay JWT, passwords ni tokens propios.
+  Si Supabase Auth no responde, es un error (`AuthNoRespondeError`), no «sesión vencida».
 - **Autorización:** RLS en todas las tablas (cada persona ve y toca solo lo suyo), `anon` sin acceso a ninguna tabla y
   la ruta exige sesión (401). La app nunca usa la `service_role` key.
-- **Datos:** PostgreSQL de Supabase, con el cliente creado por request con las cookies de la persona. El esquema completo
-  está en una sola migración (`src/backend/supabase/migrations/`).
+- **Datos:** PostgreSQL de Supabase, con el cliente creado por request con las cookies de la persona. El esquema está en las
+  migraciones de `src/backend/supabase/migrations/` (esquema inicial, cuota de uso y firma de mensajes).
+- **Cuota de uso:** cada mensaje del chat y cada título gastan crédito de OpenAI. La cuenta la hace la función
+  `consumir_cuota` de la base, en un solo paso y con un candado por persona, sobre la tabla `uso_del_asistente`, que la
+  persona no puede leer ni borrar. Así no se recupera cuota borrando conversaciones y varios pedidos a la vez no se pasan
+  del límite (`UsoModel`).
+- **Respuestas firmadas:** la persona puede insertar filas en `mensajes` de sus conversaciones (el servidor guarda con su
+  sesión). Para que no pueda inventarle al modelo respuestas «del asistente», el servidor las firma con una clave que solo
+  conoce él (`FIRMA_DE_MENSAJES`, HMAC sobre el contenido) y, al armar lo que ve el modelo, descarta las que no tienen firma
+  válida (`ConversacionesModel.mensajesConfiables`). Además, cada mensaje se valida con el validador del AI SDK y las tools
+  reales antes de dárselo al modelo. La persona sigue viendo todo lo guardado al reabrir la conversación.
 
 ## Reglas de dependencia (en `eslint.config.mjs`)
 
@@ -52,31 +64,66 @@ La raíz conserva los archivos que Next.js, npm, TypeScript y las herramientas d
 3. `src/app/` no usa Supabase, los repositorios ni el agente directamente: pasa por un controller.
 4. El dominio no importa Next, Supabase, el AI SDK ni `src/backend/lib/` (solo `import type`).
 5. Los módulos del servidor empiezan con `import "server-only"`: si un Client Component los importa, el build falla.
+   Excepciones: `lib/env.ts`, `lib/validacionLib.ts` y `lib/erroresLib.ts`, que también usa el middleware (Edge).
 6. Solo `src/backend/lib/env.ts` lee `process.env`: cada servicio valida sus variables con Zod (en `validacionLib.ts`) al usarlas.
 7. `src/shared/` no importa backend, frontend, rutas ni SDKs (salvo `import type`).
 8. El contrato del chat vive en `src/shared/chat.ts`: `AsistenteUIMessage` se deriva de las tools reales
    (`crearToolsAsistente`). Si una tool cambia de nombre, datos o resultado, la vista deja de compilar.
 
+Además (por convención, todavía sin regla de ESLint): los controllers no importan `lib/supabase`, y las tools no importan
+los repositorios.
+
 ## Validación y errores
 
 - **Lo que manda el navegador** se valida con Zod en `src/backend/controllers/validacionControllers.ts`.
 - **Lo que manda el LLM a una tool** se valida con el `inputSchema` de la tool (`src/backend/tools/validacionTools.ts`), y los movimientos otra vez en el dominio
-  (`DatosDeMovimientoSchema`) antes de guardarlos. La base tiene además sus propios `check`.
-- **Lo que responde dolarapi.com** se valida con Zod en `src/backend/lib/dolar/validacionDolar.ts` antes de usarlo; sus fallas se arman en `src/backend/lib/dolar/erroresDolar.ts`.
+  (`leerDatosDeMovimiento` / `validarDatosDeMovimiento` en `validacionDominio.ts`) antes de guardarlos. La base tiene además sus propios `check`.
+- **Lo que responde dolarapi.com** se valida con Zod en `src/backend/lib/dolar/validacionDolar.ts` (solo las casas que usa la
+  app) antes de usarlo; sus fallas se arman en `src/backend/lib/dolar/erroresDolar.ts`.
 - **Errores**: código estable en `src/shared/erroresShared.ts`, `ErrorDeAplicacion` en `src/backend/erroresBackend.ts` (sin status HTTP) y
-  `src/app/api/respuestaDeError.ts` como único lugar que lo traduce a HTTP. Las tools no lanzan: devuelven `{ ok: false, motivo }`
-  para que el modelo se lo explique a la persona.
+  `src/app/api/respuestaDeError.ts` como único lugar que lo traduce a HTTP.
+- **Las tools no lanzan:** devuelven `{ ok: false, motivo, detalle }` para que el modelo se lo explique a la persona. Si algo
+  falla por dentro (la base, un bug), `tools/ejecutarSinLanzar.ts` lo deja en el log y devuelve `motivo: "error_interno"`.
+- **Resultados que pueden fallar sin lanzar:** `Resultado<Datos, Fallo>` y `fallo()` en `lib/erroresLib.ts`.
+- **Log:** `lib/registro.ts`, una línea de JSON por evento. No se loguean datos de la persona (montos, descripciones).
 
 ## Organización de validaciones y errores
 
 - Cada carpeta con lógica tiene `validacion<Carpeta>.ts` (todo el `zod` de la carpeta) y `errores<Carpeta>.ts` (todas las
   clases de error y los `throw`). Los demás archivos solo importan y llaman sus funciones; el `throw` se hace con una
   función que devuelve `never` (ej. `lanzarPedidoInvalido`).
-- Las tools no conocen los modelos: piden todo a `MovimientosController`. Los controllers nombran sus modelos
-  `modelo<Entidad>` (`modeloConversaciones`, `modeloMovimientos`, `modeloAuth`).
+- Las tools no conocen los modelos: piden todo a un controller (`MovimientosController` o `CotizacionesController`). Los
+  controllers nombran sus modelos `modelo<Entidad>` (`modeloConversaciones`, `modeloMovimientos`, `modeloUso`, `modeloAuth`).
 
 ## Plata y fechas
 
-- **Montos:** `numeric` en la base y aritmética en centavos enteros en el dominio (nunca floats sueltos).
+- **Montos:** `numeric` en la base y aritmética en centavos enteros en el dominio (nunca floats sueltos). El monto máximo es
+  el que entra en la base (`numeric(14,2)`).
 - **Dólares:** se guarda el monto original y el monto en pesos con la cotización del día del registro (docs/adr/0001).
-- **Fechas:** `"AAAA-MM-DD"` en hora de Argentina; el "hoy" entra por parámetro, así los tests son deterministas.
+- **Fechas:** `"AAAA-MM-DD"` en hora de Argentina, entre 1900 y 2100; el "hoy" entra por parámetro, así los tests son
+  deterministas. Una fecha futura solo si la plata se mueve ese día (un cheque diferido); lo decide el asistente, que
+  pregunta. Un período con «hasta» y sin «desde» no se adivina: se pregunta desde cuándo (con la opción «desde hoy»).
+- **Promedio diario de gastos:** sobre todos los días del período (para un mes, sus 28 a 31 días).
+
+## Frontend: estado, tema y accesibilidad
+
+- **Estado del chat** en tres contextos (`frontend/chat/estado/`): `ContextoDelChat` (mensajes, conversación abierta,
+  enviar), `ContextoDelBorrador` (lo que se está escribiendo: cada letra vuelve a dibujar solo el campo) y
+  `ContextoDePaneles` (menú, balance y debug abiertos).
+- **Colores con tokens** (`src/app/globals.css`): cada color tiene un nombre por lo que hace (`fondo`, `superficie`,
+  `tinta`, `borde-control`, `marca`, `enlace`, `peligro`…) y un valor para tema claro y otro para oscuro
+  (`prefers-color-scheme`). Todos los pares de texto y fondo cumplen WCAG AA en los dos temas. Los componentes usan las
+  clases de los tokens (`bg-superficie`, `text-tinta-suave`…), nunca colores sueltos de Tailwind.
+- **Estados:** carga de la página (`loading.tsx`), «Abriendo la conversación…», «Actualizando…» y «Reintentar» en el panel
+  «Este mes», errores del asistente con su código y, cuando tiene sentido, «Reintentar».
+
+## Tests
+
+- **Unitarios e integración (Vitest):** los del backend en `src/backend/tests/` (`rapidos/`, sin Docker ni internet;
+  `integracion/supabase/`, contra la Supabase local de Docker; `integracion/http-local/`, contra servidores HTTP falsos en
+  esta máquina) y los del frontend en `src/frontend/tests/`. `npm test`.
+- **De punta a punta (Playwright):** en `e2e/*.spec.ts`, solo los flujos críticos. Levantan su propio Next (puerto 3100,
+  build en `.next-e2e`) contra la Supabase local y un OpenAI y un dolarapi.com falsos (`e2e/servidores/falsos.mjs`). Cada
+  test arranca con una persona nueva. `npm run test:e2e`.
+- Ningún test llama al LLM ni a una API real, ni usa una base remota. Los archivos `validacion*` y `errores*` no tienen tests
+  propios: se prueban a través de quienes los usan, verificando la clase del error.
