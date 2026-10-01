@@ -16,6 +16,11 @@ describe("armarSystemPrompt", () => {
     expect(prompt).toContain("preguntala");
   });
 
+  it("solo deja confirmar un registro o un borrado si la herramienta se llamó en esa misma respuesta", () => {
+    expect(prompt).toContain("SOLO si en esta misma respuesta llamaste a registrar_movimiento o borrar_movimiento");
+    expect(prompt).toContain("se registra llamando a la herramienta otra vez");
+  });
+
   it("cita la fuente de las cotizaciones y no repite lo que ya muestra la pantalla", () => {
     expect(prompt).toContain("Fuente: dolarapi.com");
     expect(prompt).toContain("no lo repitas entero");
@@ -25,12 +30,7 @@ describe("armarSystemPrompt", () => {
     const ejemplos = prompt.slice(prompt.indexOf("# Ejemplos de cómo actuar"));
 
     expect(ejemplos.match(/^Persona: /gm)?.length).toBeGreaterThanOrEqual(6);
-    for (const herramienta of [
-      "registrar_movimiento",
-      "consultar_movimientos",
-      "estadisticas",
-      "convertir",
-    ]) {
+    for (const herramienta of ["registrar_movimiento", "consultar_movimientos", "estadisticas", "convertir"]) {
       expect(ejemplos).toContain(herramienta);
     }
     expect(ejemplos).toContain("falta el medio de pago"); // pregunta en vez de asumir
