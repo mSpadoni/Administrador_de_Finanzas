@@ -61,16 +61,6 @@
   }
 }
 
-/* Tamaño de letra elegido por la persona en el menú de la cuenta (ver frontend/compartidos/tamanoDeLetra.ts). Todos los
-   tamaños de la app están en rem, así que cambiar la letra base agranda todo parejo. */
-html[data-letra="grande"] {
-  font-size: 112.5%;
-}
-
-html[data-letra="muy-grande"] {
-  font-size: 125%;
-}
-
 /* Tema oscuro: sigue lo que eligió la persona en su sistema (prefers-color-scheme). `color-scheme` hace que los controles
    del navegador (barras de scroll, campos) también se pongan oscuros. */
 :root {

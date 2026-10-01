@@ -1,47 +1,43 @@
-import { esTamanoDeLetra } from "./validacionCompartidos";
+import { esPorcentajeDeLetra } from "./validacionCompartidos";
 
-// El tamaño de letra de toda la app, para quien necesita leer más grande (accesibilidad). Todos los tamaños de la app
-// están en rem (relativos a la letra base de la página), así que alcanza con cambiar la letra base para que crezca todo
-// parejo: textos, botones y espacios. La elección se guarda en el navegador (localStorage) y se aplica antes de dibujar
-// la página (SCRIPT_DEL_TAMANO_DE_LETRA), así no se ve un instante en tamaño normal.
+// El tamaño de letra de toda la app (accesibilidad): un porcentaje del tamaño normal, que la persona ajusta con una
+// barra. Todos los tamaños de la app están en rem (relativos a la letra base de la página), así que alcanza con cambiar
+// la letra base de <html> para que crezca o se achique todo parejo: textos, botones y espacios. Se guarda en el navegador
+// (localStorage) y se aplica antes de dibujar la página (SCRIPT_DEL_TAMANO_DE_LETRA), así no se ve un instante en normal.
 
-/** Las opciones, de menor a mayor. El tamaño de cada una está en globals.css (`html[data-letra=...]`). */
-export const TAMANOS_DE_LETRA = [
-  { id: "normal", nombre: "Normal" },
-  { id: "grande", nombre: "Grande" },
-  { id: "muy-grande", nombre: "Muy grande" },
-] as const;
-
-export type TamanoDeLetra = (typeof TAMANOS_DE_LETRA)[number]["id"];
+/**
+ * Hasta dónde se puede achicar o agrandar, y de a cuánto. No baja de 85 %: con menos, los textos más chicos de la app
+ * quedarían en unos 10 px, ya difíciles de leer.
+ */
+export const LIMITES_DE_LETRA = { minimo: 85, normal: 100, maximo: 150, paso: 5 } as const;
 
 /** Dónde se guarda la elección en el navegador. */
 const CLAVE_DEL_TAMANO_DE_LETRA = "tamano-de-letra";
 
-const TAMANOS_AGRANDADOS = TAMANOS_DE_LETRA.map(({ id }) => id).filter((id) => id !== "normal");
+const { minimo, normal, maximo, paso } = LIMITES_DE_LETRA;
 
 /**
- * Lo que corre en el <head> antes de dibujar la página: si hay un tamaño guardado (y es uno de los que existen), lo pone
- * en `<html data-letra="...">`. Va como texto porque se ejecuta antes que React. Si el navegador no deja leer
- * localStorage (modo privado estricto), queda el tamaño normal.
+ * Lo que corre en el <head> antes de dibujar la página: si hay un porcentaje guardado y es válido (entre el mínimo y el
+ * máximo, de a `paso`), lo pone como letra base. Va como texto porque se ejecuta antes que React. Cualquier otra cosa
+ * guardada (o un navegador que no deja leer localStorage) deja la letra normal.
  */
-export const SCRIPT_DEL_TAMANO_DE_LETRA = `try{var t=localStorage.getItem(${JSON.stringify(
+export const SCRIPT_DEL_TAMANO_DE_LETRA = `try{var p=Number(localStorage.getItem(${JSON.stringify(
   CLAVE_DEL_TAMANO_DE_LETRA
-)});if(${JSON.stringify(TAMANOS_AGRANDADOS)}.indexOf(t)>=0)document.documentElement.dataset.letra=t}catch(e){}`;
+)}));if(p>=${minimo}&&p<=${maximo}&&(p-${minimo})%${paso}===0&&p!==${normal})document.documentElement.style.fontSize=p+"%"}catch(e){}`;
 
-/** El tamaño que tiene la página ahora (el que puso el script o la última elección). */
-export function tamanoDeLetraActual(): TamanoDeLetra {
-  const actual = document.documentElement.dataset.letra;
-  return esTamanoDeLetra(actual) ? actual : "normal";
+/** El porcentaje que tiene la página ahora (el que puso el script o la última elección). */
+export function tamanoDeLetraActual(): number {
+  const actual = Number.parseFloat(document.documentElement.style.fontSize);
+  return esPorcentajeDeLetra(actual, LIMITES_DE_LETRA) ? actual : normal;
 }
 
-/** Cambia el tamaño de la página y lo guarda para la próxima vez. */
-export function aplicarTamanoDeLetra(tamano: TamanoDeLetra): void {
-  const raiz = document.documentElement;
-  if (tamano === "normal") delete raiz.dataset.letra;
-  else raiz.dataset.letra = tamano;
+/** Cambia la letra de la página y la guarda para la próxima vez. Un porcentaje fuera de los límites no se aplica. */
+export function aplicarTamanoDeLetra(porcentaje: number): void {
+  if (!esPorcentajeDeLetra(porcentaje, LIMITES_DE_LETRA)) return;
+  document.documentElement.style.fontSize = porcentaje === normal ? "" : `${porcentaje}%`;
   try {
-    if (tamano === "normal") localStorage.removeItem(CLAVE_DEL_TAMANO_DE_LETRA);
-    else localStorage.setItem(CLAVE_DEL_TAMANO_DE_LETRA, tamano);
+    if (porcentaje === normal) localStorage.removeItem(CLAVE_DEL_TAMANO_DE_LETRA);
+    else localStorage.setItem(CLAVE_DEL_TAMANO_DE_LETRA, String(porcentaje));
   } catch {
     // Sin acceso a localStorage (modo privado estricto): el tamaño se aplica igual, solo que no se recuerda.
   }

@@ -121,7 +121,7 @@ test.describe("accesibilidad y tema", () => {
     });
   }
 
-  test("el tamaño de letra se elige en el menú de la cuenta, agranda toda la página y se recuerda", async ({
+  test("el tamaño de letra se ajusta con una barra: agranda o achica toda la página y se recuerda", async ({
     page,
   }) => {
     await page.goto("/");
@@ -129,13 +129,22 @@ test.describe("accesibilidad y tema", () => {
     expect(await letraBase()).toBe("16px");
 
     await page.getByRole("button", { name: "Cuenta de Mateo Prueba" }).click();
-    await page.getByRole("menuitemradio", { name: "Muy grande" }).click();
+    await page.getByRole("menuitem", { name: "Tamaño de letra…" }).click();
+    const barra = page.getByRole("slider", { name: "Tamaño de letra" });
+    await expect(barra).toBeFocused();
 
-    // 125 % de 16 px. Todo está en rem, así que el resto de la página crece con esto.
-    expect(await letraBase()).toBe("20px");
+    // Con el teclado, como la mueve quien no usa el mouse: End lleva al máximo (150 % de 16 px) y Home al mínimo (85 %).
+    await page.keyboard.press("End");
+    expect(await letraBase()).toBe("24px");
+    await page.keyboard.press("Home");
+    expect(await letraBase()).toBe("13.6px");
+    await page.keyboard.press("ArrowRight");
+    expect(await letraBase()).toBe("14.4px");
+    await page.getByRole("button", { name: "Listo" }).click();
+
     await page.reload();
     await expect(page.getByRole("textbox", { name: "Tu mensaje" })).toBeVisible();
-    expect(await letraBase()).toBe("20px");
+    expect(await letraBase()).toBe("14.4px");
   });
 
   test("con el tema oscuro del sistema, la app se pone oscura", async ({ page }) => {

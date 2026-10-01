@@ -1,9 +1,9 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
-import { aplicarTamanoDeLetra, tamanoDeLetraActual, type TamanoDeLetra } from "./tamanoDeLetra";
+import { aplicarTamanoDeLetra, LIMITES_DE_LETRA, tamanoDeLetraActual } from "./tamanoDeLetra";
 
-/** Quienes muestran el tamaño elegido (por ejemplo, el menú de la cuenta en la barra y en el encabezado). */
+/** Quienes muestran el tamaño elegido (por ejemplo, la barra mientras se mueve). */
 const suscriptores = new Set<() => void>();
 
 function suscribir(avisar: () => void) {
@@ -11,12 +11,12 @@ function suscribir(avisar: () => void) {
   return () => suscriptores.delete(avisar);
 }
 
-/** El tamaño de letra elegido y cómo cambiarlo. En el servidor siempre es «normal» (no hay navegador para leerlo). */
-export function useTamanoDeLetra(): [TamanoDeLetra, (tamano: TamanoDeLetra) => void] {
-  const tamano = useSyncExternalStore(suscribir, tamanoDeLetraActual, () => "normal" as const);
-  const cambiar = useCallback((nuevo: TamanoDeLetra) => {
+/** El porcentaje de letra elegido y cómo cambiarlo. En el servidor siempre es el normal (no hay navegador para leerlo). */
+export function useTamanoDeLetra(): [number, (porcentaje: number) => void] {
+  const porcentaje = useSyncExternalStore(suscribir, tamanoDeLetraActual, () => LIMITES_DE_LETRA.normal);
+  const cambiar = useCallback((nuevo: number) => {
     aplicarTamanoDeLetra(nuevo);
     suscriptores.forEach((avisar) => avisar());
   }, []);
-  return [tamano, cambiar];
+  return [porcentaje, cambiar];
 }

@@ -32,7 +32,7 @@ export default function RootLayout({
   // Esto es JSX: HTML dentro de JavaScript. `className` es el `class` de HTML (clases de Tailwind).
   // Las llaves `{...}` meten un valor de JavaScript dentro del HTML.
   return (
-    // suppressHydrationWarning: el script del <head> puede agregarle `data-letra` al <html> antes de que llegue React.
+    // suppressHydrationWarning: el script del <head> puede ponerle el tamaño de letra al <html> antes de que llegue React.
     <html lang="es-AR" suppressHydrationWarning>
       <head>
         {/* El tamaño de letra elegido se aplica antes de dibujar la página (si no, se vería un instante en normal). */}

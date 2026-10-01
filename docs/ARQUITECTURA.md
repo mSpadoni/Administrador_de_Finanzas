@@ -140,9 +140,10 @@ los repositorios.
   `tinta`, `borde-control`, `marca`, `enlace`, `peligro`…) y un valor para tema claro y otro para oscuro
   (`prefers-color-scheme`). Todos los pares de texto y fondo cumplen WCAG AA en los dos temas. Los componentes usan las
   clases de los tokens (`bg-superficie`, `text-tinta-suave`…), nunca colores sueltos de Tailwind.
-- **Tamaño de letra** (`frontend/compartidos/tamanoDeLetra.ts`): Normal, Grande o Muy grande desde el menú de la cuenta.
-  Cambia la letra base de `<html>` (`data-letra`; todo está en rem, así que crece parejo), se guarda en `localStorage` y
-  un script en el `<head>` la aplica antes de dibujar la página.
+- **Tamaño de letra** (`frontend/compartidos/tamanoDeLetra.ts`): una barra del 85 % al 150 % (de a 5 %) en una ventanita
+  que se abre desde el menú de la cuenta (`DialogoDeTamanoDeLetra`). Cambia la letra base de `<html>` (todo está en rem,
+  así que crece o se achica parejo), se guarda en `localStorage` y un script en el `<head>` la aplica antes de dibujar la
+  página. Lo guardado se valida (`validacionCompartidos.ts`): un valor fuera de rango queda en 100 %.
 - **Estados:** carga de la página (`loading.tsx`), «Abriendo la conversación…», «Actualizando…» y «Reintentar» en el panel
   «Este mes», errores del asistente con su código y, cuando tiene sentido, «Reintentar».
 

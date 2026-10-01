@@ -1,53 +1,61 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import PerfilDeUsuario from "@/frontend/chat/sidebar/PerfilDeUsuario";
 import { SCRIPT_DEL_TAMANO_DE_LETRA, tamanoDeLetraActual } from "@/frontend/compartidos/tamanoDeLetra";
 
-// El tamaño de letra (accesibilidad): se elige en el menú de la cuenta, se aplica a toda la página con
-// `<html data-letra="...">` y se recuerda en el navegador. El tamaño en sí (112,5 % y 125 %) lo pone el CSS: que la
-// letra crezca de verdad se prueba en el E2E, con un navegador real.
+// El tamaño de letra (accesibilidad): una barra de 85 % a 150 % (de a 5 %) en una ventanita que se abre desde el menú
+// de la cuenta. Cambia la letra base de <html> y se recuerda en el navegador. Que la letra crezca de verdad en pantalla
+// (y que la barra se mueva con las flechas, que jsdom no simula) se prueba en el E2E, con un navegador real.
 
 const CLAVE = "tamano-de-letra";
-const raiz = () => document.documentElement;
+const letraDeLaPagina = () => document.documentElement.style.fontSize;
 
 afterEach(() => {
   cleanup();
   vi.restoreAllMocks();
   localStorage.clear();
-  delete raiz().dataset.letra;
+  document.documentElement.style.fontSize = "";
 });
 
 /** Corre el script del <head> como lo hace el navegador al cargar la página. */
 const correrElScriptDelHead = () => new Function(SCRIPT_DEL_TAMANO_DE_LETRA)();
 
 describe("el script que aplica el tamaño guardado antes de dibujar la página", () => {
-  it.each(["grande", "muy-grande"])("con «%s» guardado, lo aplica", (guardado) => {
+  it.each([
+    ["85", "85%"], // el mínimo
+    ["90", "90%"],
+    ["125", "125%"],
+    ["150", "150%"], // el máximo
+  ])("con %s guardado, pone la letra en %s", (guardado, esperado) => {
     localStorage.setItem(CLAVE, guardado);
 
     correrElScriptDelHead();
 
-    expect(raiz().dataset.letra).toBe(guardado);
+    expect(letraDeLaPagina()).toBe(esperado);
   });
 
   it.each([
-    ["normal (el tamaño de siempre)", "normal"],
-    ["un valor que no existe", "gigante"],
+    ["100 (el normal: no hace falta tocar nada)", "100"],
+    ["80 (por debajo del mínimo)", "80"],
+    ["155 (por encima del máximo)", "155"],
+    ["112 (no es un paso de 5)", "112"],
+    ["«grande» (lo que guardaba la versión anterior)", "grande"],
     ["un valor vacío", ""],
   ])("con %s guardado, deja la letra normal", (_caso, guardado) => {
     localStorage.setItem(CLAVE, guardado);
 
     correrElScriptDelHead();
 
-    expect(raiz().dataset.letra).toBeUndefined();
+    expect(letraDeLaPagina()).toBe("");
   });
 
   it("sin nada guardado, deja la letra normal", () => {
     correrElScriptDelHead();
 
-    expect(raiz().dataset.letra).toBeUndefined();
+    expect(letraDeLaPagina()).toBe("");
   });
 
   it("si el navegador no deja leer localStorage, no rompe la página y deja la letra normal", () => {
@@ -56,102 +64,107 @@ describe("el script que aplica el tamaño guardado antes de dibujar la página",
     });
 
     expect(correrElScriptDelHead).not.toThrow();
-    expect(raiz().dataset.letra).toBeUndefined();
+    expect(letraDeLaPagina()).toBe("");
   });
 });
 
 describe("tamanoDeLetraActual", () => {
-  it("si alguien puso un valor que no existe en la página, lo toma como normal", () => {
-    raiz().dataset.letra = "enorme";
+  it("si la página tiene un tamaño que no es válido, lo toma como el normal", () => {
+    document.documentElement.style.fontSize = "300%";
 
-    expect(tamanoDeLetraActual()).toBe("normal");
+    expect(tamanoDeLetraActual()).toBe(100);
   });
 });
 
-describe("el menú de la cuenta — tamaño de letra", () => {
-  const perfil = (props: Partial<Parameters<typeof PerfilDeUsuario>[0]> = {}) => (
-    <PerfilDeUsuario nombre="Mateo" avatarUrl={null} cerrarSesion={vi.fn()} onAbrirDebug={vi.fn()} {...props} />
-  );
-
-  async function abrirMenu() {
+describe("la ventanita del tamaño de letra", () => {
+  async function abrirLaVentanita() {
+    render(<PerfilDeUsuario nombre="Mateo" avatarUrl={null} cerrarSesion={vi.fn()} onAbrirDebug={vi.fn()} />);
     await userEvent.click(screen.getByRole("button", { name: "Cuenta de Mateo" }));
-    return within(screen.getByRole("group", { name: "Tamaño de letra" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Tamaño de letra…" }));
+    return screen.getByRole("dialog", { name: "Tamaño de letra" });
   }
 
-  it("ofrece Normal, Grande y Muy grande, con Normal elegido de entrada", async () => {
-    render(perfil());
-    const grupo = await abrirMenu();
+  const barra = () => screen.getByRole("slider", { name: "Tamaño de letra" });
 
-    const opciones = grupo.getAllByRole("menuitemradio");
-    expect(opciones).toHaveLength(3);
-    expect(opciones[0]).toHaveAccessibleName("Normal");
-    expect(opciones[1]).toHaveAccessibleName("Grande");
-    expect(opciones[2]).toHaveAccessibleName("Muy grande");
-    expect(grupo.getByRole("menuitemradio", { name: "Normal" })).toHaveAttribute("aria-checked", "true");
-    expect(grupo.getByRole("menuitemradio", { name: "Grande" })).toHaveAttribute("aria-checked", "false");
+  it("se abre desde el menú de la cuenta con la barra enfocada, en el 100 %, de 85 % a 150 %", async () => {
+    await abrirLaVentanita();
+
+    expect(barra()).toHaveFocus();
+    expect(barra()).toHaveValue("100");
+    expect(barra()).toHaveAttribute("min", "85");
+    expect(barra()).toHaveAttribute("max", "150");
+    expect(barra()).toHaveAttribute("aria-valuetext", "100 %");
+    expect(screen.getByRole("button", { name: "Restablecer" })).toBeDisabled();
   });
 
-  it("elegir «Grande» agranda la página, lo recuerda y deja el menú abierto para ver el cambio", async () => {
-    render(perfil());
-    const grupo = await abrirMenu();
+  it("mover la barra cambia la letra de toda la página enseguida y la guarda", async () => {
+    await abrirLaVentanita();
 
-    await userEvent.click(grupo.getByRole("menuitemradio", { name: "Grande" }));
+    fireEvent.change(barra(), { target: { value: "125" } });
 
-    expect(raiz().dataset.letra).toBe("grande");
-    expect(localStorage.getItem(CLAVE)).toBe("grande");
-    expect(grupo.getByRole("menuitemradio", { name: "Grande" })).toHaveAttribute("aria-checked", "true");
-    expect(grupo.getByRole("menuitemradio", { name: "Normal" })).toHaveAttribute("aria-checked", "false");
-    expect(screen.getByRole("menu")).toBeInTheDocument();
+    expect(letraDeLaPagina()).toBe("125%");
+    expect(localStorage.getItem(CLAVE)).toBe("125");
+    expect(barra()).toHaveAttribute("aria-valuetext", "125 %");
   });
 
-  it("volver a «Normal» quita el tamaño de la página y lo que estaba guardado", async () => {
-    render(perfil());
-    const grupo = await abrirMenu();
-    await userEvent.click(grupo.getByRole("menuitemradio", { name: "Muy grande" }));
+  it("también se puede achicar", async () => {
+    await abrirLaVentanita();
 
-    await userEvent.click(grupo.getByRole("menuitemradio", { name: "Normal" }));
+    fireEvent.change(barra(), { target: { value: "85" } });
 
-    expect(raiz().dataset.letra).toBeUndefined();
+    expect(letraDeLaPagina()).toBe("85%");
+    expect(localStorage.getItem(CLAVE)).toBe("85");
+  });
+
+  it("«Restablecer» vuelve al 100 % y borra lo guardado", async () => {
+    await abrirLaVentanita();
+    fireEvent.change(barra(), { target: { value: "140" } });
+
+    await userEvent.click(screen.getByRole("button", { name: "Restablecer" }));
+
+    expect(letraDeLaPagina()).toBe("");
     expect(localStorage.getItem(CLAVE)).toBeNull();
+    expect(barra()).toHaveValue("100");
   });
 
-  it("se elige con el teclado: las flechas llegan a las opciones y Enter elige", async () => {
-    render(perfil());
-    await abrirMenu();
+  it("«Listo» la cierra, deja lo elegido y el foco vuelve al botón de la cuenta", async () => {
+    await abrirLaVentanita();
+    fireEvent.change(barra(), { target: { value: "110" } });
 
-    // Panel de debug → Cerrar sesión → Normal → Grande → Muy grande.
-    await userEvent.keyboard("{ArrowDown}{ArrowDown}{ArrowDown}{ArrowDown}");
-    expect(screen.getByRole("menuitemradio", { name: "Muy grande" })).toHaveFocus();
-    await userEvent.keyboard("{Enter}");
+    await userEvent.click(screen.getByRole("button", { name: "Listo" }));
 
-    expect(raiz().dataset.letra).toBe("muy-grande");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(letraDeLaPagina()).toBe("110%");
+    expect(screen.getByRole("button", { name: "Cuenta de Mateo" })).toHaveFocus();
   });
 
-  it("el menú de la barra y el del encabezado muestran la misma elección", async () => {
-    render(
-      <>
-        {perfil()}
-        {perfil({ nombre: "Otra", variante: "encabezado" })}
-      </>
-    );
-    const grupo = await abrirMenu();
-    await userEvent.click(grupo.getByRole("menuitemradio", { name: "Grande" }));
+  it("Escape la cierra", async () => {
+    await abrirLaVentanita();
+
     await userEvent.keyboard("{Escape}");
 
-    await userEvent.click(screen.getByRole("button", { name: "Cuenta de Otra" }));
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
 
-    expect(screen.getByRole("menuitemradio", { name: "Grande" })).toHaveAttribute("aria-checked", "true");
+  it("Tab no sale de la ventanita: de «Listo» vuelve a la barra", async () => {
+    await abrirLaVentanita();
+    fireEvent.change(barra(), { target: { value: "110" } });
+
+    await userEvent.tab(); // Restablecer
+    await userEvent.tab(); // Listo
+    await userEvent.tab(); // vuelve a la barra
+
+    expect(barra()).toHaveFocus();
   });
 
   it("si el navegador no deja guardar, el tamaño se aplica igual (solo que no se recuerda)", async () => {
     vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("QuotaExceededError");
     });
-    render(perfil());
-    const grupo = await abrirMenu();
+    await abrirLaVentanita();
 
-    await userEvent.click(grupo.getByRole("menuitemradio", { name: "Grande" }));
+    fireEvent.change(barra(), { target: { value: "130" } });
 
-    expect(raiz().dataset.letra).toBe("grande");
+    expect(letraDeLaPagina()).toBe("130%");
   });
 });
