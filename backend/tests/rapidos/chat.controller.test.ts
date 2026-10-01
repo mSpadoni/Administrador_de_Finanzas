@@ -4,6 +4,7 @@ import { ChatController } from "@/backend/controllers/chat.controller";
 import { ErrorDeAplicacion } from "@/backend/erroresBackend";
 import { ErrorDeConfiguracion } from "@/backend/lib/erroresLib";
 import type { ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
+import type { UsoModel } from "@/backend/models/repositorios/uso.model";
 import { ConversacionYaExisteError } from "@/backend/models/repositorios/erroresRepositorios";
 import type { AsistenteUIMessage } from "@/shared/chat";
 import { MAX_CARACTERES_MENSAJE } from "@/shared/chat";
@@ -25,7 +26,6 @@ function pedido(texto: string, cambios: Record<string, unknown> = {}) {
 function conversacionesFalsas(cambios: Partial<Record<keyof ConversacionesModel, unknown>> = {}) {
   const guardados: AsistenteUIMessage[] = [];
   const modelo = {
-    usoReciente: async () => ({ ultimoMinuto: 0, ultimoDia: 0 }),
     obtener: async () => ({ id: "c", titulo: "t", creado_en: "", actualizado_en: "" }),
     mensajes: async () => [],
     agregarMensajes: async (_id: string, mensajes: AsistenteUIMessage[]) => void guardados.push(...mensajes),
@@ -40,10 +40,14 @@ const conversacionesQueNoSeUsan = () =>
     get: () => () => Promise.reject(new Error("no se tendría que haber usado el modelo de conversaciones")),
   });
 
+/** Una cuota que siempre tiene lugar (la cuota de verdad se prueba contra la base, en integracion/uso.model.test.ts). */
+const cuotaLibre = { consumir: async () => null } as unknown as UsoModel;
+
 /** Un controller con el modelo de conversaciones dado y un modelo de lenguaje de prueba. */
 function controllerCon(modeloConversaciones: ConversacionesModel) {
   return new ChatController({
     modeloConversaciones: () => modeloConversaciones,
+    modeloUso: () => cuotaLibre,
     crearModelo: () => modeloQueResponde("Ok."),
     pausaEntrePalabrasMs: 0,
   });
@@ -122,6 +126,7 @@ describe("ChatController.responder — antes de llamar al modelo", () => {
     const { modelo, guardados } = conversacionesFalsas();
     const controller = new ChatController({
       modeloConversaciones: () => modelo,
+      modeloUso: () => cuotaLibre,
       crearModelo: () => {
         throw new ErrorDeConfiguracion("Configuración de OpenAI incompleta: Falta OPENAI_API_KEY");
       },

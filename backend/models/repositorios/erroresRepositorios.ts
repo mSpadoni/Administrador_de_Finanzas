@@ -33,3 +33,8 @@ export function lanzarSiAuthNoRespondio(error: AuthError | null): void {
   const noRespondio = isAuthRetryableFetchError(error) || (isAuthApiError(error) && error.status >= 500);
   if (noRespondio) throw new AuthNoRespondeError("Supabase Auth no respondió.", { cause: error });
 }
+
+/** La función consumir_cuota devolvió algo que no es un código de límite: la base y el código no coinciden. */
+export function lanzarCuotaConRespuestaInesperada(respuesta: unknown): never {
+  throw new Error(`consumir_cuota devolvió algo inesperado: ${JSON.stringify(respuesta)}`);
+}

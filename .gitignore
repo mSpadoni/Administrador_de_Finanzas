@@ -42,3 +42,6 @@ next-env.d.ts
 .mcp.json
 
 
+
+# Tipos de la base a medio generar (npm run db:types los reemplaza solo si salió bien).
+backend/types/database.ts.nuevo

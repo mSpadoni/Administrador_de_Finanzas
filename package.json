@@ -14,7 +14,7 @@
     "db:start": "supabase start --workdir backend",
     "db:stop": "supabase stop --workdir backend",
     "db:reset": "supabase db reset --workdir backend",
-    "db:types": "supabase gen types typescript --local --schema public --workdir backend > backend/types/database.ts",
+    "db:types": "supabase gen types typescript --local --schema public --workdir backend > backend/types/database.ts.nuevo && node -e \"require('fs').renameSync('backend/types/database.ts.nuevo', 'backend/types/database.ts')\" && prettier --write backend/types/database.ts",
     "format": "prettier . --write"
   },
   "dependencies": {

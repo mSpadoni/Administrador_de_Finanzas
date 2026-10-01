@@ -4,6 +4,7 @@ import { crearModeloOpenAI } from "@/backend/lib/openai";
 import { registrarError } from "@/backend/lib/registro";
 import { LIMITES_DE_USO, limiteAlcanzado, type LimitesDeUso } from "@/backend/models/dominio/limiteDeUso";
 import { conversacionesModel, type ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
+import { usoModel, type UsoModel } from "@/backend/models/repositorios/uso.model";
 import { ConversacionYaExisteError } from "@/backend/models/repositorios/erroresRepositorios";
 import { crearToolsAsistente } from "@/backend/tools/asistente.tools";
 import { Agente } from "@/backend/asistente/agente";
@@ -21,6 +22,8 @@ type Dependencias = {
   /** Crea el modelo de lenguaje (OpenAI): distinto de los modelos de datos, que hablan con la base. */
   crearModelo?: () => LanguageModel;
   modeloConversaciones?: () => ConversacionesModel;
+  /** La cuota de uso del asistente (cuántos mensajes por minuto y por día). */
+  modeloUso?: () => UsoModel;
   /** El controller que ejecutan las tools de movimientos (con la sesión del pedido). */
   movimientos?: () => MovimientosController;
   timeoutMs?: number;
@@ -40,6 +43,7 @@ type Dependencias = {
 export class ChatController {
   private readonly crearModelo: () => LanguageModel;
   private readonly modeloConversaciones: () => ConversacionesModel;
+  private readonly modeloUso: () => UsoModel;
   private readonly movimientos: () => MovimientosController;
   private readonly agente: Agente;
   private readonly limites: LimitesDeUso;
@@ -49,6 +53,7 @@ export class ChatController {
   constructor({
     crearModelo = () => crearModeloOpenAI(),
     modeloConversaciones = () => conversacionesModel,
+    modeloUso = () => usoModel,
     movimientos = () => movimientosController,
     timeoutMs,
     pausaEntrePalabrasMs,
@@ -57,6 +62,7 @@ export class ChatController {
   }: Dependencias = {}) {
     this.crearModelo = crearModelo;
     this.modeloConversaciones = modeloConversaciones;
+    this.modeloUso = modeloUso;
     this.movimientos = movimientos;
     // El agente se configura una vez (timeout y ritmo del texto); sin valores, usa los suyos.
     this.agente = new Agente({ timeoutMs, pausaEntrePalabrasMs, temperatura });
@@ -98,7 +104,7 @@ export class ChatController {
 
   /** El límite de uso: cada mensaje gasta crédito. Se revisa antes de guardar nada. */
   private async verificarLimiteDeUso(): Promise<void> {
-    const limite = limiteAlcanzado(await this.modeloConversaciones().usoReciente(), this.limites);
+    const limite = limiteAlcanzado(await this.modeloUso().consumir("mensaje", this.limites), this.limites);
     if (limite) lanzarLimiteAlcanzado(limite);
   }
 

@@ -7,6 +7,8 @@ import {
   type Titulador,
 } from "@/backend/asistente/titulador";
 import { crearModeloOpenAI } from "@/backend/lib/openai";
+import { LIMITES_DE_USO, type LimitesDeUso } from "@/backend/models/dominio/limiteDeUso";
+import { usoModel, type UsoModel } from "@/backend/models/repositorios/uso.model";
 import { registrarError } from "@/backend/lib/registro";
 import {
   conversacionesModel,
@@ -31,7 +33,10 @@ export class ConversacionesController {
     private readonly modeloConversaciones: () => ConversacionesModel = () => conversacionesModel,
     private readonly titulador: Titulador = tituladorDeLaApp,
     /** Crea el modelo de lenguaje con el que se pone título (los tests le pasan uno de prueba). */
-    private readonly crearModelo: () => LanguageModel = () => crearModeloOpenAI()
+    private readonly crearModelo: () => LanguageModel = () => crearModeloOpenAI(),
+    /** La cuota de uso: ponerle título también gasta crédito, así que tiene su propio límite. */
+    private readonly modeloUso: () => UsoModel = () => usoModel,
+    private readonly limites: LimitesDeUso = LIMITES_DE_USO
   ) {}
 
   /** Las conversaciones del usuario para el costado, la más reciente arriba. */
@@ -60,6 +65,8 @@ export class ConversacionesController {
     if (!esIdDeConversacion(id)) return null;
     const paraTitular = await this.leerParaTitular(id);
     if (!paraTitular) return null;
+    // Si se pasó de la cuota de títulos, se queda el que había: el título es un extra.
+    if (await this.modeloUso().consumir("titulo", this.limites)) return null;
     const modelo = this.crearModeloParaTitular();
     if (!modelo) return null;
 

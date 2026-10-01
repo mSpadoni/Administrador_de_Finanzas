@@ -3,6 +3,7 @@ import { ChatController } from "@/backend/controllers/chat.controller";
 import { MovimientosController } from "@/backend/controllers/movimientos.controller";
 import { ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
 import { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
+import { UsoModel } from "@/backend/models/repositorios/uso.model";
 import type { AsistenteUIMessage, MetadatosDeRespuesta } from "@/shared/chat";
 import { leerErrorPublico } from "@/shared/erroresShared";
 import { crearUsuarioLogueado } from "./usuarioDePrueba";
@@ -17,6 +18,7 @@ export async function usuarioConChat(dependencias: ConstructorParameters<typeof 
   const movimientos = new MovimientosModel(usuario.navegador.crearCliente);
   const controller = new ChatController({
     modeloConversaciones: () => conversaciones,
+    modeloUso: () => new UsoModel(usuario.navegador.crearCliente),
     movimientos: () => new MovimientosController(() => movimientos),
     ...dependencias,
   });

@@ -4,6 +4,7 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 import { Titulador } from "@/backend/asistente/titulador";
 import { ConversacionesController } from "@/backend/controllers/conversaciones.controller";
 import { ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
+import { UsoModel } from "@/backend/models/repositorios/uso.model";
 import { modeloQueFalla, modeloQueGenera } from "../helpers/modeloDePrueba";
 import { borrarUsuariosDePrueba, crearUsuarioLogueado } from "../helpers/usuarioDePrueba";
 
@@ -76,7 +77,12 @@ describe("ConversacionesController.retitular", () => {
     const usuario = await crearUsuarioLogueado();
     const model = new ConversacionesModel(usuario.navegador.crearCliente);
     const { modelo, pedidos } = modeloQueGenera(titulo);
-    const controller = new ConversacionesController(() => model, new Titulador(), () => modelo);
+    const controller = new ConversacionesController(
+      () => model,
+      new Titulador(),
+      () => modelo,
+      () => new UsoModel(usuario.navegador.crearCliente)
+    );
     const id = randomUUID();
     await model.crear(id, "Gasté 3000 en hot dogs");
     await model.agregarMensajes(id, [
@@ -115,7 +121,12 @@ describe("ConversacionesController.retitular", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     const usuario = await crearUsuarioLogueado();
     const model = new ConversacionesModel(usuario.navegador.crearCliente);
-    const controller = new ConversacionesController(() => model, new Titulador(), () => modeloQueFalla(new Error("sin saldo")));
+    const controller = new ConversacionesController(
+      () => model,
+      new Titulador(),
+      () => modeloQueFalla(new Error("sin saldo")),
+      () => new UsoModel(usuario.navegador.crearCliente)
+    );
     const id = randomUUID();
     await model.crear(id, "Colas");
     await model.agregarMensajes(id, [mensaje("Hola"), respuesta("¡Hola!")]);
@@ -128,9 +139,14 @@ describe("ConversacionesController.retitular", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     const usuario = await crearUsuarioLogueado();
     const model = new ConversacionesModel(usuario.navegador.crearCliente);
-    const controller = new ConversacionesController(() => model, new Titulador(), () => {
-      throw new Error("Falta OPENAI_API_KEY");
-    });
+    const controller = new ConversacionesController(
+      () => model,
+      new Titulador(),
+      () => {
+        throw new Error("Falta OPENAI_API_KEY");
+      },
+      () => new UsoModel(usuario.navegador.crearCliente)
+    );
     const id = randomUUID();
     await model.crear(id, "Colas");
     await model.agregarMensajes(id, [mensaje("Hola"), respuesta("¡Hola!")]);
@@ -145,7 +161,8 @@ describe("ConversacionesController.retitular", () => {
     const controllerDelIntruso = new ConversacionesController(
       () => new ConversacionesModel(intruso.navegador.crearCliente),
       new Titulador(),
-      () => modelo.modelo
+      () => modelo.modelo,
+      () => new UsoModel(intruso.navegador.crearCliente)
     );
 
     expect(await controllerDelIntruso.retitular(dueno.id)).toBeNull();
@@ -154,5 +171,27 @@ describe("ConversacionesController.retitular", () => {
 
     expect(modelo.pedidos).toHaveLength(0);
     expect((await dueno.model.obtener(dueno.id))?.titulo).toBe("Gasté 3000 en hot dogs");
+  });
+});
+
+describe("ConversacionesController.retitular — cuota de títulos", () => {
+  it("ponerle título también gasta cuota: pasado el límite, se queda el título que había sin llamar al modelo", async () => {
+    const usuario = await crearUsuarioLogueado();
+    const model = new ConversacionesModel(usuario.navegador.crearCliente);
+    const { modelo, pedidos } = modeloQueGenera("Título nuevo");
+    const controller = new ConversacionesController(
+      () => model,
+      new Titulador(),
+      () => modelo,
+      () => new UsoModel(usuario.navegador.crearCliente),
+      { porMinuto: 1, porDia: 100 }
+    );
+    const id = randomUUID();
+    await model.crear(id, "Colas");
+    await model.agregarMensajes(id, [mensaje("Hola"), { ...mensaje("¡Hola!"), role: "assistant" }]);
+
+    expect(await controller.retitular(id)).toBe("Título nuevo");
+    expect(await controller.retitular(id)).toBeNull();
+    expect(pedidos).toHaveLength(1);
   });
 });

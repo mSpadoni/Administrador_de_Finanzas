@@ -1,23 +1,6 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never;
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      graphql: { Args: { extensions?: Json; operationName?: string; query?: string; variables?: Json }; Returns: Json };
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
   public: {
     Tables: {
       conversaciones: {
@@ -124,12 +107,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      uso_del_asistente: {
+        Row: {
+          creado_en: string;
+          id: number;
+          tipo: string;
+          usuario_id: string;
+        };
+        Insert: {
+          creado_en?: string;
+          id?: never;
+          tipo: string;
+          usuario_id?: string;
+        };
+        Update: {
+          creado_en?: string;
+          id?: never;
+          tipo?: string;
+          usuario_id?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      consumir_cuota: { Args: { p_por_dia: number; p_por_minuto: number; p_tipo: string }; Returns: string };
     };
     Enums: {
       [_ in never]: never;
@@ -238,9 +242,6 @@ export type CompositeTypes<
     : never;
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {},
   },

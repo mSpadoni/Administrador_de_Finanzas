@@ -1,33 +1,36 @@
 import type { CodigoDeError } from "@/shared/erroresShared";
 
-// Cuántos mensajes puede mandar un usuario al asistente. Cada mensaje gasta crédito de OpenAI: sin límite, un usuario
-// (o un script con su sesión) podría agotarlo. Lógica pura: los conteos los trae el repositorio de conversaciones.
+// Cuántas veces puede una persona pedirle algo al asistente que gaste crédito de OpenAI (un mensaje del chat o el título
+// de una conversación): sin límite, una persona (o un script con su sesión) podría agotarlo. Lógica pura: la cuenta la
+// hace la base, en un solo paso (repositorios/uso.model.ts y la función consumir_cuota de la migración).
+
+/** Lo que gasta crédito: un mensaje del chat o el título de una conversación. Cada uno tiene su propia cuota. */
+export type TipoDeUso = "mensaje" | "titulo";
 
 export type LimitesDeUso = { porMinuto: number; porDia: number };
 
 /** Holgados para el uso normal (una consulta cada 6 s sostenida es mucho), cortos para un abuso. */
 export const LIMITES_DE_USO: LimitesDeUso = { porMinuto: 10, porDia: 150 };
 
-/** Las dos ventanas en las que se cuentan los mensajes (ms). */
-export const VENTANA_POR_MINUTO_MS = 60_000;
-export const VENTANA_POR_DIA_MS = 86_400_000;
+/** Qué límite se alcanzó: el del minuto o el del día. */
+export type CodigoDeLimite = Extract<CodigoDeError, `limite_${string}`>;
 
-/** Cuántos mensajes mandó el usuario en el último minuto y en las últimas 24 horas. */
-export type UsoReciente = { ultimoMinuto: number; ultimoDia: number };
+/** Qué límite alcanzó la persona, con el código (para el navegador) y el mensaje para mostrarle. */
+export type LimiteAlcanzado = { codigo: CodigoDeLimite; mensaje: string };
 
-/** Qué límite alcanzó el usuario, con el código (para el navegador) y el mensaje para mostrarle. */
-export type LimiteAlcanzado = { codigo: Extract<CodigoDeError, `limite_${string}`>; mensaje: string };
-
-/** Si el usuario ya llegó a un límite, cuál; si puede seguir, null. El del día pesa más: esperar un minuto no alcanza. */
-export function limiteAlcanzado(uso: UsoReciente, limites: LimitesDeUso = LIMITES_DE_USO): LimiteAlcanzado | null {
-  if (uso.ultimoDia >= limites.porDia) {
+/** El límite alcanzado, con el mensaje para la persona; null si puede seguir. */
+export function limiteAlcanzado(
+  codigo: CodigoDeLimite | null,
+  limites: LimitesDeUso = LIMITES_DE_USO
+): LimiteAlcanzado | null {
+  if (codigo === "limite_por_dia") {
     return {
-      codigo: "limite_por_dia",
+      codigo,
       mensaje: `Llegaste al máximo de ${limites.porDia} mensajes por día. Mañana podés seguir.`,
     };
   }
-  if (uso.ultimoMinuto >= limites.porMinuto) {
-    return { codigo: "limite_por_minuto", mensaje: "Mandaste muchos mensajes seguidos. Esperá un minuto y seguí." };
+  if (codigo === "limite_por_minuto") {
+    return { codigo, mensaje: "Mandaste muchos mensajes seguidos. Esperá un minuto y seguí." };
   }
   return null;
 }
