@@ -1,3 +1,4 @@
+import { memo } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { isStaticToolUIPart } from "ai";
@@ -32,19 +33,27 @@ const componentesMarkdown: Components = {
       {...props}
     />
   ),
-  a: (props) => <a className="text-blue-700 underline" target="_blank" rel="noreferrer" {...props} />,
+  a: (props) => <a className="break-words text-blue-700 underline" target="_blank" rel="noreferrer" {...props} />,
 };
+
+/** Fuera del componente: un array nuevo en cada render haría que react-markdown vuelva a armar todo. */
+const PLUGINS_DE_MARKDOWN = [remarkGfm];
 
 /**
  * Un globo de mensaje del chat. Los del usuario van a la derecha como texto plano;
  * los del asistente a la izquierda, con las tools que usó y el Markdown convertido a HTML (tablas, listas, negritas...).
+ * Con `memo`: mientras se escribe o llega una respuesta, solo se vuelve a dibujar el globo que cambió (useChat mantiene
+ * el mismo objeto para los mensajes que no cambian), no todos los de la conversación.
  */
-export default function MessageBubble({ mensaje }: { mensaje: AsistenteUIMessage }) {
+function MessageBubble({ mensaje }: { mensaje: AsistenteUIMessage }) {
   const esUsuario = mensaje.role === "user";
   // Un mensaje del AI SDK viene en partes: texto, tools usadas, inicio de cada paso...
   const texto = textoDe(mensaje, "\n\n");
-  const tools = mensaje.parts.filter(isStaticToolUIPart);
-  if (!texto && tools.length === 0) return null;
+  // Solo las tools que se dibujan (las que salieron bien): una que falló o quedó a medias no deja un globo vacío.
+  const tarjetas = mensaje.parts
+    .filter(isStaticToolUIPart)
+    .filter((parte) => parte.state === "output-available" && parte.output.ok);
+  if (!texto && tarjetas.length === 0) return null;
 
   return (
     // Las clases se arman con un template string: `${condición ? "a" : "b"}` agrega una u otra según quién escribió.
@@ -52,18 +61,18 @@ export default function MessageBubble({ mensaje }: { mensaje: AsistenteUIMessage
       {/* El rol va como texto visible, no solo con color o posición. */}
       <span className="mb-1 px-1 text-xs font-medium text-slate-600">{esUsuario ? "Vos" : "Asistente"}</span>
       <div
-        className={`max-w-[90%] rounded-2xl px-4 py-3 leading-relaxed sm:max-w-[80%] ${
+        className={`max-w-[90%] min-w-0 rounded-2xl px-4 py-3 leading-relaxed [overflow-wrap:anywhere] sm:max-w-[80%] ${
           esUsuario ? "bg-blue-700 text-white" : "border border-slate-200 bg-white text-slate-900"
         }`}
       >
         {/* Lo que devolvió cada tool, dibujado como tarjeta, tabla o barras (solo si salió bien). */}
-        {tools.map((parte, indice) => (
-          <ResultadoDeTool key={indice} parte={parte} />
+        {tarjetas.map((parte) => (
+          <ResultadoDeTool key={parte.toolCallId} parte={parte} />
         ))}
         {esUsuario ? (
           <p className="whitespace-pre-wrap">{texto}</p>
         ) : (
-          <ReactMarkdown remarkPlugins={[remarkGfm]} components={componentesMarkdown}>
+          <ReactMarkdown remarkPlugins={PLUGINS_DE_MARKDOWN} components={componentesMarkdown}>
             {texto}
           </ReactMarkdown>
         )}
@@ -71,3 +80,5 @@ export default function MessageBubble({ mensaje }: { mensaje: AsistenteUIMessage
     </li>
   );
 }
+
+export default memo(MessageBubble);

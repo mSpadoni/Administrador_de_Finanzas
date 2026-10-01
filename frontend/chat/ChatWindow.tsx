@@ -58,7 +58,7 @@ export default function ChatWindow({ nombre }: { nombre: string }) {
           onScroll={(evento) => alScrollear(evento.currentTarget)}
           aria-busy={abriendo}
           // Mientras se lee otra conversación, la actual se atenúa (no queda la pantalla en blanco ni congelada).
-          className={`flex-1 overflow-y-auto transition-opacity duration-200 motion-reduce:transition-none ${
+          className={`flex-1 scroll-pb-36 overflow-y-auto transition-opacity duration-200 motion-reduce:transition-none ${
             abriendo ? "opacity-50" : "opacity-100"
           }`}
         >

@@ -36,6 +36,9 @@ export function useChatDelAsistente(
     id: conversacionId,
     messages: mensajesIniciales,
     transport: transporte,
+    // Mientras llega la respuesta, la pantalla se actualiza a lo sumo cada 50 ms (y no con cada pedacito que manda el
+    // modelo): la respuesta se sigue viendo fluida y el navegador trabaja mucho menos.
+    experimental_throttle: 50,
     onFinish: ({ message, messages, isAbort, isError }) => {
       if (!isAbort && !isError) setAnuncio(anuncioDeRespuesta(message));
       // El sidebar se actualiza con lo que ya sabemos, sin volver a consultar la base: la conversación sube arriba

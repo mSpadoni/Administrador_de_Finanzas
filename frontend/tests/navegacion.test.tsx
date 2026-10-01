@@ -207,7 +207,7 @@ describe("borrar una conversación", () => {
     expect(abierta()).not.toContain(ID_A);
   });
 
-  it("si el servidor no la pudo borrar, el ítem vuelve y la conversación sigue abierta", async () => {
+  it("si el servidor no la pudo borrar, el ítem vuelve, se avisa qué pasó y la conversación sigue abierta", async () => {
     pantalla({ borrar: vi.fn().mockRejectedValue(new Error("sin conexión")) });
 
     await borrarDeLaLista("Gastos de septiembre");
@@ -215,6 +215,9 @@ describe("borrar una conversación", () => {
 
     const item = screen.getByRole("link", { name: "Gastos de septiembre" }).closest("li");
     expect(item).toHaveClass("max-h-12", "opacity-100");
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "No se pudo borrar «Gastos de septiembre». Revisá tu conexión y probá de nuevo."
+    );
     expect(abierta()).toBe(`Abierta: ${ID_A} con 2 mensajes`);
   });
 

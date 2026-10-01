@@ -91,3 +91,34 @@ describe("MessageBubble — contenido", () => {
     expect(screen.getByText("Un momento.")).toBeVisible();
   });
 });
+
+describe("MessageBubble — mensajes sin nada para mostrar", () => {
+  it("una respuesta sin texto cuya tool falló (o quedó a medias) no deja un globo vacío", () => {
+    const fallida: ParteDelAsistente = {
+      type: "tool-cotizacion_dolar",
+      toolCallId: "t1",
+      state: "output-available",
+      input: {},
+      output: { ok: false, motivo: "servicio", detalle: "No respondió." },
+    };
+    const aMedias: ParteDelAsistente = {
+      type: "tool-cotizacion_dolar",
+      toolCallId: "t2",
+      state: "input-available",
+      input: {},
+    };
+
+    mostrar({ id: "m1", role: "assistant", parts: [fallida, aMedias] });
+
+    expect(screen.queryByRole("listitem")).toBeNull();
+  });
+});
+
+describe("MessageBubble — texto largo sin espacios", () => {
+  it("un texto sin cortes (ej. una URL larga) se parte dentro del globo en vez de desbordarlo", () => {
+    mostrar(delAsistente(`https://ejemplo.com/${"a".repeat(300)}`));
+
+    // jsdom no calcula el layout: se comprueba la regla que lo garantiza en el navegador.
+    expect(screen.getByRole("listitem").querySelector("div")).toHaveClass("min-w-0", "[overflow-wrap:anywhere]");
+  });
+});

@@ -17,6 +17,12 @@ export function useDeslizarAlBajar(elemento: RefObject<HTMLElement | null>, cent
   useLayoutEffect(() => {
     const nodo = elemento.current;
     const antes = recuerdo.current;
+    // Con el campo abajo desde antes no hay nada que medir ni que animar: medir obliga al navegador a calcular el layout,
+    // y este efecto corre en cada render (en cada letra y en cada pedazo de respuesta).
+    if (!centrado && !antes.centrado) {
+      recuerdo.current = { ...antes, contexto };
+      return;
+    }
     const arribaAhora = nodo?.getBoundingClientRect().top ?? antes.arriba;
 
     const bajo = antes.centrado && !centrado && antes.contexto === contexto;

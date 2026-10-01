@@ -47,6 +47,7 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
   } = useChatEnPantalla();
   const [porBorrar, setPorBorrar] = useState<ItemConversacion | null>(null);
   const [saliendo, setSaliendo] = useState<string | null>(null); // La conversación que se está plegando al borrarla.
+  const [errorAlBorrar, setErrorAlBorrar] = useState<string | null>(null);
   const [borrando, iniciarBorrado] = useTransition();
   const primerLinkRef = useRef<HTMLAnchorElement>(null);
 
@@ -70,16 +71,18 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
   /**
    * Borrar es la única acción destructiva: pide confirmación (heurística #3) en un diálogo propio. Al confirmar, el ítem se
    * pliega y se desvanece mientras el servidor la borra; si era la abierta, se pasa a una conversación nueva. Si el servidor
-   * falla, el ítem vuelve a aparecer.
+   * falla, el ítem vuelve a aparecer y se avisa qué pasó (sin el aviso, parecería que se borró y volvió sola).
    */
   function borrarLaConversacion(conversacion: ItemConversacion) {
     setPorBorrar(null);
+    setErrorAlBorrar(null);
     setSaliendo(conversacion.id);
     iniciarBorrado(async () => {
       try {
         await Promise.all([borrar(conversacion.id), esperar(DURACION_DE_SALIDA_MS)]);
       } catch {
         setSaliendo(null);
+        setErrorAlBorrar(`No se pudo borrar «${conversacion.titulo}». Revisá tu conexión y probá de nuevo.`);
         return;
       }
       quitarConversacion(conversacion.id);
@@ -161,6 +164,10 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
             >
               Conversaciones
             </h2>
+            {/* Región viva siempre montada: así el lector de pantalla anuncia el aviso cuando aparece. */}
+            <p role="status" className="px-5 text-sm text-red-800 empty:hidden">
+              {errorAlBorrar}
+            </p>
             {conversaciones.length === 0 ? (
               <p className="px-5 py-2 text-sm text-slate-600">Todavía no tenés conversaciones guardadas.</p>
             ) : (
@@ -173,8 +180,8 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
                     // nuevo, sube y se hace visible.
                     <li
                       key={conversacion.id}
-                      className={`group relative overflow-hidden transition-[max-height,opacity] duration-300 ease-in motion-reduce:transition-none motion-safe:animate-aparecer ${
-                        seEstaPlegando ? "pointer-events-none max-h-0 opacity-0" : "max-h-12 opacity-100"
+                      className={`group relative transition-[max-height,opacity] duration-300 ease-in motion-reduce:transition-none motion-safe:animate-aparecer ${
+                        seEstaPlegando ? "pointer-events-none max-h-0 overflow-hidden opacity-0" : "max-h-12 opacity-100"
                       }`}
                     >
                       <Link
@@ -186,7 +193,7 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
                           void abrirConversacion(conversacion.id);
                         }}
                         aria-current={esLaActual ? "page" : undefined}
-                        className={`block min-h-11 truncate rounded-xl py-3 pr-11 pl-3 text-sm ${
+                        className={`block min-h-11 truncate rounded-xl py-3 pr-12 pl-3 text-sm focus-visible:outline-offset-[-3px] ${
                           esLaActual
                             ? "bg-slate-200 font-medium text-slate-900"
                             : "text-slate-800 hover:bg-slate-200/70"
@@ -197,13 +204,13 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
                           {conversacion.titulo}
                         </span>
                       </Link>
-                      {/* En escritorio el botón de borrar aparece al pasar o enfocar; en el celular siempre está a mano. */}
+                      {/* Con mouse, el botón de borrar aparece al pasar o enfocar; en pantallas táctiles (celular o tablet) siempre está a mano. */}
                       <button
                         type="button"
                         onClick={() => setPorBorrar(conversacion)}
                         disabled={borrando}
                         aria-label={`Borrar la conversación «${conversacion.titulo}»`}
-                        className="absolute top-1/2 right-1 grid size-10 -translate-y-1/2 place-items-center rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-800 focus-visible:opacity-100 disabled:opacity-50 md:opacity-0 md:group-hover:opacity-100"
+                        className="absolute top-1/2 right-0.5 grid size-11 -translate-y-1/2 place-items-center rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-800 focus-visible:opacity-100 focus-visible:outline-offset-[-3px] disabled:opacity-50 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                       >
                         <Icono nombre="borrar" className="size-4" />
                       </button>

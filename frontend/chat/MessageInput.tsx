@@ -95,8 +95,8 @@ export default function MessageInput({
       {/* focus-within: el aro del contenedor reemplaza al foco del textarea (que no se dibuja) mientras se escribe. */}
       <div
         data-expandida={dosFilas}
-        className={`grid grid-cols-[auto_1fr_auto] items-end gap-x-1 rounded-3xl border bg-white/60 p-1 shadow-md backdrop-blur-md focus-within:ring-2 sm:p-1.5 ${
-          muyLargo ? "border-2 border-red-600 focus-within:ring-red-600" : "border-slate-300 focus-within:ring-blue-700"
+        className={`grid grid-cols-[auto_1fr_auto] items-end gap-x-1 rounded-3xl border bg-white/80 p-1 shadow-md backdrop-blur-md focus-within:ring-2 sm:p-1.5 ${
+          muyLargo ? "border-2 border-red-600 focus-within:ring-red-600" : "border-slate-500 focus-within:ring-blue-700"
         }`}
       >
         <MenuDeAtajos
@@ -117,7 +117,7 @@ export default function MessageInput({
           placeholder="Ej.: Gasté 5.000 en el súper…"
           // field-sizing-content: el campo crece con el texto hasta max-h-40 y ahí scrollea (donde el navegador no lo
           // soporta queda de una línea con scroll).
-          className={`field-sizing-content max-h-40 min-h-11 resize-none bg-transparent py-2.5 text-base text-slate-900 outline-none placeholder:text-sm placeholder:text-slate-600 ${
+          className={`field-sizing-content max-h-40 min-h-11 resize-none bg-transparent py-2.5 text-base text-slate-900 outline-none placeholder:text-sm placeholder:text-slate-700 ${
             dosFilas ? "col-span-3 col-start-1 row-start-1 px-3" : "col-start-2 row-start-1 px-2"
           }`}
         />
