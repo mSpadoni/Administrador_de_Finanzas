@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { CotizacionesController } from "@/backend/controllers/cotizaciones.controller";
+import { CotizacionesServicio } from "@/backend/servicios/cotizaciones.servicio";
 import { ClienteDolar } from "@/backend/lib/dolar/clienteDolar";
 import type { ResultadoCotizaciones } from "@/backend/lib/dolar/cotizaciones";
 import { crearToolsAsistente } from "@/backend/tools/asistente.tools";
@@ -33,7 +33,7 @@ afterEach(async () => {
 async function toolContra(status: number, cuerpo = "") {
   servidor = await levantarServidor(() => ({ status, headers: { "content-type": "application/json" }, cuerpo }));
   const dolar = new ClienteDolar({ endpoint: servidor.url, reintentos: 0 });
-  return crearToolsAsistente({ cotizaciones: new CotizacionesController(dolar) }).cotizacion_dolar;
+  return crearToolsAsistente({ cotizaciones: new CotizacionesServicio(dolar) }).cotizacion_dolar;
 }
 
 describe("cotizacion_dolar", () => {

@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { MovimientosController } from "@/backend/controllers/movimientos.controller";
+import { MovimientosServicio } from "@/backend/servicios/movimientos.servicio";
 import type { DatosDeMovimiento } from "@/backend/models/dominio/movimiento";
 import { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
 import { borrarUsuariosDePrueba, crearUsuarioLogueado } from "@/backend/tests/helpers/supabase/usuarioDePrueba";
@@ -22,13 +22,13 @@ const movimiento = (cambios: Partial<DatosDeMovimiento>): DatosDeMovimiento => (
   ...cambios,
 });
 
-/** Una persona logueada, con su modelo y el controller que lee sus movimientos. */
+/** Una persona logueada, con su modelo y el servicio que lee sus movimientos. */
 async function persona() {
   const { navegador } = await crearUsuarioLogueado();
   const modelo = new MovimientosModel(navegador.crearCliente);
   return {
     modelo,
-    controller: new MovimientosController(
+    servicio: new MovimientosServicio(
       () => modelo,
       undefined,
       () => HOY
@@ -36,9 +36,9 @@ async function persona() {
   };
 }
 
-describe("MovimientosController.estadisticasDelMes", () => {
+describe("MovimientosServicio.estadisticasDelMes", () => {
   it("resume el mes en curso y lo compara con el mes anterior", async () => {
-    const { modelo, controller } = await persona();
+    const { modelo, servicio } = await persona();
     await modelo.registrar(movimiento({ monto: 150000, categoria: "supermercado" }), null);
     await modelo.registrar(movimiento({ monto: 100000, categoria: "ocio", fecha: "2026-09-29" }), null);
     await modelo.registrar(
@@ -47,7 +47,7 @@ describe("MovimientosController.estadisticasDelMes", () => {
     );
     await modelo.registrar(movimiento({ monto: 200000, fecha: "2026-08-15" }), null); // mes anterior
 
-    const { periodo, resumen, porCategoria, variacionDeGastos } = await controller.estadisticasDelMes();
+    const { periodo, resumen, porCategoria, variacionDeGastos } = await servicio.estadisticasDelMes();
 
     expect(periodo).toEqual({ desde: "2026-09-01", hasta: "2026-09-30" });
     expect(resumen).toEqual({ ingresos: 1000000, gastos: 250000, balance: 750000 });
@@ -61,16 +61,16 @@ describe("MovimientosController.estadisticasDelMes", () => {
   it("no cuenta los movimientos de otro mes ni los de otras personas", async () => {
     const otra = await persona();
     await otra.modelo.registrar(movimiento({ monto: 999999 }), null);
-    const { modelo, controller } = await persona();
+    const { modelo, servicio } = await persona();
     await modelo.registrar(movimiento({ monto: 5000, fecha: "2026-10-01" }), null); // el mes que viene
 
-    const { resumen } = await controller.estadisticasDelMes();
+    const { resumen } = await servicio.estadisticasDelMes();
 
     expect(resumen).toEqual({ ingresos: 0, gastos: 0, balance: 0 });
   });
 });
 
-describe("MovimientosController.registrar — datos fuera de rango", () => {
+describe("MovimientosServicio.registrar — datos fuera de rango", () => {
   // Valores borde de lo que acepta la base: un monto que no entra en numeric(14,2) o un año que Postgres no acepta
   // tienen que volver como un dato mal pedido (el asistente lo corrige), no como un error de la base.
   const entrada = {
@@ -83,10 +83,10 @@ describe("MovimientosController.registrar — datos fuera de rango", () => {
   } as const;
 
   it("el monto más grande que entra en la base se guarda; uno más grande es un dato inválido y no se guarda", async () => {
-    const { modelo, controller } = await persona();
+    const { modelo, servicio } = await persona();
 
-    expect(await controller.registrar({ ...entrada, monto: 999_999_999_999.99 })).toMatchObject({ ok: true });
-    expect(await controller.registrar({ ...entrada, monto: 1_000_000_000_000 })).toEqual({
+    expect(await servicio.registrar({ ...entrada, monto: 999_999_999_999.99 })).toMatchObject({ ok: true });
+    expect(await servicio.registrar({ ...entrada, monto: 1_000_000_000_000 })).toEqual({
       ok: false,
       motivo: "datos_invalidos",
       detalle: "El monto es demasiado grande.",
@@ -95,17 +95,17 @@ describe("MovimientosController.registrar — datos fuera de rango", () => {
   });
 
   it("una fecha fuera de 1900–2100 es un dato inválido; los extremos se aceptan", async () => {
-    const { controller } = await persona();
+    const { servicio } = await persona();
 
     for (const fecha of ["0000-01-01", "1899-12-31", "2101-01-01"]) {
-      expect(await controller.registrar({ ...entrada, fecha }), fecha).toMatchObject({
+      expect(await servicio.registrar({ ...entrada, fecha }), fecha).toMatchObject({
         ok: false,
         motivo: "datos_invalidos",
         detalle: "La fecha tiene que estar entre 1900 y 2100.",
       });
     }
     for (const fecha of ["1900-01-01", "2100-12-31"]) {
-      expect(await controller.registrar({ ...entrada, fecha }), fecha).toMatchObject({ ok: true });
+      expect(await servicio.registrar({ ...entrada, fecha }), fecha).toMatchObject({ ok: true });
     }
   });
 });

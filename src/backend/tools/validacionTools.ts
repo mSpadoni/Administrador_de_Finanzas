@@ -12,7 +12,7 @@ import { FechaSchema } from "@/backend/models/dominio/validacionDominio";
 
 // Todo lo que el LLM le manda a una tool se valida acá, con Zod: son los `inputSchema` de cada tool. Las descripciones
 // (`.describe`) son las que lee el modelo para decidir cómo llamarlas. Lo que se hace con esos datos (registrar,
-// consultar, convertir) lo decide backend/controllers/movimientos.controller.ts.
+// consultar, convertir) lo decide backend/servicios/movimientos.servicio.ts.
 
 const PeriodoSchema = z
   .object({

@@ -4,7 +4,7 @@ import type { Estadisticas } from "@/backend/models/dominio/estadisticas";
 import type { AsistenteUIMessage } from "@/shared/chat";
 import type { ConversacionDelCostado } from "@/shared/conversaciones";
 import { conversacionesController, type ConversacionesController } from "./conversaciones.controller";
-import { movimientosController, type MovimientosController } from "./movimientos.controller";
+import { movimientosServicio, type MovimientosServicio } from "@/backend/servicios/movimientos.servicio";
 
 /** Todo lo que necesita la pantalla del chat para dibujarse. */
 export type DatosDeLaPantalla = {
@@ -23,7 +23,7 @@ export type DatosDeLaPantalla = {
 export class PantallaController {
   constructor(
     private readonly conversaciones: () => ConversacionesController = () => conversacionesController,
-    private readonly movimientos: () => MovimientosController = () => movimientosController
+    private readonly movimientos: () => MovimientosServicio = () => movimientosServicio
   ) {}
 
   /** Lee lo que necesita la pantalla de la conversación `id`. Las tres lecturas van a la vez. */

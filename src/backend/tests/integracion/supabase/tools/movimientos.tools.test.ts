@@ -1,5 +1,5 @@
 import { afterAll, afterEach, describe, expect, it } from "vitest";
-import { MovimientosController, type MovimientosConsultados } from "@/backend/controllers/movimientos.controller";
+import { MovimientosServicio, type MovimientosConsultados } from "@/backend/servicios/movimientos.servicio";
 import { ClienteDolar } from "@/backend/lib/dolar/clienteDolar";
 import { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
 import { crearToolsAsistente } from "@/backend/tools/asistente.tools";
@@ -44,8 +44,12 @@ async function personaConTools(dolarapi: Respuesta = DOLARES) {
   const movimientos = new MovimientosModel(persona.navegador.crearCliente);
   servidor = await levantarServidor(() => dolarapi);
   const dolar = new ClienteDolar({ endpoint: servidor.url, reintentos: 0 });
-  const controller = new MovimientosController(() => movimientos, dolar, () => HOY);
-  const tools = crearToolsAsistente({ movimientos: controller });
+  const servicio = new MovimientosServicio(
+    () => movimientos,
+    dolar,
+    () => HOY
+  );
+  const tools = crearToolsAsistente({ movimientos: servicio });
   return { movimientos, tools, dolarapi: servidor };
 }
 

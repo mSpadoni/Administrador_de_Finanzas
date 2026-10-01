@@ -44,9 +44,10 @@ const reglasDeDependencia = [
     rules: prohibir(backendNoDependeDeAppNiFrontend),
   },
   {
-    // Casos de uso, datos, asistente y errores: no saben de HTTP ni de Next. La respuesta HTTP la arman las rutas.
+    // Controllers, servicios, datos, asistente y errores: no saben de HTTP ni de Next. La respuesta HTTP la arman las rutas.
     files: [
       "src/backend/controllers/**/*.ts",
+      "src/backend/servicios/**/*.ts",
       "src/backend/models/**/*.ts",
       "src/backend/asistente/**/*.ts",
       "src/backend/tools/**/*.ts",

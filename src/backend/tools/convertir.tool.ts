@@ -1,11 +1,11 @@
 import "server-only";
 import { tool } from "ai";
-import { movimientosController, type MovimientosController } from "@/backend/controllers/movimientos.controller";
+import { movimientosServicio, type MovimientosServicio } from "@/backend/servicios/movimientos.servicio";
 import { ejecutarSinLanzar } from "./ejecutarSinLanzar";
 import { EntradaConvertirSchema } from "./validacionTools";
 
 /** La tool convertir: pasa un monto entre pesos y dólares con la cotización actual. */
-export function crearToolConvertir(movimientos: MovimientosController = movimientosController) {
+export function crearToolConvertir(movimientos: MovimientosServicio = movimientosServicio) {
   return tool({
     description:
       "Convierte un monto entre pesos y dólares con la cotización actual (compra y venta). Usala para '¿cuánto son " +

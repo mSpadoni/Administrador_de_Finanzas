@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MovimientosController, type EntradaDeMovimiento } from "@/backend/controllers/movimientos.controller";
+import { MovimientosServicio, type EntradaDeMovimiento } from "@/backend/servicios/movimientos.servicio";
 import type { CotizacionUsada, DatosDeMovimiento } from "@/backend/models/dominio/movimiento";
 import type { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
 
@@ -17,8 +17,8 @@ const GASTO: EntradaDeMovimiento = {
   fecha: "2026-09-29",
 };
 
-/** Un controller con un repositorio en memoria que anota lo que se le pidió guardar. */
-function controllerConRepositorioFalso() {
+/** Un servicio con un repositorio en memoria que anota lo que se le pidió guardar. */
+function servicioConRepositorioFalso() {
   const guardados: DatosDeMovimiento[] = [];
   const repositorio = {
     registrar: async (datos: DatosDeMovimiento, cotizacion: CotizacionUsada | null) => {
@@ -27,22 +27,22 @@ function controllerConRepositorioFalso() {
     },
   } as unknown as MovimientosModel;
   // El dólar no se usa (todo es en pesos): si se usara, un cliente real iría a internet, y eso haría fallar el test.
-  const controller = new MovimientosController(
+  const servicio = new MovimientosServicio(
     () => repositorio,
     undefined,
     () => "2026-09-29"
   );
-  return { controller, guardados };
+  return { servicio, guardados };
 }
 
 /** Registra `entrada` y devuelve el detalle del error (o null si se guardó) y cuántas cosas llegaron al repositorio. */
 async function registrar(entrada: EntradaDeMovimiento) {
-  const { controller, guardados } = controllerConRepositorioFalso();
-  const resultado = await controller.registrar(entrada);
+  const { servicio, guardados } = servicioConRepositorioFalso();
+  const resultado = await servicio.registrar(entrada);
   return { resultado, guardados };
 }
 
-describe("MovimientosController.registrar — qué es un movimiento válido", () => {
+describe("MovimientosServicio.registrar — qué es un movimiento válido", () => {
   it("un gasto y un ingreso bien formados se guardan", async () => {
     const ingreso: EntradaDeMovimiento = {
       ...GASTO,
@@ -119,9 +119,9 @@ describe("MovimientosController.registrar — qué es un movimiento válido", ()
   });
 });
 
-describe("MovimientosController — «hasta» sin «desde»", () => {
+describe("MovimientosServicio — «hasta» sin «desde»", () => {
   it("las estadísticas y la consulta piden el «desde», y le sugieren al asistente ofrecer «desde hoy»", async () => {
-    const { controller } = controllerConRepositorioFalso();
+    const { servicio } = servicioConRepositorioFalso();
     const esperado = {
       ok: false,
       motivo: "datos_invalidos",
@@ -129,19 +129,19 @@ describe("MovimientosController — «hasta» sin «desde»", () => {
         "Falta desde cuándo. Preguntale a la persona desde qué día quiere ver y ofrecele «desde hoy» para que no tenga que decir una fecha.",
     };
 
-    expect(await controller.estadisticas({ hasta: "2026-10-31" })).toEqual(esperado);
-    expect(await controller.consultar({ periodo: { hasta: "2026-10-31" } })).toEqual(esperado);
+    expect(await servicio.estadisticas({ hasta: "2026-10-31" })).toEqual(esperado);
+    expect(await servicio.consultar({ periodo: { hasta: "2026-10-31" } })).toEqual(esperado);
   });
 
   it("«desde hoy» hasta una fecha futura es un rango válido", async () => {
     const listar = async () => [];
-    const controller = new MovimientosController(
+    const servicio = new MovimientosServicio(
       () => ({ listar }) as unknown as MovimientosModel,
       undefined,
       () => "2026-09-29"
     );
 
-    expect(await controller.consultar({ periodo: { desde: "2026-09-29", hasta: "2026-10-31" } })).toMatchObject({
+    expect(await servicio.consultar({ periodo: { desde: "2026-09-29", hasta: "2026-10-31" } })).toMatchObject({
       ok: true,
       periodo: { desde: "2026-09-29", hasta: "2026-10-31" },
     });

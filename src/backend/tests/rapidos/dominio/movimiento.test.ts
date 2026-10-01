@@ -1,13 +1,9 @@
 import { describe, expect, it } from "vitest";
-import {
-  montoEnPesos,
-  valorDeCotizacion,
-  type DatosDeMovimiento,
-} from "@/backend/models/dominio/movimiento";
+import { montoEnPesos, valorDeCotizacion, type DatosDeMovimiento } from "@/backend/models/dominio/movimiento";
 import { ErrorDeDominio } from "@/backend/models/dominio/erroresDominio";
 
 // Cómo se calcula el monto en pesos de un movimiento (docs/adr/0001). Lógica pura. Qué es un movimiento válido se prueba
-// por el caso de uso que lo registra (movimientos.controller.test.ts).
+// por el caso de uso que lo registra (movimientos.servicio.test.ts).
 
 const GASTO: DatosDeMovimiento = {
   tipo: "gasto",

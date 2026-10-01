@@ -1,11 +1,11 @@
 import "server-only";
 import { tool } from "ai";
-import { movimientosController, type MovimientosController } from "@/backend/controllers/movimientos.controller";
+import { movimientosServicio, type MovimientosServicio } from "@/backend/servicios/movimientos.servicio";
 import { ejecutarSinLanzar } from "./ejecutarSinLanzar";
 import { EntradaEstadisticasSchema } from "./validacionTools";
 
 /** La tool estadisticas: totales, porcentajes por categoría y variación contra el período anterior. */
-export function crearToolEstadisticas(movimientos: MovimientosController = movimientosController) {
+export function crearToolEstadisticas(movimientos: MovimientosServicio = movimientosServicio) {
   return tool({
     description:
       "Estadísticas de un período: ingresos, gastos, balance, totales y porcentaje por categoría, promedio diario " +

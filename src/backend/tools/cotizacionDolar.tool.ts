@@ -1,11 +1,11 @@
 import "server-only";
 import { tool } from "ai";
-import { cotizacionesController, type CotizacionesController } from "@/backend/controllers/cotizaciones.controller";
+import { cotizacionesServicio, type CotizacionesServicio } from "@/backend/servicios/cotizaciones.servicio";
 import { ejecutarSinLanzar } from "./ejecutarSinLanzar";
 import { EntradaCotizacionDolarSchema } from "./validacionTools";
 
 /** La tool cotizacion_dolar: la cotización actual del dólar (todos los tipos o uno). */
-export function crearToolCotizacionDolar(cotizaciones: CotizacionesController = cotizacionesController) {
+export function crearToolCotizacionDolar(cotizaciones: CotizacionesServicio = cotizacionesServicio) {
   return tool({
     description:
       "Cotización actual del dólar en Argentina (oficial, blue, MEP y tarjeta), con compra y venta en pesos. Usala " +

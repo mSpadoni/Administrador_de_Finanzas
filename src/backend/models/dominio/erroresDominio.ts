@@ -1,5 +1,5 @@
 // Todos los errores de backend/models/dominio. Son errores de quien llama (un dato que el dominio nunca debería recibir):
-// los controllers validan antes, así que llegar hasta acá es un bug o un pedido mal armado, no algo de la persona.
+// los servicios validan antes, así que llegar hasta acá es un bug o un pedido mal armado, no algo de la persona.
 
 /** Un pedido que rompe una regla del dominio (un período al revés, un monto en dólares sin cotización…). */
 export class ErrorDeDominio extends Error {

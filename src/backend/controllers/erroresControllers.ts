@@ -1,15 +1,11 @@
 import "server-only";
 import { traducirError } from "@/backend/asistente/erroresAsistente";
 import { ErrorDeAplicacion } from "@/backend/erroresBackend";
-import type { MotivoDelDolar } from "@/backend/lib/dolar/erroresDolar";
-import { fallo, type Fallo } from "@/backend/lib/erroresLib";
-import { ErrorDeDominio } from "@/backend/models/dominio/erroresDominio";
 import { ConversacionYaExisteError } from "@/backend/models/repositorios/erroresRepositorios";
 import type { LimiteAlcanzado } from "@/backend/models/dominio/limiteDeUso";
 
-// Todos los errores de backend/controllers: los que cortan un caso de uso (se lanzan, la ruta los responde con su
-// código) y los fallos de los casos de uso de movimientos (no se lanzan: se devuelven como `{ ok: false, motivo,
-// detalle }` para que el asistente se los explique a la persona).
+// Todos los errores de backend/controllers: los que cortan un pedido (se lanzan y la ruta los responde con su código).
+// Los fallos de los servicios de movimientos (que no se lanzan) están en servicios/erroresServicios.ts.
 
 /** Lo que manda el navegador no pasó su esquema: la ruta responde 400 (pedido_invalido). */
 export function lanzarPedidoInvalido(mensaje: string): never {
@@ -37,20 +33,3 @@ export function lanzarPorFalloAlCrearConversacion(causa: unknown): never {
     cause: causa,
   });
 }
-
-/** Por qué un caso de uso de movimientos no pudo hacer lo que se le pidió (un fallo de la cotización o un dato mal pedido). */
-export type FalloDeMovimientos = Fallo<MotivoDelDolar | "datos_invalidos" | "no_encontrado">;
-
-export const datosInvalidos = (detalle: string): FalloDeMovimientos => fallo("datos_invalidos", detalle);
-
-/**
- * Por qué no se pudo armar el período pedido. Solo el rango al revés (un error del dominio) es un dato mal pedido; cualquier
- * otro error es un bug y sigue de largo.
- */
-export function falloDelPeriodoPedido(error: unknown): FalloDeMovimientos {
-  if (error instanceof ErrorDeDominio) return datosInvalidos(error.message);
-  throw error;
-}
-
-export const movimientoNoEncontrado = (): FalloDeMovimientos =>
-  fallo("no_encontrado", "No hay un movimiento tuyo con ese id.");

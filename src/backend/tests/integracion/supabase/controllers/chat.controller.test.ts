@@ -1,14 +1,25 @@
 import { randomUUID } from "node:crypto";
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { ChatController } from "@/backend/controllers/chat.controller";
-import { MovimientosController } from "@/backend/controllers/movimientos.controller";
+import { MovimientosServicio } from "@/backend/servicios/movimientos.servicio";
 import { ErrorDeAplicacion } from "@/backend/erroresBackend";
 import { ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
 import { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
 import { MAX_MENSAJES_CONTEXTO, type AsistenteUIMessage } from "@/shared/chat";
 import { borrarUsuariosDePrueba, crearUsuarioLogueado } from "@/backend/tests/helpers/supabase/usuarioDePrueba";
-import { usuarioConChat, codigoDelError, conversar, herramientas, mensajesGuardados } from "@/backend/tests/helpers/asistente/chatDePrueba";
-import { errorDeLaApi, modeloQueFalla, modeloQueLlamaTool, modeloQueResponde } from "@/backend/tests/helpers/asistente/modeloDePrueba";
+import {
+  usuarioConChat,
+  codigoDelError,
+  conversar,
+  herramientas,
+  mensajesGuardados,
+} from "@/backend/tests/helpers/asistente/chatDePrueba";
+import {
+  errorDeLaApi,
+  modeloQueFalla,
+  modeloQueLlamaTool,
+  modeloQueResponde,
+} from "@/backend/tests/helpers/asistente/modeloDePrueba";
 import { conVariablesAsync } from "@/backend/tests/helpers/variablesDeEntorno";
 
 // NUESTRA orquestación del chat (guardar, errores, timeout, streaming, historial) contra la Supabase local,
@@ -275,7 +286,7 @@ describe("ChatController.responder — tools que pide el modelo", () => {
     } as unknown as MovimientosModel;
     const { conversaciones, controller } = await usuarioConChat({
       crearModelo: () => modelo,
-      movimientos: () => new MovimientosController(() => baseCaida),
+      movimientos: () => new MovimientosServicio(() => baseCaida),
     });
     const id = randomUUID();
     vi.spyOn(console, "error").mockImplementation(() => undefined);

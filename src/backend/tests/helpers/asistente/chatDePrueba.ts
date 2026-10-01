@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { ChatController } from "@/backend/controllers/chat.controller";
-import { MovimientosController } from "@/backend/controllers/movimientos.controller";
+import { MovimientosServicio } from "@/backend/servicios/movimientos.servicio";
 import { ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
 import { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
 import { UsoModel } from "@/backend/models/repositorios/uso.model";
@@ -19,7 +19,7 @@ export async function usuarioConChat(dependencias: ConstructorParameters<typeof 
   const controller = new ChatController({
     modeloConversaciones: () => conversaciones,
     modeloUso: () => new UsoModel(usuario.navegador.crearCliente),
-    movimientos: () => new MovimientosController(() => movimientos),
+    movimientos: () => new MovimientosServicio(() => movimientos),
     ...dependencias,
   });
   return { usuario, conversaciones, controller };

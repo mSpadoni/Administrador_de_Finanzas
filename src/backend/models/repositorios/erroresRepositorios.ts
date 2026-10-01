@@ -2,7 +2,7 @@ import "server-only";
 import { isAuthApiError, isAuthRetryableFetchError, type AuthError } from "@supabase/supabase-js";
 import { esClaveDuplicada } from "@/backend/lib/supabase/erroresSupabase";
 
-// Los errores de backend/models/repositorios: lo que los repositorios traducen de la base para que los controllers no
+// Los errores de backend/models/repositorios: lo que los repositorios traducen de la base para que los controllers y servicios no
 // tengan que saber de Postgres (códigos, claves, RLS).
 
 /** Se quiso crear una conversación con un id que ya existe (y, como RLS no la deja ver, es de otra persona). */

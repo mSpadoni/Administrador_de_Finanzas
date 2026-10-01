@@ -1,11 +1,11 @@
 import "server-only";
 import { tool } from "ai";
-import { movimientosController, type MovimientosController } from "@/backend/controllers/movimientos.controller";
+import { movimientosServicio, type MovimientosServicio } from "@/backend/servicios/movimientos.servicio";
 import { ejecutarSinLanzar } from "./ejecutarSinLanzar";
 import { EntradaRegistrarMovimientoSchema } from "./validacionTools";
 
 /** La tool registrar_movimiento: el asistente guarda un gasto o un ingreso de la persona. */
-export function crearToolRegistrarMovimiento(movimientos: MovimientosController = movimientosController) {
+export function crearToolRegistrarMovimiento(movimientos: MovimientosServicio = movimientosServicio) {
   return tool({
     description:
       "Registra un gasto o un ingreso de la persona. Usala cuando cuente algo que gastó o cobró. Si es en dólares, " +

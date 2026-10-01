@@ -29,7 +29,7 @@ import {
   falloDelPeriodoPedido,
   movimientoNoEncontrado,
   type FalloDeMovimientos,
-} from "./erroresControllers";
+} from "./erroresServicios";
 
 /** Lo que pide la persona al registrar un movimiento, tal como lo entiende el asistente (todavía sin validar). */
 export type EntradaDeMovimiento = {
@@ -75,7 +75,7 @@ export type Conversion = Resultado<
  * Ningún caso de uso lanza por un dato mal pedido: devuelve `{ ok: false, motivo, detalle }` para que el asistente
  * lo corrija o se lo explique a la persona. Un error de la base sí se propaga.
  */
-export class MovimientosController {
+export class MovimientosServicio {
   constructor(
     private readonly modeloMovimientos: () => MovimientosModel = () => movimientosModel,
     private readonly dolar: ClienteDolar = clienteDolar,
@@ -171,4 +171,4 @@ export class MovimientosController {
 }
 
 /** Instancia lista para usar desde las tools y las páginas (con el cliente del request). */
-export const movimientosController = new MovimientosController();
+export const movimientosServicio = new MovimientosServicio();

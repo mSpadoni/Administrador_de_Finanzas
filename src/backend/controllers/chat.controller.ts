@@ -11,7 +11,7 @@ import { Agente } from "@/backend/asistente/agente";
 import { MAX_MENSAJES_CONTEXTO, type AsistenteUIMessage } from "@/shared/chat";
 import { tituloDesde } from "@/shared/conversaciones";
 import { lanzarErrorDelModelo, lanzarLimiteAlcanzado, lanzarPorFalloAlCrearConversacion } from "./erroresControllers";
-import { movimientosController, type MovimientosController } from "./movimientos.controller";
+import { movimientosServicio, type MovimientosServicio } from "@/backend/servicios/movimientos.servicio";
 import { validarPedidoDeChat, type PedidoDeChat } from "./validacionControllers";
 
 /**
@@ -25,7 +25,7 @@ type Dependencias = {
   /** La cuota de uso del asistente (cuántos mensajes por minuto y por día). */
   modeloUso?: () => UsoModel;
   /** El controller que ejecutan las tools de movimientos (con la sesión del pedido). */
-  movimientos?: () => MovimientosController;
+  movimientos?: () => MovimientosServicio;
   timeoutMs?: number;
   /** Pausa entre palabras al mostrar la respuesta (ms). 0 = tan rápido como llega del modelo. */
   pausaEntrePalabrasMs?: number;
@@ -44,7 +44,7 @@ export class ChatController {
   private readonly crearModelo: () => LanguageModel;
   private readonly modeloConversaciones: () => ConversacionesModel;
   private readonly modeloUso: () => UsoModel;
-  private readonly movimientos: () => MovimientosController;
+  private readonly movimientos: () => MovimientosServicio;
   private readonly agente: Agente;
   private readonly limites: LimitesDeUso;
 
@@ -54,7 +54,7 @@ export class ChatController {
     crearModelo = () => crearModeloOpenAI(),
     modeloConversaciones = () => conversacionesModel,
     modeloUso = () => usoModel,
-    movimientos = () => movimientosController,
+    movimientos = () => movimientosServicio,
     timeoutMs,
     pausaEntrePalabrasMs,
     temperatura,
