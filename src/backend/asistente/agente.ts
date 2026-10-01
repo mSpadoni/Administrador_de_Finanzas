@@ -15,6 +15,7 @@ import { hoyEnArgentina } from "@/backend/models/dominio/periodo";
 import type { ToolsDelAsistente } from "@/backend/tools/asistente.tools";
 import { traducirError } from "@/backend/asistente/erroresAsistente";
 import type { AsistenteUIMessage, MetadatosDeRespuesta } from "@/shared/chat";
+import { leerErrorPublico } from "@/shared/erroresShared";
 import { mensajesParaElModelo } from "./contexto";
 import { medidorDeRespuesta } from "./medicion";
 import { textoDeErrorEnStream, timeoutComoError } from "./streams";
@@ -156,6 +157,9 @@ export class Agente {
         // Cualquier error del modelo llega al usuario con su código y un mensaje entendible, sin detalles técnicos.
         // El original (con el cuerpo de la respuesta de OpenAI) va solo al log del servidor.
         onError: (error) => {
+          // El AI SDK puede volver a pasar por acá el texto de un error que ya se tradujo (ej. al cerrar el mensaje):
+          // se devuelve tal cual, sin traducirlo de nuevo (sería «no disponible») ni volver a loguearlo.
+          if (error instanceof Error && leerErrorPublico(error.message)) return error.message;
           const traducido = traducirError(error);
           registrarError("asistente.stream", error, { codigo: traducido.codigo });
           return textoDeErrorEnStream(traducido);

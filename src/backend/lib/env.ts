@@ -1,4 +1,5 @@
 import {
+  VariablesDeDolarSchema,
   VariablesDeFirmaSchema,
   VariablesDeOpenAISchema,
   VariablesDeSupabaseSchema,
@@ -13,6 +14,7 @@ import {
 
 export const URL_API_OPENAI_POR_DEFECTO = "https://api.openai.com/v1";
 export const MODELO_OPENAI_POR_DEFECTO = "gpt-4.1";
+export const URL_DOLARAPI_POR_DEFECTO = "https://dolarapi.com/v1/dolares";
 
 /** Supabase: URL del proyecto y publishable key (pública a propósito: la seguridad la da RLS). */
 export function envSupabase(): { url: string; key: string } {
@@ -34,4 +36,10 @@ export function envOpenAI(): { apiKey: string; baseURL: string; modelo: string }
 export function envFirma(): { clave: string } {
   const variables = validarVariablesDeEntorno("la firma de mensajes", VariablesDeFirmaSchema, process.env);
   return { clave: variables.FIRMA_DE_MENSAJES };
+}
+
+/** dolarapi.com: el endpoint de las cotizaciones (por defecto el público). */
+export function envDolar(): { endpoint: string } {
+  const variables = validarVariablesDeEntorno("dolarapi.com", VariablesDeDolarSchema, process.env);
+  return { endpoint: variables.DOLARAPI_URL ?? URL_DOLARAPI_POR_DEFECTO };
 }

@@ -27,6 +27,11 @@ export const VariablesDeOpenAISchema = z.object({
   OPENAI_MODEL: opcional(z.string()),
 });
 
+/** dolarapi.com: la dirección es opcional (los tests de punta a punta la apuntan a un servidor falso local). */
+export const VariablesDeDolarSchema = z.object({
+  DOLARAPI_URL: opcional(url("DOLARAPI_URL")),
+});
+
 /** La clave con la que el servidor firma las respuestas del asistente: secreta y larga (al menos 32 caracteres). */
 export const VariablesDeFirmaSchema = z.object({
   FIRMA_DE_MENSAJES: requerida("FIRMA_DE_MENSAJES").pipe(

@@ -1,5 +1,6 @@
 import "server-only";
 import type { TipoDeDolar } from "@/backend/models/dominio/movimiento";
+import { envDolar } from "../env";
 import { CacheDeCotizaciones } from "./cacheDeCotizaciones";
 import { aCotizaciones, type ResultadoCotizacion, type ResultadoCotizaciones } from "./cotizaciones";
 import {
@@ -17,15 +18,13 @@ import {
 // API key. Un solo pedido (/v1/dolares) trae todos los tipos de dólar; se guarda 5 minutos (cacheDeCotizaciones.ts).
 // Lo que responde se valida en validacionDolar.ts y las fallas se arman en erroresDolar.ts.
 
-const ENDPOINT_POR_DEFECTO = "https://dolarapi.com/v1/dolares";
-
 /**
  * Cómo se configura el cliente del dólar (el objeto que recibe el constructor de ClienteDolar). Todo es opcional:
  * sin nada, usa dolarapi.com con 5 s, 1 reintento y 5 min de caché. Los tests cambian estos valores para probar
  * cada respuesta posible contra un servidor local.
  */
 export type OpcionesDolar = {
-  /** Dirección completa del endpoint (por defecto https://dolarapi.com/v1/dolares). */
+  /** Dirección completa del endpoint (por defecto DOLARAPI_URL o https://dolarapi.com/v1/dolares). */
   endpoint?: string;
   /** Cuánto esperar cada intento (ms). */
   timeoutMs?: number;
@@ -62,7 +61,7 @@ export class ClienteDolar {
   private readonly cache: CacheDeCotizaciones;
 
   constructor({
-    endpoint = ENDPOINT_POR_DEFECTO,
+    endpoint = envDolar().endpoint,
     timeoutMs = 5000,
     reintentos = 1,
     duracionCacheMs = 5 * 60_000,

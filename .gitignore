@@ -45,3 +45,9 @@ next-env.d.ts
 
 # Tipos de la base a medio generar (npm run db:types los reemplaza solo si salió bien).
 src/backend/types/database.ts.nuevo
+
+# Tests de punta a punta (Playwright): build propio, sesiones de prueba y reportes.
+/.next-e2e/
+/e2e/.sesiones/
+/playwright-report/
+/test-results/
