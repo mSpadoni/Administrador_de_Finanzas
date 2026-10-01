@@ -15,7 +15,7 @@ export const TAMANOS_DE_LETRA = [
 export type TamanoDeLetra = (typeof TAMANOS_DE_LETRA)[number]["id"];
 
 /** Dónde se guarda la elección en el navegador. */
-export const CLAVE_DEL_TAMANO_DE_LETRA = "tamano-de-letra";
+const CLAVE_DEL_TAMANO_DE_LETRA = "tamano-de-letra";
 
 const TAMANOS_AGRANDADOS = TAMANOS_DE_LETRA.map(({ id }) => id).filter((id) => id !== "normal");
 

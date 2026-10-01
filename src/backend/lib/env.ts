@@ -12,9 +12,9 @@ import {
 // - No lleva `server-only` porque también la usa el middleware (Edge). El frontend no la puede importar (regla de ESLint).
 // - Es el único archivo que lee `process.env`.
 
-export const URL_API_OPENAI_POR_DEFECTO = "https://api.openai.com/v1";
-export const MODELO_OPENAI_POR_DEFECTO = "gpt-4.1";
-export const URL_DOLARAPI_POR_DEFECTO = "https://dolarapi.com/v1/dolares";
+const URL_API_OPENAI_POR_DEFECTO = "https://api.openai.com/v1";
+const MODELO_OPENAI_POR_DEFECTO = "gpt-4.1";
+const URL_DOLARAPI_POR_DEFECTO = "https://dolarapi.com/v1/dolares";
 
 /** Supabase: URL del proyecto y publishable key (pública a propósito: la seguridad la da RLS). */
 export function envSupabase(): { url: string; key: string } {

@@ -20,7 +20,7 @@ function jsonCanonico(valor: unknown): string {
 }
 
 /** Lo que se firma de un mensaje: a qué conversación pertenece, su id, su rol y sus partes. */
-export type ContenidoFirmado = { conversacionId: string; id: string; rol: string; partes: unknown };
+type ContenidoFirmado = { conversacionId: string; id: string; rol: string; partes: unknown };
 
 /** La firma de un mensaje (base64url). */
 export function firmar({ conversacionId, id, rol, partes }: ContenidoFirmado): string {

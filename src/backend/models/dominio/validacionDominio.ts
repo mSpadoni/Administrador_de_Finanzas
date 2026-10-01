@@ -25,7 +25,7 @@ const MontoSchema = z
   .refine((monto) => redondear(monto) === monto, "El monto puede tener a lo sumo dos decimales.");
 
 /** Lo que describe la persona. El monto en pesos no: lo calcula la app con la cotización del día. */
-export const DatosDeMovimientoSchema = z
+const DatosDeMovimientoSchema = z
   .object({
     tipo: z.enum(TIPOS_DE_MOVIMIENTO),
     monto: MontoSchema,
@@ -43,7 +43,7 @@ export const DatosDeMovimientoSchema = z
 export type DatosDeMovimiento = z.infer<typeof DatosDeMovimientoSchema>;
 
 /** Los datos de un movimiento ya validados, o el primer problema (con el texto que se le explica a la persona). */
-export type DatosDeMovimientoLeidos = { ok: true; datos: DatosDeMovimiento } | { ok: false; detalle: string };
+type DatosDeMovimientoLeidos = { ok: true; datos: DatosDeMovimiento } | { ok: false; detalle: string };
 
 /** Valida los datos de un movimiento sin lanzar: para lo que llega del asistente y para las filas que se leen. */
 export function leerDatosDeMovimiento(entrada: unknown): DatosDeMovimientoLeidos {

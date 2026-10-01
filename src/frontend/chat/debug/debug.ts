@@ -7,7 +7,7 @@ import { avisoDeHerramienta, herramientaFallo } from "../conversacion/tipos";
 // y con qué datos), qué devolvieron, cuánto tardó y cuántos tokens gastó. Funciones puras, sin dibujar nada.
 
 /** Cuántos caracteres se muestran como máximo de un dato de una tool (los resultados pueden ser enormes). */
-export const MAX_CARACTERES_EN_DEBUG = 1500;
+const MAX_CARACTERES_EN_DEBUG = 1500;
 
 /** Un dato como texto legible: JSON con sangría, o el texto tal cual; si es largo, se corta y se dice cuánto falta. */
 export function comoTextoDeDebug(valor: unknown, max = MAX_CARACTERES_EN_DEBUG): string {
@@ -75,7 +75,7 @@ export function respuestasParaDebug(mensajes: AsistenteUIMessage[]): RespuestaDe
 }
 
 /** Los totales de toda la conversación (solo cuentan las respuestas medidas). */
-export type TotalesDeDebug = {
+type TotalesDeDebug = {
   respuestas: number;
   herramientas: number;
   ms: number;

@@ -18,7 +18,7 @@ import type { Database } from "@/backend/types/database";
 type FilaMovimiento = Database["public"]["Tables"]["movimientos"]["Row"];
 
 /** Qué movimientos listar además del período (sin filtro: todos). */
-export type FiltroDeMovimientos = { tipo?: TipoDeMovimiento; categoria?: Categoria };
+type FiltroDeMovimientos = { tipo?: TipoDeMovimiento; categoria?: Categoria };
 
 /**
  * La fila como Movimiento del dominio, validada. La base ya tiene los check, pero una fila que no pasa la validación

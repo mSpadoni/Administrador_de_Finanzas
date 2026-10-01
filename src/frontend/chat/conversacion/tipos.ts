@@ -79,7 +79,7 @@ const FUENTE_DEL_DOLAR = "dolarapi.com";
  * De qué API externa saca datos una herramienta mientras trabaja, o null si trabaja solo con los datos de la persona (su
  * base). El dólar sale de dolarapi.com, también al registrar un movimiento en dólares (que busca la cotización del día).
  */
-export function fuenteDeLaHerramienta(parte: ParteDelAsistente): string | null {
+function fuenteDeLaHerramienta(parte: ParteDelAsistente): string | null {
   if (!isStaticToolUIPart(parte)) return null;
   switch (parte.type) {
     case "tool-cotizacion_dolar":

@@ -16,7 +16,7 @@ export type ConversacionGuardada = Pick<FilaConversacion, "id" | "titulo" | "cre
 const COLUMNAS_CONVERSACION = "id, titulo, creado_en, actualizado_en";
 
 /** Largo máximo del título (el mismo límite que pone la base). */
-export const MAX_CARACTERES_TITULO = 120;
+const MAX_CARACTERES_TITULO = 120;
 
 /** El título como lo acepta la base: nunca más largo que su límite. */
 const tituloParaLaBase = (titulo: string) => titulo.slice(0, MAX_CARACTERES_TITULO);

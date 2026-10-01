@@ -30,19 +30,19 @@ import { textoDeErrorEnStream, timeoutComoError } from "./streams";
 const MAXIMO_DE_PASOS = 8;
 
 /** Tokens de salida por paso: alcanza de sobra para una respuesta con tablas y los datos de las tools. */
-export const MAXIMO_TOKENS_DE_SALIDA = 4000;
+const MAXIMO_TOKENS_DE_SALIDA = 4000;
 
 /**
  * El modelo manda el texto en ráfagas irregulares; así la respuesta se lee más cómoda: sale palabra por palabra,
  * a un ritmo parejo (~20 palabras por segundo).
  */
-export const PAUSA_ENTRE_PALABRAS_MS = 50;
+const PAUSA_ENTRE_PALABRAS_MS = 50;
 
 /** Cuánto puede tardar una respuesta completa si no se configura otra cosa (ms). */
 const TIMEOUT_DEL_AGENTE_MS = 45_000;
 
 /** Cómo responde el asistente: se configura una vez, al crear el agente. */
-export type ConfiguracionDelAgente = {
+type ConfiguracionDelAgente = {
   /** Cuánto puede tardar una respuesta completa (ms). */
   timeoutMs?: number;
   /** Pausa entre palabras al mostrar la respuesta (ms). 0 = tan rápido como llega del modelo. */
@@ -52,7 +52,7 @@ export type ConfiguracionDelAgente = {
 };
 
 /** Lo que cambia en cada respuesta: el modelo, la conversación, las tools del pedido y qué hacer al terminar. */
-export type PedidoAlAgente = {
+type PedidoAlAgente = {
   modelo: LanguageModel;
   /** La conversación hasta ahora, con el mensaje nuevo del usuario al final. */
   mensajes: AsistenteUIMessage[];

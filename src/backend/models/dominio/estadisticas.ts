@@ -9,7 +9,7 @@ import { contiene, diasDe, periodoAnterior, type Periodo } from "./periodo";
 export type Resumen = { ingresos: number; gastos: number; balance: number };
 
 /** El total de una categoría y qué porcentaje es del total de su tipo. */
-export type TotalPorCategoria = { tipo: TipoDeMovimiento; categoria: Categoria; total: number; porcentaje: number };
+type TotalPorCategoria = { tipo: TipoDeMovimiento; categoria: Categoria; total: number; porcentaje: number };
 
 /** Las estadísticas de un período. `porcentaje` es null si en el período anterior no hubo gastos. */
 export type Estadisticas = {

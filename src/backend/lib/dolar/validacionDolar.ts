@@ -18,7 +18,7 @@ const CasaSchema = z.object({
 });
 
 /** Una casa de cambio como la publica dolarapi, ya validada. */
-export type CasaDeDolarapi = z.infer<typeof CasaSchema>;
+type CasaDeDolarapi = z.infer<typeof CasaSchema>;
 
 /** Las casas de la respuesta (cada una con su nombre y el resto sin validar), o null si no es una lista de casas. */
 export function validarListaDeCasas(json: unknown): { casa: string }[] | null {

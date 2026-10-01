@@ -12,7 +12,7 @@ export const MAX_CARACTERES_MENSAJE = 6000;
 export const MAX_MENSAJES_CONTEXTO = 20;
 
 /** Cada tool del asistente con el tipo de sus datos (input) y de su resultado (output). */
-export type HerramientasDelAsistente = InferUITools<ToolsDelAsistente>;
+type HerramientasDelAsistente = InferUITools<ToolsDelAsistente>;
 
 /** Los nombres de las tools del asistente ("registrar_movimiento", "cotizacion_dolar"…). */
 export type NombreDeHerramienta = keyof HerramientasDelAsistente;

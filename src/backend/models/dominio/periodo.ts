@@ -8,7 +8,7 @@ import { lanzarPeriodoAlReves, lanzarPeriodoSinDesde } from "./erroresDominio";
 export type Periodo = { desde: string; hasta: string };
 
 /** Las unidades con las que se piden los períodos más comunes. */
-export type UnidadDePeriodo = "dia" | "semana" | "mes";
+type UnidadDePeriodo = "dia" | "semana" | "mes";
 
 const MS_POR_DIA = 86_400_000;
 

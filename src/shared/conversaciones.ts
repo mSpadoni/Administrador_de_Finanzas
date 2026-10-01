@@ -5,7 +5,7 @@
 export type ConversacionDelCostado = { id: string; titulo: string };
 
 /** Largo máximo del título provisorio (el primer mensaje de la persona). */
-export const MAX_CARACTERES_TITULO_PROVISORIO = 60;
+const MAX_CARACTERES_TITULO_PROVISORIO = 60;
 
 /** Largo máximo del título que propone el asistente (entra en la barra lateral). */
 export const MAX_CARACTERES_TITULO_DEL_ASISTENTE = 50;

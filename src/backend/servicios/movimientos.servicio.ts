@@ -46,16 +46,16 @@ export type EntradaDeMovimiento = {
 };
 
 /** Qué movimientos consultar: un período (sin valor, el mes actual) y, si se quiere, solo un tipo o una categoría. */
-export type ConsultaDeMovimientos = { periodo?: PedidoDePeriodo; tipo?: TipoDeMovimiento; categoria?: Categoria };
+type ConsultaDeMovimientos = { periodo?: PedidoDePeriodo; tipo?: TipoDeMovimiento; categoria?: Categoria };
 
-export type MovimientoRegistrado = Resultado<{ movimiento: Movimiento }, FalloDeMovimientos>;
+type MovimientoRegistrado = Resultado<{ movimiento: Movimiento }, FalloDeMovimientos>;
 export type MovimientosConsultados = Resultado<
   { periodo: Periodo; movimientos: Movimiento[]; resumen: Resumen },
   FalloDeMovimientos
 >;
-export type EstadisticasConsultadas = Resultado<{ estadisticas: Estadisticas }, FalloDeMovimientos>;
-export type MovimientoBorrado = { ok: true } | FalloDeMovimientos;
-export type Conversion = Resultado<
+type EstadisticasConsultadas = Resultado<{ estadisticas: Estadisticas }, FalloDeMovimientos>;
+type MovimientoBorrado = { ok: true } | FalloDeMovimientos;
+type Conversion = Resultado<
   {
     monto: number;
     de: Moneda;

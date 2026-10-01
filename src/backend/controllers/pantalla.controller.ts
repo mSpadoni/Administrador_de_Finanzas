@@ -7,7 +7,7 @@ import { conversacionesServicio, type ConversacionesServicio } from "@/backend/s
 import { movimientosServicio, type MovimientosServicio } from "@/backend/servicios/movimientos.servicio";
 
 /** Todo lo que necesita la pantalla del chat para dibujarse. */
-export type DatosDeLaPantalla = {
+type DatosDeLaPantalla = {
   /** Las conversaciones de la barra lateral, la más reciente arriba. */
   conversaciones: ConversacionDelCostado[];
   /** El historial de la conversación abierta (vacío si todavía no se guardó ningún mensaje). */
@@ -22,7 +22,7 @@ export type DatosDeLaPantalla = {
  * servicios de conversaciones y de movimientos (un controller no llama a otro controller). El id ya viene validado por la
  * página.
  */
-export class PantallaController {
+class PantallaController {
   constructor(
     private readonly conversaciones: () => ConversacionesServicio = () => conversacionesServicio,
     private readonly movimientos: () => MovimientosServicio = () => movimientosServicio

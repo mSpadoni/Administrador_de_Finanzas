@@ -9,7 +9,7 @@ import type { CodigoDeError } from "@/shared/erroresShared";
 // Acá no se loguea: lo hace quien maneja el error (la ruta, o el onError del stream), una sola vez.
 
 /** Lo que ve el usuario cuando el modelo tarda demasiado. */
-export const MENSAJE_TIMEOUT = "El asistente tardó demasiado en responder. Probá de nuevo en unos segundos.";
+const MENSAJE_TIMEOUT = "El asistente tardó demasiado en responder. Probá de nuevo en unos segundos.";
 
 /**
  * Todos los errores del modelo que la app distingue, cada uno con su código y su mensaje. Para agregar uno nuevo se

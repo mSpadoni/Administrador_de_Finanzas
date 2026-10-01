@@ -10,7 +10,7 @@ import { lanzarPedidoInvalido } from "./erroresControllers";
 // movimientos en el dominio (models/dominio/validacionDominio.ts).
 
 /** El primer problema de una validación, con el texto que ve la persona (o `porDefecto` si no trae ninguno). */
-export function primerMensaje(error: { issues: readonly { message: string }[] }, porDefecto: string): string {
+function primerMensaje(error: { issues: readonly { message: string }[] }, porDefecto: string): string {
   return error.issues[0]?.message ?? porDefecto;
 }
 

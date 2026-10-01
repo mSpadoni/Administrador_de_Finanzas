@@ -9,7 +9,7 @@ import { crearToolEstadisticas } from "./estadisticas.tool";
 import { crearToolRegistrarMovimiento } from "./registrarMovimiento.tool";
 
 /** Lo que se le puede pasar a las tools del asistente para reemplazar sus piezas (útil en los tests). */
-export type DependenciasDelAsistente = {
+type DependenciasDelAsistente = {
   /** El servicio que ejecutan las tools de movimientos y de convertir (con la sesión del pedido). */
   movimientos?: MovimientosServicio;
   /** El servicio que ejecuta la tool de la cotización del dólar. */

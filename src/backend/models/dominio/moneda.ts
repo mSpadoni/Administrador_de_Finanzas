@@ -6,7 +6,7 @@ import type { CotizacionUsada, Moneda } from "./movimiento";
 // vez de un `if (moneda === "USD")` repetido en cada cuenta. Lógica pura.
 
 /** Lo que sabe hacer cada moneda con un monto. */
-export type EstrategiaDeMoneda = {
+type EstrategiaDeMoneda = {
   /** La otra moneda: los dólares se convierten a pesos y los pesos, a dólares. */
   destino: Moneda;
   /**

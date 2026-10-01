@@ -10,7 +10,7 @@ import { validarCasa, validarListaDeCasas } from "./validacionDolar";
 const CASA_DE: Record<TipoDeDolar, string> = { oficial: "oficial", blue: "blue", mep: "bolsa", tarjeta: "tarjeta" };
 
 /** La cotización de un tipo de dólar, en pesos. `actualizada`: cuándo la publicó la fuente (ISO 8601). */
-export type Cotizacion = { tipoDeDolar: TipoDeDolar; compra: number; venta: number; actualizada: string };
+type Cotizacion = { tipoDeDolar: TipoDeDolar; compra: number; venta: number; actualizada: string };
 
 export type ResultadoCotizaciones = Resultado<{ cotizaciones: Cotizacion[] }, FalloDelDolar>;
 export type ResultadoCotizacion = Resultado<{ cotizacion: Cotizacion }, FalloDelDolar>;
