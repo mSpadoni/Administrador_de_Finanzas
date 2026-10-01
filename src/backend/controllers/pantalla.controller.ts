@@ -3,7 +3,7 @@ import { registrarError } from "@/backend/lib/registro";
 import type { Estadisticas } from "@/backend/models/dominio/estadisticas";
 import type { AsistenteUIMessage } from "@/shared/chat";
 import type { ConversacionDelCostado } from "@/shared/conversaciones";
-import { conversacionesController, type ConversacionesController } from "./conversaciones.controller";
+import { conversacionesServicio, type ConversacionesServicio } from "@/backend/servicios/conversaciones.servicio";
 import { movimientosServicio, type MovimientosServicio } from "@/backend/servicios/movimientos.servicio";
 
 /** Todo lo que necesita la pantalla del chat para dibujarse. */
@@ -18,11 +18,13 @@ export type DatosDeLaPantalla = {
 
 /**
  * El caso de uso de abrir la pantalla del chat: junta en una sola lectura lo que hoy llega de tres lados (la lista del
- * costado, la conversación y el resumen del mes), para que la ruta no tenga que saber de dónde sale cada cosa.
+ * costado, la conversación y el resumen del mes), para que la ruta no tenga que saber de dónde sale cada cosa. Usa los
+ * servicios de conversaciones y de movimientos (un controller no llama a otro controller). El id ya viene validado por la
+ * página.
  */
 export class PantallaController {
   constructor(
-    private readonly conversaciones: () => ConversacionesController = () => conversacionesController,
+    private readonly conversaciones: () => ConversacionesServicio = () => conversacionesServicio,
     private readonly movimientos: () => MovimientosServicio = () => movimientosServicio
   ) {}
 

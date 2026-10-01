@@ -21,6 +21,12 @@ const backendNoDependeDeAppNiFrontend = {
   message: "El backend no depende de las rutas (app/) ni del frontend: ellas dependen de él, no al revés.",
 };
 
+/** Lo que no usan los casos de uso: el HTTP es cosa de las rutas. */
+const sinHttp = {
+  group: ["next/server", "next/headers", "next/navigation"],
+  message: "Los casos de uso no manejan HTTP: devuelven datos o tiran un ErrorDeAplicacion y la ruta responde.",
+};
+
 /**
  * `@typescript-eslint/no-restricted-imports` con `patterns`. Si varias configuraciones tocan el mismo archivo, gana la
  * última: por eso el dominio repite la regla del backend.
@@ -53,9 +59,16 @@ const reglasDeDependencia = [
       "src/backend/tools/**/*.ts",
       "src/backend/erroresBackend.ts",
     ],
-    rules: prohibir(backendNoDependeDeAppNiFrontend, {
-      group: ["next/server", "next/headers", "next/navigation"],
-      message: "Los casos de uso no manejan HTTP: devuelven datos o tiran un ErrorDeAplicacion y la ruta responde.",
+    rules: prohibir(backendNoDependeDeAppNiFrontend, sinHttp),
+  },
+  {
+    // Controllers, servicios y tools no usan un controller: un controller atiende un pedido de una ruta y lo que se
+    // comparte va a un servicio. (Repite las reglas del bloque anterior: con varias configuraciones, gana la última.)
+    files: ["src/backend/controllers/**/*.ts", "src/backend/servicios/**/*.ts", "src/backend/tools/**/*.ts"],
+    rules: prohibir(backendNoDependeDeAppNiFrontend, sinHttp, {
+      group: ["@/backend/controllers/*", "./*.controller", "../controllers/*"],
+      message:
+        "Un controller no llama a otro controller (ni lo usan servicios o tools): lo que se comparte va a src/backend/servicios/.",
     }),
   },
   {

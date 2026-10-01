@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { describe, expect, it, vi } from "vitest";
 import { AuthController } from "@/backend/controllers/auth.controller";
 import { ConversacionesController } from "@/backend/controllers/conversaciones.controller";
+import { ConversacionesServicio } from "@/backend/servicios/conversaciones.servicio";
 import type { AuthModel } from "@/backend/models/repositorios/auth.model";
 import type { ConversacionesModel } from "@/backend/models/repositorios/conversaciones.model";
 
@@ -16,7 +17,9 @@ function modeloQueNoSeUsa<T extends object>(): T {
 }
 
 describe("ConversacionesController — el id de la conversación", () => {
-  const controller = new ConversacionesController(() => modeloQueNoSeUsa<ConversacionesModel>());
+  const controller = new ConversacionesController(
+    () => new ConversacionesServicio(() => modeloQueNoSeUsa<ConversacionesModel>())
+  );
 
   it.each(["123", "../admin", "", null, 42, `${randomUUID()}x`])(
     "un id que no es un UUID (%s) no llega al modelo: abrir da vacío, borrar da false y retitular da null",
@@ -29,7 +32,9 @@ describe("ConversacionesController — el id de la conversación", () => {
 
   it("un UUID sí llega al modelo", async () => {
     const obtener = vi.fn(async () => null);
-    const conModelo = new ConversacionesController(() => ({ obtener }) as unknown as ConversacionesModel);
+    const conModelo = new ConversacionesController(
+      () => new ConversacionesServicio(() => ({ obtener }) as unknown as ConversacionesModel)
+    );
     const id = randomUUID();
 
     expect(await conModelo.abrir(id)).toEqual({ conversacion: null, mensajes: [] });
