@@ -22,8 +22,10 @@ type Props = {
   variante?: "barra" | "encabezado";
 };
 
-const ITEM_DEL_MENU =
-  "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-tinta transition hover:bg-superficie-suave focus-visible:bg-superficie-suave";
+const ITEM_BASE = "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition";
+const ITEM_DEL_MENU = `${ITEM_BASE} text-tinta hover:bg-superficie-suave focus-visible:bg-superficie-suave`;
+/** «Cerrar sesión»: en rojo, porque te saca de la app. */
+const ITEM_DE_SALIDA = `${ITEM_BASE} text-peligro hover:bg-peligro-suave focus-visible:bg-peligro-suave`;
 
 /** La foto de la persona; si no tiene o no carga, un círculo con su inicial. Es decorativa: el nombre va al lado. */
 function Avatar({ nombre, avatarUrl }: { nombre: string; avatarUrl: string | null }) {
@@ -55,7 +57,8 @@ function Avatar({ nombre, avatarUrl }: { nombre: string; avatarUrl: string | nul
 
 /**
  * El perfil al pie de la barra lateral: foto y nombre. Al tocarlo se abre un menú con sus funciones secundarias: el
- * «Panel de debug» y «Cerrar sesión» (que antes de cerrar pregunta, porque corta lo que la persona estaba haciendo).
+ * «Panel de debug», «Tamaño de letra…» y, al final y en rojo, «Cerrar sesión» (que antes de cerrar pregunta, porque corta
+ * lo que la persona estaba haciendo).
  */
 export default function PerfilDeUsuario({ nombre, avatarUrl, cerrarSesion, onAbrirDebug, variante = "barra" }: Props) {
   const enElEncabezado = variante === "encabezado";
@@ -100,18 +103,6 @@ export default function PerfilDeUsuario({ nombre, avatarUrl, cerrarSesion, onAbr
               <Icono nombre="debug" className="size-5 shrink-0" />
               Panel de debug
             </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                cerrar();
-                setConfirmando(true);
-              }}
-              className={ITEM_DEL_MENU}
-            >
-              <Icono nombre="cerrarSesion" className="size-5 shrink-0" />
-              Cerrar sesión
-            </button>
             {/* Tamaño de letra (accesibilidad): abre una ventanita con una barra para achicarla o agrandarla. */}
             <button
               type="button"
@@ -126,6 +117,19 @@ export default function PerfilDeUsuario({ nombre, avatarUrl, cerrarSesion, onAbr
                 Aa
               </span>
               Tamaño de letra…
+            </button>
+            {/* Cerrar sesión va al final y en rojo: es la acción que te saca de la app (pide confirmación). */}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                cerrar();
+                setConfirmando(true);
+              }}
+              className={ITEM_DE_SALIDA}
+            >
+              <Icono nombre="cerrarSesion" className="size-5 shrink-0" />
+              Cerrar sesión
             </button>
           </>
         )}

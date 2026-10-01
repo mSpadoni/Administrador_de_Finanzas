@@ -314,6 +314,18 @@ describe("PerfilDeUsuario", () => {
     expect(screen.queryByRole("menu")).toBeNull();
   });
 
+  it("el menú de la cuenta tiene, en orden: Panel de debug, Tamaño de letra y, al final, Cerrar sesión", async () => {
+    render(<PerfilDeUsuario nombre="Mateo" avatarUrl={null} cerrarSesion={vi.fn()} onAbrirDebug={vi.fn()} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Cuenta de Mateo" }));
+    const items = screen.getAllByRole("menuitem");
+
+    expect(items).toHaveLength(3);
+    expect(items[0]).toHaveAccessibleName("Panel de debug");
+    expect(items[1]).toHaveAccessibleName("Tamaño de letra…");
+    expect(items[2]).toHaveAccessibleName("Cerrar sesión");
+  });
+
   it("«Cerrar sesión» pregunta antes; recién al confirmar cierra la sesión", async () => {
     const cerrarSesion = vi.fn().mockResolvedValue(undefined);
     render(<PerfilDeUsuario nombre="Mateo" avatarUrl={null} cerrarSesion={cerrarSesion} onAbrirDebug={vi.fn()} />);

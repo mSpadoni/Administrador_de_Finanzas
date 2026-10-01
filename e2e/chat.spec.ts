@@ -133,9 +133,9 @@ test.describe("accesibilidad y tema", () => {
     const barra = page.getByRole("slider", { name: "Tamaño de letra" });
     await expect(barra).toBeFocused();
 
-    // Con el teclado, como la mueve quien no usa el mouse: End lleva al máximo (150 % de 16 px) y Home al mínimo (85 %).
+    // Con el teclado, como la mueve quien no usa el mouse: End lleva al máximo (130 % de 16 px) y Home al mínimo (85 %).
     await page.keyboard.press("End");
-    expect(await letraBase()).toBe("24px");
+    expect(await letraBase()).toBe("20.8px");
     await page.keyboard.press("Home");
     expect(await letraBase()).toBe("13.6px");
     await page.keyboard.press("ArrowRight");

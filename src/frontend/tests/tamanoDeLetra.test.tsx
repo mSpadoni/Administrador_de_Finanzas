@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import PerfilDeUsuario from "@/frontend/chat/sidebar/PerfilDeUsuario";
 import { SCRIPT_DEL_TAMANO_DE_LETRA, tamanoDeLetraActual } from "@/frontend/compartidos/tamanoDeLetra";
 
-// El tamaño de letra (accesibilidad): una barra de 85 % a 150 % (de a 5 %) en una ventanita que se abre desde el menú
+// El tamaño de letra (accesibilidad): una barra de 85 % a 130 % (de a 5 %) en una ventanita que se abre desde el menú
 // de la cuenta. Cambia la letra base de <html> y se recuerda en el navegador. Que la letra crezca de verdad en pantalla
 // (y que la barra se mueva con las flechas, que jsdom no simula) se prueba en el E2E, con un navegador real.
 
@@ -28,7 +28,7 @@ describe("el script que aplica el tamaño guardado antes de dibujar la página",
     ["85", "85%"], // el mínimo
     ["90", "90%"],
     ["125", "125%"],
-    ["150", "150%"], // el máximo
+    ["130", "130%"], // el máximo
   ])("con %s guardado, pone la letra en %s", (guardado, esperado) => {
     localStorage.setItem(CLAVE, guardado);
 
@@ -40,7 +40,8 @@ describe("el script que aplica el tamaño guardado antes de dibujar la página",
   it.each([
     ["100 (el normal: no hace falta tocar nada)", "100"],
     ["80 (por debajo del mínimo)", "80"],
-    ["155 (por encima del máximo)", "155"],
+    ["135 (por encima del máximo)", "135"],
+    ["150 (el máximo de la versión anterior)", "150"],
     ["112 (no es un paso de 5)", "112"],
     ["«grande» (lo que guardaba la versión anterior)", "grande"],
     ["un valor vacío", ""],
@@ -86,13 +87,13 @@ describe("la ventanita del tamaño de letra", () => {
 
   const barra = () => screen.getByRole("slider", { name: "Tamaño de letra" });
 
-  it("se abre desde el menú de la cuenta con la barra enfocada, en el 100 %, de 85 % a 150 %", async () => {
+  it("se abre desde el menú de la cuenta con la barra enfocada, en el 100 %, de 85 % a 130 %", async () => {
     await abrirLaVentanita();
 
     expect(barra()).toHaveFocus();
     expect(barra()).toHaveValue("100");
     expect(barra()).toHaveAttribute("min", "85");
-    expect(barra()).toHaveAttribute("max", "150");
+    expect(barra()).toHaveAttribute("max", "130");
     expect(barra()).toHaveAttribute("aria-valuetext", "100 %");
     expect(screen.getByRole("button", { name: "Restablecer" })).toBeDisabled();
   });
@@ -118,7 +119,7 @@ describe("la ventanita del tamaño de letra", () => {
 
   it("«Restablecer» vuelve al 100 % y borra lo guardado", async () => {
     await abrirLaVentanita();
-    fireEvent.change(barra(), { target: { value: "140" } });
+    fireEvent.change(barra(), { target: { value: "120" } });
 
     await userEvent.click(screen.getByRole("button", { name: "Restablecer" }));
 

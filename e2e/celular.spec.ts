@@ -63,16 +63,16 @@ test("en el celular el campo arranca en el medio y se puede mandar un mensaje", 
   expect(anchoDeMas).toBeLessThanOrEqual(0);
 });
 
-test("con la letra al máximo (150 %), en el celular nada se sale del ancho de la pantalla", async ({ page }) => {
+test("con la letra al máximo (130 %), en el celular nada se sale del ancho de la pantalla", async ({ page }) => {
   // Como si la persona lo hubiera elegido antes: queda guardado en el navegador.
-  await page.addInitScript(() => localStorage.setItem("tamano-de-letra", "150"));
+  await page.addInitScript(() => localStorage.setItem("tamano-de-letra", "130"));
   await page.goto("/");
   const campo = page.getByRole("textbox", { name: "Tu mensaje" });
   await campo.fill("Gasté 5000 en el súper con débito");
   await campo.press("Enter");
   await expect(page.getByRole("article", { name: "Movimiento registrado" })).toBeVisible();
 
-  expect(await page.evaluate(() => getComputedStyle(document.documentElement).fontSize)).toBe("24px");
+  expect(await page.evaluate(() => getComputedStyle(document.documentElement).fontSize)).toBe("20.8px");
   const anchoDeMas = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(anchoDeMas).toBeLessThanOrEqual(0);
 });

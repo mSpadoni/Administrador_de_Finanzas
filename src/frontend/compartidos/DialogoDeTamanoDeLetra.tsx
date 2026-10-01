@@ -7,7 +7,7 @@ import { useTamanoDeLetra } from "./useTamanoDeLetra";
 type Props = { abierto: boolean; onCerrar: () => void };
 
 /**
- * La ventanita para ajustar el tamaño de letra con una barra (de 85 % a 150 %). El cambio se ve en toda la página
+ * La ventanita para ajustar el tamaño de letra con una barra (de 85 % a 130 %). El cambio se ve en toda la página
  * mientras se mueve la barra; «Restablecer» vuelve al 100 % y «Listo», Escape o un click afuera la cierran (lo elegido
  * ya quedó aplicado y guardado). Patrón «dialog» de WAI-ARIA, como DialogoDeConfirmacion: al abrirse el foco va a la
  * barra, Tab no sale de la ventanita y al cerrarse el foco vuelve a donde estaba.

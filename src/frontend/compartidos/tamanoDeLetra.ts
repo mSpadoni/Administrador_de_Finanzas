@@ -7,9 +7,9 @@ import { esPorcentajeDeLetra } from "./validacionCompartidos";
 
 /**
  * Hasta dónde se puede achicar o agrandar, y de a cuánto. No baja de 85 %: con menos, los textos más chicos de la app
- * quedarían en unos 10 px, ya difíciles de leer.
+ * quedarían en unos 10 px, ya difíciles de leer. No pasa de 130 %: más grande, los paneles se aprietan demasiado.
  */
-export const LIMITES_DE_LETRA = { minimo: 85, normal: 100, maximo: 150, paso: 5 } as const;
+export const LIMITES_DE_LETRA = { minimo: 85, normal: 100, maximo: 130, paso: 5 } as const;
 
 /** Dónde se guarda la elección en el navegador. */
 const CLAVE_DEL_TAMANO_DE_LETRA = "tamano-de-letra";
