@@ -121,6 +121,23 @@ test.describe("accesibilidad y tema", () => {
     });
   }
 
+  test("el tamaño de letra se elige en el menú de la cuenta, agranda toda la página y se recuerda", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    const letraBase = () => page.evaluate(() => getComputedStyle(document.documentElement).fontSize);
+    expect(await letraBase()).toBe("16px");
+
+    await page.getByRole("button", { name: "Cuenta de Mateo Prueba" }).click();
+    await page.getByRole("menuitemradio", { name: "Muy grande" }).click();
+
+    // 125 % de 16 px. Todo está en rem, así que el resto de la página crece con esto.
+    expect(await letraBase()).toBe("20px");
+    await page.reload();
+    await expect(page.getByRole("textbox", { name: "Tu mensaje" })).toBeVisible();
+    expect(await letraBase()).toBe("20px");
+  });
+
   test("con el tema oscuro del sistema, la app se pone oscura", async ({ page }) => {
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/");

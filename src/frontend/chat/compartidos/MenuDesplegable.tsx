@@ -16,11 +16,11 @@ type Props = {
   deshabilitado?: boolean;
   /** Clases del contenedor del botón y el menú (para ubicarlo en una grilla o un flex). */
   claseDelContenedor?: string;
-  /** Los ítems del menú: botones con `role="menuitem"`. Reciben `cerrar` para cerrarlo al elegir uno. */
+  /** Los ítems del menú: botones con `role="menuitem"` (o `menuitemradio`). Reciben `cerrar` para cerrarlo al elegir uno. */
   children: (cerrar: () => void) => ReactNode;
 };
 
-const ITEMS = '[role="menuitem"]:not(:disabled)';
+const ITEMS = '[role="menuitem"]:not(:disabled), [role="menuitemradio"]:not(:disabled)';
 
 /**
  * Un menú desplegable accesible (patrón «menu button» de la guía WAI-ARIA): el botón anuncia que abre un menú y si está

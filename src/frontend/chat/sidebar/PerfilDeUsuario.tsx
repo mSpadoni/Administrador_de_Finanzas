@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 import DialogoDeConfirmacion from "@/frontend/compartidos/DialogoDeConfirmacion";
+import { TAMANOS_DE_LETRA } from "@/frontend/compartidos/tamanoDeLetra";
+import { useTamanoDeLetra } from "@/frontend/compartidos/useTamanoDeLetra";
 import Icono from "../compartidos/iconos";
 import MenuDesplegable from "../compartidos/MenuDesplegable";
 
@@ -60,6 +62,7 @@ export default function PerfilDeUsuario({ nombre, avatarUrl, cerrarSesion, onAbr
   const enElEncabezado = variante === "encabezado";
   const [confirmando, setConfirmando] = useState(false);
   const [cerrando, iniciarCierre] = useTransition();
+  const [tamanoDeLetra, cambiarTamanoDeLetra] = useTamanoDeLetra();
 
   return (
     <>
@@ -110,6 +113,27 @@ export default function PerfilDeUsuario({ nombre, avatarUrl, cerrarSesion, onAbr
               <Icono nombre="cerrarSesion" className="size-5 shrink-0" />
               Cerrar sesión
             </button>
+            {/* Tamaño de letra (accesibilidad): elegir uno no cierra el menú, así se ve el cambio enseguida. */}
+            <div role="group" aria-labelledby="titulo-tamano-de-letra" className="mt-1 border-t border-borde pt-1">
+              <p id="titulo-tamano-de-letra" className="px-3 pt-1.5 pb-1 text-xs font-semibold text-tinta-suave">
+                Tamaño de letra
+              </p>
+              {TAMANOS_DE_LETRA.map((tamano) => (
+                <button
+                  key={tamano.id}
+                  type="button"
+                  role="menuitemradio"
+                  aria-checked={tamanoDeLetra === tamano.id}
+                  onClick={() => cambiarTamanoDeLetra(tamano.id)}
+                  className={ITEM_DEL_MENU}
+                >
+                  <span aria-hidden="true" className="grid size-5 shrink-0 place-items-center">
+                    {tamanoDeLetra === tamano.id ? "✓" : ""}
+                  </span>
+                  {tamano.nombre}
+                </button>
+              ))}
+            </div>
           </>
         )}
       </MenuDesplegable>

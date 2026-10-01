@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { SCRIPT_DEL_TAMANO_DE_LETRA } from "@/frontend/compartidos/tamanoDeLetra";
 import "./globals.css"; // Importar el CSS acá lo aplica a todas las páginas.
 
 // Next.js lee esta constante y la usa para el <title> y la descripción de la pestaña del navegador.
@@ -31,7 +32,12 @@ export default function RootLayout({
   // Esto es JSX: HTML dentro de JavaScript. `className` es el `class` de HTML (clases de Tailwind).
   // Las llaves `{...}` meten un valor de JavaScript dentro del HTML.
   return (
-    <html lang="es-AR">
+    // suppressHydrationWarning: el script del <head> puede agregarle `data-letra` al <html> antes de que llegue React.
+    <html lang="es-AR" suppressHydrationWarning>
+      <head>
+        {/* El tamaño de letra elegido se aplica antes de dibujar la página (si no, se vería un instante en normal). */}
+        <script dangerouslySetInnerHTML={{ __html: SCRIPT_DEL_TAMANO_DE_LETRA }} />
+      </head>
       <body className="min-h-dvh antialiased">{children}</body>
     </html>
   );
