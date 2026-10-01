@@ -343,3 +343,26 @@ describe("useDeslizarAlBajar", () => {
     expect(animar).not.toHaveBeenCalled();
   });
 });
+
+describe("el borrador del campo", () => {
+  it("es de cada conversación: al abrir otra, el campo queda vacío", async () => {
+    pantalla();
+    const campo = screen.getByRole("textbox", { name: "Tu mensaje" });
+    await userEvent.type(campo, "Algo a medio escribir");
+
+    await userEvent.click(screen.getByRole("link", { name: "Dólar" }));
+
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "Tu mensaje" })).toHaveValue(""));
+  });
+
+  it("si el mensaje no se puede mandar (pasado del límite), lo escrito no se pierde", async () => {
+    pantalla();
+    const campo = screen.getByRole("textbox", { name: "Tu mensaje" });
+    await userEvent.click(campo);
+    await userEvent.paste("x".repeat(6001));
+
+    await userEvent.keyboard("{Enter}");
+
+    expect(campo).toHaveValue("x".repeat(6001));
+  });
+});

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useChatEnPantalla } from "../estado/ContextoDelChat";
+import { usePaneles } from "../estado/ContextoDePaneles";
 import Icono from "./iconos";
 import { esClickComun } from "./navegacion";
 import PerfilDeUsuario from "../sidebar/PerfilDeUsuario";
@@ -26,8 +27,8 @@ const BOTON_DEL_ENCABEZADO = "grid size-11 place-items-center rounded-xl text-sl
  * y nada más (el balance y el perfil están fijos a los costados). Todos los botones miden 44 px y llevan su nombre.
  */
 export default function EncabezadoDeLaApp({ usuario, cerrarSesion }: Props) {
-  const { nuevaConversacion, menuAbierto, setMenuAbierto, balanceAbierto, setBalanceAbierto, abrirDebug } =
-    useChatEnPantalla();
+  const { nuevaConversacion } = useChatEnPantalla();
+  const { menuAbierto, setMenuAbierto, balanceAbierto, setBalanceAbierto, abrirDebug } = usePaneles();
   return (
     <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 border-b border-slate-200 bg-white px-2 py-1 md:flex md:justify-between md:px-4 md:py-0">
       <div className="justify-self-start md:hidden">

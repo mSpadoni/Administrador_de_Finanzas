@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import DialogoDeConfirmacion from "@/frontend/compartidos/DialogoDeConfirmacion";
 import { useChatEnPantalla } from "../estado/ContextoDelChat";
+import { usePaneles } from "../estado/ContextoDePaneles";
 import { useSidebar } from "./EstadoSidebar";
 import Icono from "../compartidos/iconos";
 import { esClickComun, urlDeConversacion } from "../compartidos/navegacion";
@@ -41,10 +42,9 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
     abrirConversacion,
     usarAtajo,
     generando,
-    abrirDebug,
-    menuAbierto: abierto, // En celular la hamburguesa del encabezado lo abre; acá se cierra.
-    setMenuAbierto: setAbierto,
   } = useChatEnPantalla();
+  // En celular la hamburguesa del encabezado abre el menú; acá se cierra.
+  const { abrirDebug, menuAbierto: abierto, setMenuAbierto: setAbierto } = usePaneles();
   const [porBorrar, setPorBorrar] = useState<ItemConversacion | null>(null);
   const [saliendo, setSaliendo] = useState<string | null>(null); // La conversación que se está plegando al borrarla.
   const [errorAlBorrar, setErrorAlBorrar] = useState<string | null>(null);

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, type KeyboardEvent } from "react";
 import type { EstadisticasDelPeriodo } from "@/shared/chat";
-import { useChatEnPantalla } from "../estado/ContextoDelChat";
+import { usePaneles } from "../estado/ContextoDePaneles";
 import Icono from "../compartidos/iconos";
 import { ContenidoDelMes } from "./PanelDelMes";
 
@@ -64,6 +64,6 @@ function Cajon({ estadisticas, onCerrar }: Props) {
  * compu) cuando se toca el botón del encabezado. Cerrado no existe; se cierra con la ✕, tocando afuera o con Escape.
  */
 export default function CajonDelBalance({ estadisticas }: { estadisticas: EstadisticasDelPeriodo | null }) {
-  const { balanceAbierto, setBalanceAbierto } = useChatEnPantalla();
+  const { balanceAbierto, setBalanceAbierto } = usePaneles();
   return balanceAbierto ? <Cajon estadisticas={estadisticas} onCerrar={() => setBalanceAbierto(false)} /> : null;
 }

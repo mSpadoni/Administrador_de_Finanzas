@@ -4,6 +4,7 @@
 import { useRef } from "react";
 import AvisoDeError from "./AvisoDeError";
 import EstadoEnVivo from "./EstadoEnVivo";
+import { useBorrador } from "../estado/ContextoDelBorrador";
 import { useChatEnPantalla } from "../estado/ContextoDelChat";
 import { useDeslizarAlBajar } from "./hooks/useDeslizarAlBajar";
 import MessageBubble from "./MessageBubble";
@@ -13,8 +14,8 @@ import TextoEscribiendose from "./TextoEscribiendose";
 
 /**
  * La ventana de chat: mensajes con la respuesta en streaming, qué está haciendo el asistente, errores y el campo para
- * escribir. El chat en sí (mensajes, borrador, scroll) vive en ProveedorDelChat, porque también lo usan los atajos de la
- * barra lateral.
+ * escribir. El chat en sí (mensajes, scroll) vive en ProveedorDelChat, porque también lo usan los atajos de la barra
+ * lateral; el borrador del campo, en ProveedorDelBorrador (ver CampoDelChat).
  *
  * En una conversación vacía el saludo y el campo de texto van juntos en el medio de la pantalla (como ChatGPT); con el primer
  * mensaje el campo baja hasta abajo del todo, deslizándose, y los mensajes ocupan el resto. Es el mismo campo en los dos
@@ -31,8 +32,6 @@ export default function ChatWindow({ nombre }: { nombre: string }) {
     generando,
     anuncio,
     estadoDelAsistente,
-    borrador,
-    setBorrador,
     textareaRef,
     zonaRef,
     alScrollear,
@@ -114,10 +113,8 @@ export default function ChatWindow({ nombre }: { nombre: string }) {
               }
             >
               <div className="mx-auto w-full max-w-3xl">
-                <MessageInput
-                  valor={borrador}
-                  onCambio={setBorrador}
-                  onEnviar={() => mandar(borrador)}
+                <CampoDelChat
+                  mandar={mandar}
                   onDetener={stop}
                   onUsarAtajo={usarAtajo}
                   generando={generando}
@@ -129,5 +126,27 @@ export default function ChatWindow({ nombre }: { nombre: string }) {
         </div>
       </section>
     </main>
+  );
+}
+
+type PropsDelCampo = Omit<Parameters<typeof MessageInput>[0], "valor" | "onCambio" | "onEnviar"> & {
+  mandar: (texto: string) => boolean;
+};
+
+/**
+ * El campo de texto con su borrador. Es el único que escucha el borrador: escribir una letra vuelve a dibujar el campo y
+ * no la lista de mensajes. Al mandar, el campo se vacía solo si el mensaje salió.
+ */
+function CampoDelChat({ mandar, ...props }: PropsDelCampo) {
+  const { borrador, setBorrador } = useBorrador();
+  return (
+    <MessageInput
+      {...props}
+      valor={borrador}
+      onCambio={setBorrador}
+      onEnviar={() => {
+        if (mandar(borrador)) setBorrador("");
+      }}
+    />
   );
 }

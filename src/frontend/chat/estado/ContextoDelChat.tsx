@@ -3,6 +3,8 @@
 
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { MAX_CARACTERES_MENSAJE, type AsistenteUIMessage } from "@/shared/chat";
+import { ProveedorDelBorrador } from "./ContextoDelBorrador";
+import { ProveedorDePaneles } from "./ContextoDePaneles";
 import { lanzarChatSinProveedor } from "./erroresEstado";
 import { useChatDelAsistente } from "./hooks/useChatDelAsistente";
 import { useSeguirAlFinal } from "./hooks/useSeguirAlFinal";
@@ -21,27 +23,17 @@ type ValorDelChat = Omit<ReturnType<typeof useChatDelAsistente>, "enviar"> & {
   nuevaConversacion: (forzar?: boolean) => void;
   /** Abre una conversación guardada, sin recargar la página. */
   abrirConversacion: (id: string) => Promise<void>;
-  /** Lo que la persona está escribiendo y todavía no mandó. */
-  borrador: string;
-  setBorrador: (texto: string) => void;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   /** El scroll de la zona de mensajes (ver useSeguirAlFinal). */
   zonaRef: RefObject<HTMLDivElement | null>;
   alScrollear: (zona: HTMLDivElement) => void;
-  /** Manda un mensaje del usuario (el del campo o el de un atajo). */
-  mandar: (texto: string) => void;
+  /**
+   * Manda un mensaje del usuario (el del campo o el de un atajo). Devuelve si se mandó: uno vacío, pasado del límite o
+   * mientras el asistente responde no se manda (y el campo no se vacía).
+   */
+  mandar: (texto: string) => boolean;
   /** Un atajo: se manda directo al asistente. */
   usarAtajo: (atajo: Atajo) => void;
-  /** En celular, ¿está abierto el menú lateral (conversaciones)? Lo abre la hamburguesa del encabezado. */
-  menuAbierto: boolean;
-  setMenuAbierto: (abierto: boolean) => void;
-  /** En celular y tablet, ¿está abierto el panel del balance del mes? Lo abre el botón del encabezado. */
-  balanceAbierto: boolean;
-  setBalanceAbierto: (abierto: boolean) => void;
-  /** ¿Está abierto el panel de debug? (se abre desde el menú del perfil) */
-  debugAbierto: boolean;
-  abrirDebug: () => void;
-  cerrarDebug: () => void;
   /** Qué está haciendo el asistente ahora («Pensando…», «Consultando tus movimientos…»), o null. */
   estadoDelAsistente: string | null;
 };
@@ -66,7 +58,9 @@ type Props = {
 /**
  * El chat de la pantalla, compartido entre quienes lo usan: la ventana de mensajes, el campo de texto y los atajos de la
  * barra lateral (que mandan un mensaje sin ser parte del chat). Los mensajes los maneja useChatDelAsistente y el scroll,
- * useSeguirAlFinal.
+ * useSeguirAlFinal. Lo que cambia mucho y no es del chat va en contextos aparte, para no volver a dibujar la conversación
+ * por cada cosa: el borrador del campo (ContextoDelBorrador, cambia con cada letra) y los paneles abiertos
+ * (ContextoDePaneles).
  *
  * También es quien cambia de conversación (nueva, abrir una guardada, ir atrás o adelante): lo hace en el navegador y
  * actualiza la dirección con `history.pushState`, sin pedirle al servidor la página entera. Así no hay un momento en blanco
@@ -77,11 +71,7 @@ export function ProveedorDelChat({ conversacionId, mensajesIniciales, leerConver
   const [abriendo, setAbriendo] = useState(false);
   const { enviar, ...chat } = useChatDelAsistente(sesion.id, sesion.mensajes, retitular);
   const { zonaRef, alScrollear, volverAlFinal } = useSeguirAlFinal(chat.messages, chat.status);
-  const [borrador, setBorrador] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [debugAbierto, setDebugAbierto] = useState(false); // El panel de debug arranca cerrado.
-  const [menuAbierto, setMenuAbierto] = useState(false); // Los paneles laterales del celular, también.
-  const [balanceAbierto, setBalanceAbierto] = useState(false);
   const idActualRef = useRef(sesion.id); // Para el evento de «atrás», que no ve el estado de este render.
   // Cada cambio de conversación tiene un número: si mientras se abre una la persona elige otra cosa, la lectura que llega
   // tarde ya no es la última y se descarta (si no, pisaría lo que eligió después).
@@ -91,12 +81,14 @@ export function ProveedorDelChat({ conversacionId, mensajesIniciales, leerConver
     idActualRef.current = sesion.id;
   }, [sesion.id]);
 
-  /** Muestra otra conversación: vacía el campo, vuelve al final y (salvo si viene de «atrás») actualiza la dirección. */
+  /**
+   * Muestra otra conversación: vuelve al final y (salvo si viene de «atrás») actualiza la dirección. El campo se vacía solo:
+   * el borrador es de cada conversación (ProveedorDelBorrador).
+   */
   function cambiarA(nueva: Sesion, actualizarUrl: boolean) {
     ultimoCambioRef.current += 1;
     setAbriendo(false);
     setSesion(nueva);
-    setBorrador("");
     volverAlFinal();
     if (actualizarUrl) window.history.pushState(null, "", urlDeConversacion(nueva.id));
     textareaRef.current?.focus();
@@ -141,11 +133,11 @@ export function ProveedorDelChat({ conversacionId, mensajesIniciales, leerConver
   function mandar(texto: string) {
     const limpio = texto.trim();
     // Un mensaje vacío o pasado del límite no se manda (el campo ya lo avisa; el servidor también lo rechazaría).
-    if (!limpio || limpio.length > MAX_CARACTERES_MENSAJE || chat.generando) return;
+    if (!limpio || limpio.length > MAX_CARACTERES_MENSAJE || chat.generando) return false;
     volverAlFinal(); // Al mandar un mensaje, se vuelve al final para ver la respuesta.
     enviar(limpio);
-    setBorrador("");
     textareaRef.current?.focus();
+    return true;
   }
 
   const valor: ValorDelChat = {
@@ -154,23 +146,20 @@ export function ProveedorDelChat({ conversacionId, mensajesIniciales, leerConver
     abriendo,
     nuevaConversacion,
     abrirConversacion,
-    borrador,
-    setBorrador,
     textareaRef,
     zonaRef,
     alScrollear,
     mandar,
-    usarAtajo: (atajo) => mandar(atajo.mensaje),
-    menuAbierto,
-    setMenuAbierto,
-    balanceAbierto,
-    setBalanceAbierto,
-    debugAbierto,
-    abrirDebug: () => setDebugAbierto(true),
-    cerrarDebug: () => setDebugAbierto(false),
+    usarAtajo: (atajo) => void mandar(atajo.mensaje),
     estadoDelAsistente: estadoDeLaRespuesta(chat.status, chat.messages),
   };
-  return <ContextoDelChat.Provider value={valor}>{children}</ContextoDelChat.Provider>;
+  return (
+    <ContextoDelChat.Provider value={valor}>
+      <ProveedorDePaneles>
+        <ProveedorDelBorrador conversacionId={sesion.id}>{children}</ProveedorDelBorrador>
+      </ProveedorDePaneles>
+    </ContextoDelChat.Provider>
+  );
 }
 
 /** El chat de la pantalla. Solo se puede usar adentro de <ProveedorDelChat>. */

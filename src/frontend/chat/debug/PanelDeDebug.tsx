@@ -3,6 +3,7 @@
 import { useEffect, useRef, type KeyboardEvent } from "react";
 import { lineasDeUso } from "./actividad";
 import { useChatEnPantalla } from "../estado/ContextoDelChat";
+import { usePaneles } from "../estado/ContextoDePaneles";
 import { respuestasParaDebug, totalesDeDebug, type HerramientaDeDebug, type RespuestaDeDebug } from "./debug";
 import { formatoDuracion, formatoTokens } from "../compartidos/formato";
 import Icono from "../compartidos/iconos";
@@ -150,6 +151,7 @@ export default function PanelDeDebug({ mensajes, abierto, onCerrar }: Props) {
 
 /** El panel conectado al chat de la pantalla (lo que se ve en la app). */
 export function PanelDeDebugDelChat() {
-  const { messages, debugAbierto, cerrarDebug } = useChatEnPantalla();
+  const { messages } = useChatEnPantalla();
+  const { debugAbierto, cerrarDebug } = usePaneles();
   return <PanelDeDebug mensajes={messages} abierto={debugAbierto} onCerrar={cerrarDebug} />;
 }
