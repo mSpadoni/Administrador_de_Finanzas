@@ -1,0 +1,29 @@
+flowchart TB
+  UI["Navegador<br/>componentes React (src/frontend)"]
+  R["Rutas y Server Actions<br/>(src/app)"]
+  subgraph CTRL ["Controllers (src/backend/controllers)"]
+    CC["ChatController<br/>un mensaje del chat"]
+    PC["PantallaController<br/>lo que muestra la página"]
+    VC["ConversacionesController<br/>abrir, borrar, titular"]
+  end
+  A["Asistente<br/>agente, prompt, contexto"]
+  T["Tools"]
+  S["Servicios (src/backend/servicios)<br/>Movimientos · Cotizaciones · Conversaciones"]
+  D["Dominio<br/>reglas puras"]
+  M["Repositorios"]
+  L["Cliente de dolarapi"]
+  UI --> R
+  R --> CC
+  R --> PC
+  R --> VC
+  CC --> A
+  A --> T
+  T --> S
+  PC --> S
+  VC --> S
+  S --> D
+  S --> M
+  S --> L
+  A -- "streamText" --> O[("OpenAI")]
+  M --> DB[("Supabase<br/>Postgres + Auth + RLS")]
+  L --> X[("dolarapi.com")]

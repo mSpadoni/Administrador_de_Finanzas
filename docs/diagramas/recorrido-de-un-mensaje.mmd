@@ -1,0 +1,17 @@
+flowchart TB
+  P1["1 · Navegador<br/>«Pagué 15 dólares de Spotify con la tarjeta»<br/>valida el mensaje y lo manda a POST /api/chat"]
+  P2["2 · Ruta /api/chat<br/>¿hay una sesión iniciada?"]
+  P3["3 · ChatController<br/>valida el pedido · descuenta la cuota<br/>lee el historial firmado · guarda el mensaje"]
+  P4["4 · Agente → OpenAI<br/>instrucciones + historial + lista de tools"]
+  P5(["5 · El modelo decide usar registrar_movimiento"])
+  P6["6 · Tool registrar_movimiento<br/>valida el JSON que armó el modelo"]
+  S["MovimientosServicio<br/>reglas del dominio → dólar tarjeta de hoy<br/>→ guarda el gasto en USD y en pesos"]
+  P7["7 · El modelo recibe { ok: true, movimiento }<br/>y escribe la respuesta"]
+  P8["8 · Navegador<br/>aparece la tarjeta y después el texto, de a poco"]
+  P9["9 · Al terminar<br/>se guarda la respuesta firmada<br/>se actualizan «Este mes» y el título"]
+  X[("dolarapi.com")]
+  DB[("Supabase")]
+  P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> S --> P7 --> P8 --> P9
+  S -.-> X
+  S -.-> DB
+  P3 -.-> DB
