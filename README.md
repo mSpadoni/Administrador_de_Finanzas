@@ -532,3 +532,7 @@ npm run db:stop
 Vercel despliega cada push a `main`. En Vercel van las mismas variables de `.env.example`; `OPENAI_API_KEY` y
 `FIRMA_DE_MENSAJES` como secretas. Las migraciones nuevas se aplican en la Supabase de producción antes de desplegar el
 código que las usa.
+
+## Link a la app
+
+https://administrador-de-finanzas-mspadoni.vercel.app
