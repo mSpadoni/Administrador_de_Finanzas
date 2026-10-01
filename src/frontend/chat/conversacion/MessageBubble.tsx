@@ -3,7 +3,7 @@ import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { isStaticToolUIPart } from "ai";
 import { textoDe, type AsistenteUIMessage } from "@/shared/chat";
-import { ResultadoDeTool } from "./TarjetasDeResultado";
+import { ResultadoDeTool } from "./tarjetas/ResultadoDeTool";
 
 // react-markdown no renderiza HTML crudo: lo que escriba el modelo no puede inyectar scripts.
 // Este objeto dice cómo dibujar cada elemento del Markdown (párrafo, lista, tabla...) con estilos propios.
