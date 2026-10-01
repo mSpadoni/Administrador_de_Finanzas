@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { RUTAS } from "@/shared/rutas";
 import { useChatEnPantalla } from "../estado/ContextoDelChat";
 import { usePaneles } from "../estado/ContextoDePaneles";
 import Icono from "./iconos";
@@ -48,7 +49,7 @@ export default function EncabezadoDeLaApp({ usuario, cerrarSesion }: Props) {
 
       <h1 className="text-center text-sm leading-tight font-bold text-tinta md:py-3 md:text-left md:text-lg md:leading-normal">
         <Link
-          href="/"
+          href={RUTAS.inicio}
           onClick={(evento) => {
             if (!esClickComun(evento)) return;
             evento.preventDefault();

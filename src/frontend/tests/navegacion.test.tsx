@@ -7,7 +7,8 @@ import type { AsistenteUIMessage } from "@/shared/chat";
 import BarraLateral from "@/frontend/chat/sidebar/BarraLateral";
 import { ProveedorDelChat, useChatEnPantalla } from "@/frontend/chat/estado/ContextoDelChat";
 import { ProveedorSidebar, useSidebar } from "@/frontend/chat/sidebar/EstadoSidebar";
-import { esClickComun, idDeConversacionEnLaUrl, urlDeConversacion } from "@/frontend/chat/compartidos/navegacion";
+import { esClickComun } from "@/frontend/chat/compartidos/navegacion";
+import { idDeConversacionEnLaRuta, rutaDeConversacion } from "@/shared/rutas";
 import TextoEscribiendose from "@/frontend/chat/conversacion/TextoEscribiendose";
 
 // Cambiar de conversación (nueva, abrir una guardada, borrar, atrás) se resuelve en el navegador, sin pedirle al servidor
@@ -30,15 +31,15 @@ const CHARLA_B = [mensaje("m3", "user", "¿Y el dólar?")];
 
 describe("las direcciones de las conversaciones", () => {
   it("se arman y se leen de vuelta", () => {
-    expect(urlDeConversacion(ID_A)).toBe(`/conversacion/${ID_A}`);
-    expect(idDeConversacionEnLaUrl(`/conversacion/${ID_A}`)).toBe(ID_A);
-    expect(idDeConversacionEnLaUrl(`/conversacion/${ID_A}/`)).toBe(ID_A);
+    expect(rutaDeConversacion(ID_A)).toBe(`/conversacion/${ID_A}`);
+    expect(idDeConversacionEnLaRuta(`/conversacion/${ID_A}`)).toBe(ID_A);
+    expect(idDeConversacionEnLaRuta(`/conversacion/${ID_A}/`)).toBe(ID_A);
   });
 
   it("lo que no es la dirección de una conversación no tiene id", () => {
-    expect(idDeConversacionEnLaUrl("/")).toBeNull();
-    expect(idDeConversacionEnLaUrl("/conversacion/abc")).toBeNull();
-    expect(idDeConversacionEnLaUrl(`/otra/${ID_A}`)).toBeNull();
+    expect(idDeConversacionEnLaRuta("/")).toBeNull();
+    expect(idDeConversacionEnLaRuta("/conversacion/abc")).toBeNull();
+    expect(idDeConversacionEnLaRuta(`/otra/${ID_A}`)).toBeNull();
   });
 
   it("con Ctrl, Cmd, Shift o el botón del medio se abre en otra pestaña: no es un click común", () => {
@@ -105,7 +106,7 @@ function pantalla({
 const abierta = () => screen.getByText(/^Abierta:/).textContent;
 
 describe("cambiar de conversación sin recargar", () => {
-  beforeEach(() => window.history.replaceState(null, "", urlDeConversacion(ID_A)));
+  beforeEach(() => window.history.replaceState(null, "", rutaDeConversacion(ID_A)));
 
   it("si se elige otra cosa mientras una conversación se está abriendo, gana lo último que se eligió", async () => {
     // Regresión: antes, la lectura que terminaba última pisaba la pantalla aunque la persona ya hubiera elegido otra cosa.
@@ -128,8 +129,8 @@ describe("cambiar de conversación sin recargar", () => {
 
     expect(abierta()).toMatch(/Abierta: [0-9a-f-]{36} con 0 mensajes/);
     expect(abierta()).not.toContain(ID_A);
-    expect(idDeConversacionEnLaUrl(window.location.pathname)).not.toBe(ID_A);
-    expect(idDeConversacionEnLaUrl(window.location.pathname)).not.toBeNull();
+    expect(idDeConversacionEnLaRuta(window.location.pathname)).not.toBe(ID_A);
+    expect(idDeConversacionEnLaRuta(window.location.pathname)).not.toBeNull();
     expect(leer).not.toHaveBeenCalled();
   });
 
@@ -139,7 +140,7 @@ describe("cambiar de conversación sin recargar", () => {
     await userEvent.click(screen.getByRole("link", { name: "Nueva conversación" }));
 
     expect(abierta()).toBe(`Abierta: ${ID_A} con 0 mensajes`);
-    expect(window.location.pathname).toBe(urlDeConversacion(ID_A));
+    expect(window.location.pathname).toBe(rutaDeConversacion(ID_A));
   });
 
   it("abrir una conversación de la lista trae su historial y marca esa como la actual", async () => {
@@ -149,7 +150,7 @@ describe("cambiar de conversación sin recargar", () => {
 
     await waitFor(() => expect(abierta()).toBe(`Abierta: ${ID_B} con 1 mensajes`));
     expect(leer).toHaveBeenCalledWith(ID_B);
-    expect(window.location.pathname).toBe(urlDeConversacion(ID_B));
+    expect(window.location.pathname).toBe(rutaDeConversacion(ID_B));
     expect(screen.getByRole("link", { name: "Dólar" })).toHaveAttribute("aria-current", "page");
     expect(screen.getByRole("link", { name: "Gastos de septiembre" })).not.toHaveAttribute("aria-current");
   });
@@ -161,7 +162,7 @@ describe("cambiar de conversación sin recargar", () => {
     leer.mockResolvedValueOnce(CHARLA_A);
 
     // El navegador cambia la dirección y avisa con «popstate» (acá se simula igual).
-    window.history.replaceState(null, "", urlDeConversacion(ID_A));
+    window.history.replaceState(null, "", rutaDeConversacion(ID_A));
     act(() => void window.dispatchEvent(new PopStateEvent("popstate")));
 
     await waitFor(() => expect(abierta()).toBe(`Abierta: ${ID_A} con 2 mensajes`));
@@ -183,7 +184,7 @@ describe("el título de las conversaciones", () => {
 
 describe("borrar una conversación", () => {
   beforeEach(() => {
-    window.history.replaceState(null, "", urlDeConversacion(ID_A));
+    window.history.replaceState(null, "", rutaDeConversacion(ID_A));
     vi.useFakeTimers({ shouldAdvanceTime: true });
   });
   afterEach(() => vi.useRealTimers());

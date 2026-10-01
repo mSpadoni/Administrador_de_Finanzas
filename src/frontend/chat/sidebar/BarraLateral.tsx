@@ -8,7 +8,8 @@ import { useChatEnPantalla } from "../estado/ContextoDelChat";
 import { usePaneles } from "../estado/ContextoDePaneles";
 import { useSidebar } from "./EstadoSidebar";
 import Icono from "../compartidos/iconos";
-import { esClickComun, urlDeConversacion } from "../compartidos/navegacion";
+import { RUTAS, rutaDeConversacion } from "@/shared/rutas";
+import { esClickComun } from "../compartidos/navegacion";
 import PerfilDeUsuario from "./PerfilDeUsuario";
 import { ATAJOS, type Atajo } from "../conversacion/respuesta";
 import type { ItemConversacion } from "./sidebar";
@@ -129,7 +130,7 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
               común se cambia en pantalla, sin recargar. */}
           <Link
             ref={primerLinkRef}
-            href="/"
+            href={RUTAS.inicio}
             onClick={(evento) => {
               if (!esClickComun(evento)) return;
               evento.preventDefault();
@@ -190,7 +191,7 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
                       }`}
                     >
                       <Link
-                        href={urlDeConversacion(conversacion.id)}
+                        href={rutaDeConversacion(conversacion.id)}
                         onClick={(evento) => {
                           if (!esClickComun(evento)) return;
                           evento.preventDefault();

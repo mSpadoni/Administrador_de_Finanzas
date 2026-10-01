@@ -5,6 +5,7 @@ import { DefaultChatTransport } from "ai";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { AsistenteUIMessage } from "@/shared/chat";
+import { RUTAS } from "@/shared/rutas";
 import { useSidebar } from "../../sidebar/EstadoSidebar";
 import { anuncioDeRespuesta, cambioLosMovimientos, tituloDeLaConversacion } from "../../conversacion/respuesta";
 
@@ -29,7 +30,7 @@ export function useChatDelAsistente(
   const [transporte] = useState(
     () =>
       new DefaultChatTransport<AsistenteUIMessage>({
-        api: "/api/chat",
+        api: RUTAS.apiDelChat,
         prepareSendMessagesRequest: ({ id, messages }) => ({ body: { id, mensaje: messages.at(-1) } }),
       })
   );

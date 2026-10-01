@@ -40,6 +40,23 @@ dominio lo encuentren con la convención actual.
 | Frontend        | `src/frontend/`                                                             | Componentes React y lógica de presentación, por tema: `autenticacion/`, `compartidos/` y `chat/` (`conversacion/`, `estado/`, `sidebar/`, `resumen/`, `debug/`, `compartidos/`). Los datos llegan por props y las acciones como Server Actions. La lógica pura va en archivos `.ts` (testeables sin navegador).                                                                                                                                               | otras vistas                                   |
 | Compartido      | `src/shared/`                                                               | Lógica pura que usan el servidor y el navegador (ej. el tipo de los mensajes del chat, el contrato de errores).                                                                                                                                                                                                                                                                                                                                               | solo tipos de otras librerías                  |
 
+## Rutas (URLs)
+
+En Next.js cada URL la define una carpeta de `src/app/` (no hay un archivo de rutas como en Express). Para que los textos de
+las URLs no estén escritos a mano por todos lados, salen todos de `src/shared/rutas.ts` (`RUTAS`, `rutaDeConversacion`,
+`RUTA_DE_LOGIN_FALLIDO`…), que usan las páginas, las acciones, los componentes y los tests.
+
+| URL                  | Archivo que la atiende               | Qué hace                                                                          |
+| -------------------- | ------------------------------------ | --------------------------------------------------------------------------------- |
+| `/`                  | `src/app/page.tsx`                   | Sin sesión: la bienvenida con «Ingresar con Google». Con sesión: lleva a un chat. |
+| `/?error=login`      | `src/app/page.tsx`                   | La bienvenida con el aviso de que falló el login.                                 |
+| `/conversacion/<id>` | `src/app/conversacion/[id]/page.tsx` | Una conversación: nueva (todavía sin guardar) o guardada.                         |
+| `POST /api/chat`     | `src/app/api/chat/route.ts`          | Un mensaje al asistente; la respuesta vuelve en streaming.                        |
+| `GET /auth/callback` | `src/app/auth/callback/route.ts`     | La vuelta del login de Google: canjea el código por la sesión.                    |
+
+Las acciones que el navegador dispara sin cambiar de URL son Server Actions: `src/app/auth/actions.ts` (ingresar, cerrar
+sesión) y `src/app/conversacion/actions.ts` (leer, borrar y titular una conversación).
+
 ## Autenticación, autorización y datos
 
 - **Autenticación:** Supabase Auth (Google). `AuthController` es un envoltorio fino; no hay JWT, passwords ni tokens propios.

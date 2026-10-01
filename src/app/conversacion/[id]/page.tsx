@@ -5,6 +5,7 @@ import { authController } from "@/backend/controllers/auth.controller";
 import { pantallaController } from "@/backend/controllers/pantalla.controller";
 import { esIdDeConversacion } from "@/backend/controllers/validacionControllers";
 import PantallaDeChat from "@/frontend/chat/PantallaDeChat";
+import { RUTAS } from "@/shared/rutas";
 
 /** En Next 15 los parámetros de la URL llegan como Promise: `/conversacion/abc` → `{ id: "abc" }`. */
 type Props = { params: Promise<{ id: string }> };
@@ -16,7 +17,7 @@ type Props = { params: Promise<{ id: string }> };
  */
 export default async function PaginaConversacion({ params }: Props) {
   const usuario = await authController.obtenerUsuarioActual();
-  if (!usuario) redirect("/");
+  if (!usuario) redirect(RUTAS.inicio);
 
   const { id } = await params;
   if (!esIdDeConversacion(id)) notFound();

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SE_PUEDE_REINTENTAR } from "@/shared/erroresShared";
+import { RUTAS } from "@/shared/rutas";
 import { errorParaMostrar } from "./tipos";
 
 type Props = { error: Error; onReintentar: () => void };
@@ -20,7 +21,7 @@ export default function AvisoDeError({ error, onReintentar }: Props) {
       {codigo === "no_autenticado" ? (
         // "/" lee la sesión en el servidor: sin sesión muestra el botón de Google.
         <Link
-          href="/"
+          href={RUTAS.inicio}
           className="mt-2 inline-block rounded-lg border border-peligro-borde bg-superficie px-3 py-1.5 font-medium text-peligro hover:bg-peligro-suave-fuerte"
         >
           Volver a ingresar

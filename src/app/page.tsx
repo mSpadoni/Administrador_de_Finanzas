@@ -3,9 +3,7 @@ import { redirect } from "next/navigation";
 import { ingresarConGoogle } from "@/app/auth/actions";
 import { authController } from "@/backend/controllers/auth.controller";
 import BienvenidaConLogin from "@/frontend/autenticacion/BienvenidaConLogin";
-
-/** El valor de `?error=` con el que /auth/callback vuelve acá cuando falló el login. */
-const ERROR_DE_LOGIN = "login";
+import { ERROR_DE_LOGIN, rutaDeConversacion } from "@/shared/rutas";
 
 /**
  * Props que Next.js le pasa a la página. `searchParams` son los parámetros de la URL
@@ -27,7 +25,7 @@ export default async function HomePage({ searchParams }: Props) {
 
   // Con sesión: una conversación nueva, con su propio id y su URL desde el principio.
   // (No se guarda en la base hasta el primer mensaje: las conversaciones vacías no ocupan lugar.)
-  if (usuario) redirect(`/conversacion/${randomUUID()}`);
+  if (usuario) redirect(rutaDeConversacion(randomUUID()));
 
   // Sin sesión: pantalla de bienvenida con el botón de Google.
   return <BienvenidaConLogin ingresar={ingresarConGoogle} falloElLogin={error === ERROR_DE_LOGIN} />;

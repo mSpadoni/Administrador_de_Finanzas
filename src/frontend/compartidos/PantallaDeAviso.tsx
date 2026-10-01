@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { RUTAS } from "@/shared/rutas";
 
 type Props = {
   titulo: string;
@@ -21,7 +22,7 @@ export default function PantallaDeAviso({ titulo, children, accion }: Props) {
         <div className="mt-6 flex flex-wrap gap-3">
           {accion}
           <Link
-            href="/"
+            href={RUTAS.inicio}
             className="rounded-lg border border-borde-fuerte px-4 py-2 font-medium text-tinta hover:bg-superficie-suave"
           >
             Volver al inicio

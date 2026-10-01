@@ -8,7 +8,8 @@ import { ProveedorDePaneles } from "./ContextoDePaneles";
 import { lanzarChatSinProveedor } from "./erroresEstado";
 import { useChatDelAsistente } from "./hooks/useChatDelAsistente";
 import { useSeguirAlFinal } from "./hooks/useSeguirAlFinal";
-import { idDeConversacionEnLaUrl, nuevoIdDeConversacion, urlDeConversacion } from "../compartidos/navegacion";
+import { idDeConversacionEnLaRuta, rutaDeConversacion } from "@/shared/rutas";
+import { nuevoIdDeConversacion } from "../compartidos/navegacion";
 import { estadoDeLaRespuesta, type Atajo } from "../conversacion/respuesta";
 
 type ValorDelChat = Omit<ReturnType<typeof useChatDelAsistente>, "enviar"> & {
@@ -90,7 +91,7 @@ export function ProveedorDelChat({ conversacionId, mensajesIniciales, leerConver
     setAbriendo(false);
     setSesion(nueva);
     volverAlFinal();
-    if (actualizarUrl) window.history.pushState(null, "", urlDeConversacion(nueva.id));
+    if (actualizarUrl) window.history.pushState(null, "", rutaDeConversacion(nueva.id));
     textareaRef.current?.focus();
   }
 
@@ -112,7 +113,7 @@ export function ProveedorDelChat({ conversacionId, mensajesIniciales, leerConver
       if (sigueSiendoLaUltima()) cambiarA({ id, mensajes }, actualizarUrl);
     } catch {
       // Si no se pudo leer sin recargar, se abre de la forma de siempre (la página la pide al servidor).
-      if (sigueSiendoLaUltima()) window.location.assign(urlDeConversacion(id));
+      if (sigueSiendoLaUltima()) window.location.assign(rutaDeConversacion(id));
     } finally {
       if (sigueSiendoLaUltima()) setAbriendo(false);
     }
@@ -121,7 +122,7 @@ export function ProveedorDelChat({ conversacionId, mensajesIniciales, leerConver
   // «Atrás» y «adelante» del navegador: la dirección cambió sola, hay que mostrar la conversación que le corresponde.
   useEffect(() => {
     const alVolver = () => {
-      const id = idDeConversacionEnLaUrl(window.location.pathname);
+      const id = idDeConversacionEnLaRuta(window.location.pathname);
       if (id && id !== idActualRef.current) void abrirConversacion(id, false);
     };
     window.addEventListener("popstate", alVolver);

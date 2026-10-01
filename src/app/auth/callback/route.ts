@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { authController } from "@/backend/controllers/auth.controller";
+import { RUTA_DE_LOGIN_FALLIDO, RUTAS } from "@/shared/rutas";
 
 // Google → Supabase → acá, con ?code=... (o sin code si el usuario canceló).
 // Un archivo route.ts es un endpoint: exportar una función `GET` hace que responda a GET /auth/callback.
@@ -11,5 +12,5 @@ export async function GET(request: NextRequest) {
   // Si vino el code, se canjea por una sesión; si no (el usuario canceló), directamente es false.
   const ok = await authController.completarLogin(code);
 
-  return NextResponse.redirect(ok ? `${origin}/` : `${origin}/?error=login`);
+  return NextResponse.redirect(`${origin}${ok ? RUTAS.inicio : RUTA_DE_LOGIN_FALLIDO}`);
 }
