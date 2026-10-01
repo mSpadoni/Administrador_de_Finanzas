@@ -134,6 +134,23 @@ const reglasDeDependencia = [
 ];
 
 // Usa las reglas recomendadas por Next.js (rendimiento web + TypeScript). FlatCompat adapta ese formato viejo al nuevo.
-const eslintConfig = [...compat.extends("next/core-web-vitals", "next/typescript"), ...reglasDeDependencia];
+// No se revisa lo generado (igual que en .gitignore): builds de Next, next-env.d.ts (que Next pide no tocar),
+// cobertura y reportes de Playwright.
+const eslintConfig = [
+  {
+    ignores: [
+      ".next/**",
+      ".next-e2e/**",
+      "out/**",
+      "build/**",
+      "coverage/**",
+      "playwright-report/**",
+      "test-results/**",
+      "next-env.d.ts",
+    ],
+  },
+  ...compat.extends("next/core-web-vitals", "next/typescript"),
+  ...reglasDeDependencia,
+];
 
 export default eslintConfig;
