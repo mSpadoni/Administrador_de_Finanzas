@@ -12,7 +12,7 @@ type Props = { error: Error; onReintentar: () => void };
 export default function AvisoDeError({ error, onReintentar }: Props) {
   const { codigo, mensaje } = errorParaMostrar(error);
   return (
-    <div role="alert" className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+    <div role="alert" className="rounded-lg border border-peligro-borde bg-peligro-suave p-4 text-sm text-peligro">
       <p className="font-medium">
         <span aria-hidden="true">⚠ </span>
         {mensaje}
@@ -21,7 +21,7 @@ export default function AvisoDeError({ error, onReintentar }: Props) {
         // "/" lee la sesión en el servidor: sin sesión muestra el botón de Google.
         <Link
           href="/"
-          className="mt-2 inline-block rounded-lg border border-red-400 bg-white px-3 py-1.5 font-medium text-red-900 hover:bg-red-100"
+          className="mt-2 inline-block rounded-lg border border-peligro-borde bg-superficie px-3 py-1.5 font-medium text-peligro hover:bg-peligro-suave-fuerte"
         >
           Volver a ingresar
         </Link>
@@ -31,7 +31,7 @@ export default function AvisoDeError({ error, onReintentar }: Props) {
             type="button"
             // Reintentar vuelve a pedir la respuesta al último mensaje (el servidor no lo guarda dos veces).
             onClick={onReintentar}
-            className="mt-2 rounded-lg border border-red-400 bg-white px-3 py-1.5 font-medium text-red-900 hover:bg-red-100"
+            className="mt-2 rounded-lg border border-peligro-borde bg-superficie px-3 py-1.5 font-medium text-peligro hover:bg-peligro-suave-fuerte"
           >
             Reintentar
           </button>

@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { AsistenteUIMessage, EstadisticasDelPeriodo, MovimientoGuardado } from "@/shared/chat";
 import MessageBubble from "@/frontend/chat/conversacion/MessageBubble";
 import PanelDelMes, { CATEGORIAS_EN_EL_PANEL } from "@/frontend/chat/resumen/PanelDelMes";
@@ -11,6 +12,10 @@ import { MAX_FILAS_EN_TABLA } from "@/frontend/chat/conversacion/TarjetasDeResul
 // Lo que ve la persona cuando el asistente usa una tool: las tarjetas, la tabla, las barras y el panel «Este mes».
 // Componentes reales en un DOM (jsdom), leídos por rol y nombre accesible. Los resultados son los que devuelven las tools.
 afterEach(cleanup);
+
+// El botón «Reintentar» del panel le pide a Next que vuelva a leer la página: el router no existe fuera de la app.
+const refrescar = vi.fn();
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: refrescar }) }));
 
 const gasto = (cambios: Partial<MovimientoGuardado> = {}): MovimientoGuardado => ({
   id: "11111111-1111-4111-8111-111111111111",
@@ -313,13 +318,21 @@ describe("panel «Este mes»", () => {
       />
     );
 
-    expect(screen.getByText("Todavía no registraste gastos este mes.")).toBeInTheDocument();
+    expect(screen.getByText(/^Todavía no registraste gastos este mes\./)).toBeInTheDocument();
   });
 
-  it("si no se pudo leer el resumen avisa, sin romper la pantalla", () => {
+  it("si no se pudo leer el resumen avisa y ofrece reintentar sin recargar la página", async () => {
     render(<PanelDelMes estadisticas={null} />);
 
-    expect(screen.getByText(/No pudimos cargar el resumen del mes/)).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("No se pudo cargar el resumen del mes.");
+    await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
+    expect(refrescar).toHaveBeenCalledTimes(1);
+  });
+
+  it("sin el chat (el panel solo), no muestra el aviso de «Actualizando…»", () => {
+    render(<PanelDelMes estadisticas={ESTADISTICAS} />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("");
   });
 });
 

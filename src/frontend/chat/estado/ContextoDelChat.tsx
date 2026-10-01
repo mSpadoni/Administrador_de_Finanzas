@@ -162,6 +162,14 @@ export function ProveedorDelChat({ conversacionId, mensajesIniciales, leerConver
   );
 }
 
+/**
+ * El chat de la pantalla si hay uno, o null: para las piezas que también se muestran fuera del chat (como el resumen del
+ * mes) y que, sin chat, simplemente no muestran lo que depende de él.
+ */
+export function useChatEnPantallaSiHay(): ValorDelChat | null {
+  return useContext(ContextoDelChat);
+}
+
 /** El chat de la pantalla. Solo se puede usar adentro de <ProveedorDelChat>. */
 export function useChatEnPantalla(): ValorDelChat {
   return useContext(ContextoDelChat) ?? lanzarChatSinProveedor();

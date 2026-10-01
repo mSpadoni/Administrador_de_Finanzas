@@ -4,7 +4,11 @@ import { comoTextoDeDebug, respuestasParaDebug, totalesDeDebug } from "@/fronten
 
 // Lo que muestra el panel de debug: por cada respuesta, qué decidió hacer el modelo, cuánto tardó y cuántos tokens gastó.
 
-const usuario = (texto: string): AsistenteUIMessage => ({ id: `u-${texto}`, role: "user", parts: [{ type: "text", text: texto }] });
+const usuario = (texto: string): AsistenteUIMessage => ({
+  id: `u-${texto}`,
+  role: "user",
+  parts: [{ type: "text", text: texto }],
+});
 
 const conTool = (id: string, metadata?: AsistenteUIMessage["metadata"]): AsistenteUIMessage => ({
   id,

@@ -16,24 +16,24 @@ const componentesMarkdown: Components = {
   h1: (props) => <p className="mt-3 mb-1 font-semibold" {...props} />,
   h2: (props) => <p className="mt-3 mb-1 font-semibold" {...props} />,
   h3: (props) => <p className="mt-3 mb-1 font-semibold" {...props} />,
-  code: (props) => <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.9em]" {...props} />,
-  pre: (props) => <pre className="my-2 overflow-x-auto rounded-lg bg-slate-100 p-3 text-sm" {...props} />,
+  code: (props) => <code className="rounded bg-superficie-suave px-1 py-0.5 font-mono text-[0.9em]" {...props} />,
+  pre: (props) => <pre className="my-2 overflow-x-auto rounded-lg bg-superficie-suave p-3 text-sm" {...props} />,
   // Las tablas (movimientos, totales): con scroll horizontal propio para no romper el layout en mobile.
   table: (props) => (
     <div className="my-3 overflow-x-auto">
       <table className="w-full border-collapse text-left text-sm" {...props} />
     </div>
   ),
-  th: (props) => <th className="border border-slate-300 bg-slate-100 px-2 py-1 font-semibold" {...props} />,
-  td: (props) => <td className="border border-slate-300 px-2 py-1 align-top" {...props} />,
+  th: (props) => <th className="border border-borde-fuerte bg-superficie-suave px-2 py-1 font-semibold" {...props} />,
+  td: (props) => <td className="border border-borde-fuerte px-2 py-1 align-top" {...props} />,
   // Una cita ("> ⚠ ...") se destaca con borde, fondo y el ícono (no solo color): el asistente la usa para avisos.
   blockquote: (props) => (
     <blockquote
-      className="my-3 rounded-r-lg border-l-4 border-amber-500 bg-amber-50 px-3 py-2 text-amber-950"
+      className="my-3 rounded-r-lg border-l-4 border-aviso-borde bg-aviso-suave px-3 py-2 text-aviso"
       {...props}
     />
   ),
-  a: (props) => <a className="break-words text-blue-700 underline" target="_blank" rel="noreferrer" {...props} />,
+  a: (props) => <a className="break-words text-enlace underline" target="_blank" rel="noreferrer" {...props} />,
 };
 
 /** Fuera del componente: un array nuevo en cada render haría que react-markdown vuelva a armar todo. */
@@ -59,10 +59,10 @@ function MessageBubble({ mensaje }: { mensaje: AsistenteUIMessage }) {
     // Las clases se arman con un template string: `${condición ? "a" : "b"}` agrega una u otra según quién escribió.
     <li className={`flex flex-col ${esUsuario ? "items-end" : "items-start"}`}>
       {/* El rol va como texto visible, no solo con color o posición. */}
-      <span className="mb-1 px-1 text-xs font-medium text-slate-600">{esUsuario ? "Vos" : "Asistente"}</span>
+      <span className="mb-1 px-1 text-xs font-medium text-tinta-suave">{esUsuario ? "Vos" : "Asistente"}</span>
       <div
         className={`max-w-[90%] min-w-0 rounded-2xl px-4 py-3 leading-relaxed [overflow-wrap:anywhere] sm:max-w-[80%] ${
-          esUsuario ? "bg-blue-700 text-white" : "border border-slate-200 bg-white text-slate-900"
+          esUsuario ? "bg-marca text-sobre-marca" : "border border-borde bg-superficie text-tinta"
         }`}
       >
         {/* Lo que devolvió cada tool, dibujado como tarjeta, tabla o barras (solo si salió bien). */}

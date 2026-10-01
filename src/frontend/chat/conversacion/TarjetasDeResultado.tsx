@@ -19,7 +19,7 @@ import {
 /** Máximo de filas que muestra la tabla en el chat; el resto se avisa (el detalle completo lo cuenta el asistente). */
 export const MAX_FILAS_EN_TABLA = 15;
 
-const tarjeta = "my-2 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-900";
+const tarjeta = "my-2 rounded-xl border border-borde bg-fondo p-3 text-sm text-tinta";
 
 /** El movimiento que acaba de registrar el asistente. */
 export function TarjetaDeMovimiento({ movimiento }: { movimiento: MovimientoGuardado }) {
@@ -31,20 +31,20 @@ export function TarjetaDeMovimiento({ movimiento }: { movimiento: MovimientoGuar
           <span aria-hidden="true">✓ </span>
           {esGasto ? "Gasto registrado" : "Ingreso registrado"}
         </span>
-        <span className={esGasto ? "text-red-800" : "text-green-800"}>
+        <span className={esGasto ? "text-peligro" : "text-ingreso"}>
           {esGasto ? "− " : "+ "}
           {formatoMonto(movimiento.monto, movimiento.moneda)}
         </span>
       </p>
       <p className="mt-1">{movimiento.descripcion}</p>
       {movimiento.cotizacion && (
-        <p className="mt-1 text-slate-700">
+        <p className="mt-1 text-tinta-suave">
           Equivale a {formatoPesos(movimiento.montoEnPesos)} (dólar{" "}
           {nombreDelTipoDeDolar(movimiento.cotizacion.tipoDeDolar).toLowerCase()} a{" "}
           {formatoPesos(movimiento.cotizacion.valor)})
         </p>
       )}
-      <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-700">
+      <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-tinta-suave">
         <div className="flex gap-1">
           <dt className="font-medium">Categoría:</dt>
           <dd>{nombreDeCategoria(movimiento.categoria)}</dd>
@@ -76,7 +76,7 @@ export function TablaDeMovimientos({ datos }: { datos: ResultadoExitoso<"consult
           <table className="w-full border-collapse text-left text-xs sm:text-sm">
             <caption className="pb-2 text-left font-semibold">{titulo}</caption>
             <thead>
-              <tr className="border-b border-slate-300">
+              <tr className="border-b border-borde-fuerte">
                 <th scope="col" className="py-1 pr-2 font-semibold">
                   Fecha
                 </th>
@@ -93,7 +93,7 @@ export function TablaDeMovimientos({ datos }: { datos: ResultadoExitoso<"consult
             </thead>
             <tbody>
               {visibles.map((m) => (
-                <tr key={m.id} className="border-b border-slate-200 last:border-0">
+                <tr key={m.id} className="border-b border-borde last:border-0">
                   <td className="py-1 pr-2 whitespace-nowrap">{fechaCorta(m.fecha)}</td>
                   <td className="py-1 pr-2">{m.descripcion}</td>
                   <td className="py-1 pr-2">{nombreDeCategoria(m.categoria)}</td>
@@ -102,7 +102,7 @@ export function TablaDeMovimientos({ datos }: { datos: ResultadoExitoso<"consult
                     <span aria-hidden="true">{m.tipo === "gasto" ? "− " : "+ "}</span>
                     {formatoPesos(m.montoEnPesos)}
                     {m.moneda === "USD" && (
-                      <span className="block text-xs text-slate-600">{formatoMonto(m.monto, "USD")}</span>
+                      <span className="block text-xs text-tinta-suave">{formatoMonto(m.monto, "USD")}</span>
                     )}
                   </td>
                 </tr>
@@ -112,7 +112,7 @@ export function TablaDeMovimientos({ datos }: { datos: ResultadoExitoso<"consult
         </div>
       )}
       {movimientos.length > visibles.length && (
-        <p className="mt-1 text-xs text-slate-700">Y {movimientos.length - visibles.length} más en este período.</p>
+        <p className="mt-1 text-xs text-tinta-suave">Y {movimientos.length - visibles.length} más en este período.</p>
       )}
       <ResumenDeMontos resumen={resumen} />
     </section>
@@ -122,17 +122,17 @@ export function TablaDeMovimientos({ datos }: { datos: ResultadoExitoso<"consult
 /** Ingresos, gastos y balance (en pesos). */
 function ResumenDeMontos({ resumen }: { resumen: EstadisticasDelPeriodo["resumen"] }) {
   return (
-    <dl className="mt-2 grid grid-cols-3 gap-2 border-t border-slate-200 pt-2 text-xs sm:text-sm">
+    <dl className="mt-2 grid grid-cols-3 gap-2 border-t border-borde pt-2 text-xs sm:text-sm">
       <div>
-        <dt className="text-slate-700">Ingresos</dt>
-        <dd className="font-semibold text-green-800">{formatoPesos(resumen.ingresos)}</dd>
+        <dt className="text-tinta-suave">Ingresos</dt>
+        <dd className="font-semibold text-ingreso">{formatoPesos(resumen.ingresos)}</dd>
       </div>
       <div>
-        <dt className="text-slate-700">Gastos</dt>
-        <dd className="font-semibold text-red-800">{formatoPesos(resumen.gastos)}</dd>
+        <dt className="text-tinta-suave">Gastos</dt>
+        <dd className="font-semibold text-peligro">{formatoPesos(resumen.gastos)}</dd>
       </div>
       <div>
-        <dt className="text-slate-700">Balance</dt>
+        <dt className="text-tinta-suave">Balance</dt>
         <dd className="font-semibold">{formatoPesos(resumen.balance)}</dd>
       </div>
     </dl>
@@ -142,7 +142,7 @@ function ResumenDeMontos({ resumen }: { resumen: EstadisticasDelPeriodo["resumen
 /** Las barras de los gastos por categoría: el ancho es el porcentaje, y el número va siempre escrito al lado. */
 export function BarrasDeCategorias({ porCategoria }: { porCategoria: EstadisticasDelPeriodo["porCategoria"] }) {
   const gastos = porCategoria.filter((c) => c.tipo === "gasto");
-  if (gastos.length === 0) return <p className="mt-2 text-xs text-slate-700">No hubo gastos en este período.</p>;
+  if (gastos.length === 0) return <p className="mt-2 text-xs text-tinta-suave">No hubo gastos en este período.</p>;
   return (
     <ul aria-label="Gastos por categoría" className="mt-2 space-y-2">
       {gastos.map((c) => (
@@ -154,9 +154,9 @@ export function BarrasDeCategorias({ porCategoria }: { porCategoria: Estadistica
             </span>
           </p>
           {/* La barra es solo un refuerzo visual: la información está en el texto de arriba. */}
-          <div aria-hidden="true" className="mt-0.5 h-2 rounded-full bg-slate-200">
+          <div aria-hidden="true" className="mt-0.5 h-2 rounded-full bg-superficie-fuerte">
             <div
-              className="h-2 rounded-full bg-blue-700"
+              className="h-2 rounded-full bg-marca"
               style={{ width: `${Math.min(100, Math.max(2, c.porcentaje))}%` }}
             />
           </div>
@@ -174,7 +174,7 @@ export function TarjetaDeEstadisticas({ estadisticas }: { estadisticas: Estadist
     <section aria-label={titulo} className={tarjeta}>
       <h3 className="font-semibold">{titulo}</h3>
       <ResumenDeMontos resumen={resumen} />
-      <p className="mt-2 text-xs text-slate-700 sm:text-sm">
+      <p className="mt-2 text-xs text-tinta-suave sm:text-sm">
         Promedio diario de gastos: {formatoPesos(promedioDiarioDeGastos)}.{" "}
         {textoDeVariacion(variacionDeGastos.porcentaje)}.
       </p>
@@ -199,11 +199,11 @@ export function TarjetaDeCotizacion({
             <span>
               Compra {formatoPesos(c.compra)} · Venta {formatoPesos(c.venta)}
             </span>
-            <span className="w-full text-xs text-slate-700">Actualizada el {horaDeActualizacion(c.actualizada)}</span>
+            <span className="w-full text-xs text-tinta-suave">Actualizada el {horaDeActualizacion(c.actualizada)}</span>
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-slate-700">Fuente: dolarapi.com</p>
+      <p className="mt-2 text-xs text-tinta-suave">Fuente: dolarapi.com</p>
     </section>
   );
 }
@@ -219,7 +219,7 @@ export function TarjetaDeConversion({ conversion }: { conversion: ResultadoExito
       <p className="mt-1">
         Con la cotización de compra: {formatoMonto(conCompra, a)} · con la de venta: {formatoMonto(conVenta, a)}
       </p>
-      <p className="mt-1 text-xs text-slate-700">
+      <p className="mt-1 text-xs text-tinta-suave">
         Cotización actualizada el {horaDeActualizacion(actualizada)} · Fuente: dolarapi.com
       </p>
     </section>

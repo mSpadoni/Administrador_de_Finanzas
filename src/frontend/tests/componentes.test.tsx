@@ -291,7 +291,12 @@ describe("PerfilDeUsuario", () => {
 
   it("con foto la muestra como imagen decorativa (el nombre ya está al lado)", () => {
     const { container } = render(
-      <PerfilDeUsuario nombre="Mateo" avatarUrl="https://lh3.googleusercontent.com/foto" cerrarSesion={vi.fn()} onAbrirDebug={vi.fn()} />
+      <PerfilDeUsuario
+        nombre="Mateo"
+        avatarUrl="https://lh3.googleusercontent.com/foto"
+        cerrarSesion={vi.fn()}
+        onAbrirDebug={vi.fn()}
+      />
     );
 
     expect(container.querySelector("img")).toHaveAttribute("src", "https://lh3.googleusercontent.com/foto");

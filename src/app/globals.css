@@ -1,9 +1,52 @@
 /* Trae Tailwind: habilita las clases utilitarias que se usan en los componentes (flex, px-4, text-slate-700...). */
 @import "tailwindcss";
 
-/* Animación de entrada: lo que aparece (una conversación nueva, un ítem de la lista) sube un poquito mientras se
-   hace visible. Se usa con `motion-safe:animate-aparecer`: con «reducir movimiento» activado no se anima. */
+/* Tokens de color: cada color tiene un nombre por lo que hace (fondo, tinta, marca, peligro…) y no por cómo se ve. Con
+   @theme, Tailwind arma una clase por token (bg-superficie, text-tinta-suave, border-borde-control…) que lee la variable:
+   así el tema oscuro solo cambia los valores, no las clases de los componentes.
+   Todos los pares de texto y fondo cumplen el contraste de WCAG AA en los dos temas (texto ≥ 4,5:1; bordes de controles
+   y foco ≥ 3:1).
+   - fondo / superficie / superficie-suave / superficie-fuerte: de atrás hacia adelante (página, tarjetas, botones, hover).
+   - tinta / tinta-suave: texto principal y secundario.
+   - borde (decorativo), borde-fuerte (separadores y tablas) y borde-control (contorno de un campo: tiene que verse).
+   - marca + sobre-marca: botones principales y el globo de la persona. enlace: texto de links y acentos.
+   - invertido + sobre-invertido: botones oscuros sobre fondo claro (y al revés en tema oscuro).
+   - peligro (texto), peligro-suave (avisos de error), peligro-fondo (botón de borrar); ingreso; aviso. */
 @theme {
+  --color-fondo: #f8fafc;
+  --color-superficie: #ffffff;
+  --color-superficie-suave: #f1f5f9;
+  --color-superficie-fuerte: #e2e8f0;
+  --color-tinta: #0f172a;
+  --color-tinta-suave: #334155;
+  --color-borde: #e2e8f0;
+  --color-borde-fuerte: #cbd5e1;
+  --color-borde-control: #64748b;
+  --color-marca: #1d4ed8;
+  --color-marca-fuerte: #1e40af;
+  --color-sobre-marca: #ffffff;
+  --color-enlace: #1d4ed8;
+  --color-enlace-fuerte: #1e3a8a;
+  --color-invertido: #0f172a;
+  --color-invertido-fuerte: #334155;
+  --color-sobre-invertido: #ffffff;
+  --color-sobre-invertido-suave: #e2e8f0;
+  --color-peligro: #b91c1c;
+  --color-peligro-suave: #fef2f2;
+  --color-peligro-suave-fuerte: #fee2e2;
+  --color-peligro-borde: #f87171;
+  --color-peligro-fondo: #b91c1c;
+  --color-peligro-fondo-fuerte: #991b1b;
+  --color-sobre-peligro: #ffffff;
+  --color-ingreso: #166534;
+  --color-aviso: #713f12;
+  --color-aviso-suave: #fffbeb;
+  --color-aviso-borde: #f59e0b;
+  --color-esqueleto: #e2e8f0;
+  --color-foco: #005fcc;
+
+  /* Animación de entrada: lo que aparece (una conversación nueva, un ítem de la lista) sube un poquito mientras se
+     hace visible. Se usa con `motion-safe:animate-aparecer`: con «reducir movimiento» activado no se anima. */
   --animate-aparecer: aparecer 300ms ease-out both;
 
   @keyframes aparecer {
@@ -18,15 +61,51 @@
   }
 }
 
-/* Variables CSS globales (se usan con var(--nombre)): colores de fondo y de texto de toda la app. */
+/* Tema oscuro: sigue lo que eligió la persona en su sistema (prefers-color-scheme). `color-scheme` hace que los controles
+   del navegador (barras de scroll, campos) también se pongan oscuros. */
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-fondo: #0b1220;
+    --color-superficie: #111a2b;
+    --color-superficie-suave: #172236;
+    --color-superficie-fuerte: #22304a;
+    --color-tinta: #e6edf3;
+    --color-tinta-suave: #aab6c5;
+    --color-borde: #26344d;
+    --color-borde-fuerte: #3a4a66;
+    --color-borde-control: #7d8ea6;
+    --color-marca: #2f5fd0;
+    --color-marca-fuerte: #3b6fe0;
+    --color-sobre-marca: #ffffff;
+    --color-enlace: #8fb6ff;
+    --color-enlace-fuerte: #b6d0ff;
+    --color-invertido: #e6edf3;
+    --color-invertido-fuerte: #c3cedb;
+    --color-sobre-invertido: #0b1220;
+    --color-sobre-invertido-suave: #26344d;
+    --color-peligro: #ff8a80;
+    --color-peligro-suave: #3a1717;
+    --color-peligro-suave-fuerte: #4a1d1d;
+    --color-peligro-borde: #b4544d;
+    --color-peligro-fondo: #b91c1c;
+    --color-peligro-fondo-fuerte: #991b1b;
+    --color-sobre-peligro: #ffffff;
+    --color-ingreso: #5fd08e;
+    --color-aviso: #ffcf80;
+    --color-aviso-suave: #33270d;
+    --color-aviso-borde: #b7791f;
+    --color-esqueleto: #22304a;
+    --color-foco: #8fb6ff;
+  }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-fondo);
+  color: var(--color-tinta);
   font-family:
     system-ui,
     -apple-system,
@@ -47,7 +126,7 @@ a,
    Fuera de una capa, esta regla pisaba a todas las clases de Tailwind. */
 @layer base {
   :focus-visible {
-    outline: 3px solid #005fcc;
+    outline: 3px solid var(--color-foco);
     outline-offset: 2px;
   }
 }

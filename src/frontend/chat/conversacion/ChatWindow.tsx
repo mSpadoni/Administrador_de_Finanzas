@@ -44,10 +44,22 @@ export default function ChatWindow({ nombre }: { nombre: string }) {
 
   return (
     <main id="chat" className="flex min-h-0 flex-1 flex-col">
-      <section aria-labelledby="titulo-conversacion" data-campo={centrado ? "al-medio" : "abajo"} className="flex min-h-0 flex-1 flex-col">
+      <section
+        aria-labelledby="titulo-conversacion"
+        data-campo={centrado ? "al-medio" : "abajo"}
+        className="relative flex min-h-0 flex-1 flex-col"
+      >
         <h2 id="titulo-conversacion" className="sr-only">
           Conversación con el asistente
         </h2>
+        {/* Mientras se lee otra conversación: un aviso a la vista y para el lector de pantalla (no solo la opacidad). */}
+        <p role="status" className="pointer-events-none absolute inset-x-0 top-2 z-20 flex justify-center empty:hidden">
+          {abriendo && (
+            <span className="rounded-full bg-superficie px-3 py-1 text-sm text-tinta shadow-md">
+              Abriendo la conversación…
+            </span>
+          )}
+        </p>
 
         {/* El scroll es de todo el bloque, campo incluido: el campo queda pegado abajo (sticky) y los mensajes pasan por
             debajo al scrollear, con su fondo translúcido. Con la conversación vacía el campo no se pega: va junto al
@@ -71,12 +83,12 @@ export default function ChatWindow({ nombre }: { nombre: string }) {
                     {/* El saludo se escribe solo, como si se estuviera tipeando en el momento; la explicación aparece después. */}
                     <TextoEscribiendose
                       texto={`Hola, ${nombre}. ¿Qué querés hacer?`}
-                      className="text-2xl font-semibold text-slate-900 sm:text-3xl"
+                      className="text-2xl font-semibold text-tinta sm:text-3xl"
                     />
-                    <p className="mx-auto mt-2 max-w-md text-sm text-slate-600 [animation-delay:1.8s] motion-safe:animate-aparecer">
-                      Contame un gasto o un ingreso como se lo contarías a alguien («gasté 5.000 en el súper con débito»),
-                      preguntá cómo venís este mes o a cuánto está el dólar. También tenés atajos en el «+» del campo y
-                      en la barra lateral.
+                    <p className="mx-auto mt-2 max-w-md text-sm text-tinta-suave [animation-delay:1.8s] motion-safe:animate-aparecer">
+                      Contame un gasto o un ingreso como se lo contarías a alguien («gasté 5.000 en el súper con
+                      débito»), preguntá cómo venís este mes o a cuánto está el dólar. También tenés atajos en el «+»
+                      del campo y en la barra lateral.
                     </p>
                   </div>
                 )}
@@ -109,7 +121,7 @@ export default function ChatWindow({ nombre }: { nombre: string }) {
             <div
               ref={campoRef}
               className={
-                centrado ? "" : "sticky bottom-0 z-10 bg-gradient-to-t from-slate-50/80 via-slate-50/40 to-transparent"
+                centrado ? "" : "sticky bottom-0 z-10 bg-gradient-to-t from-fondo/80 via-fondo/40 to-transparent"
               }
             >
               <div className="mx-auto w-full max-w-3xl">

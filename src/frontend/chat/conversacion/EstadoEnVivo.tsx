@@ -18,12 +18,12 @@ export default function EstadoEnVivo({ texto }: { texto: string | null }) {
   }, []);
 
   return (
-    <div role="status" className="text-sm text-slate-700">
+    <div role="status" className="text-sm text-tinta-suave">
       {texto && (
         <p className="flex items-center gap-2">
-          <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-blue-700 motion-safe:animate-pulse" />
+          <span aria-hidden="true" className="size-2 shrink-0 rounded-full bg-marca motion-safe:animate-pulse" />
           <span>{texto}</span>
-          <span aria-hidden="true" className="text-slate-600 tabular-nums">
+          <span aria-hidden="true" className="text-tinta-suave tabular-nums">
             · {segundos} s
           </span>
         </p>

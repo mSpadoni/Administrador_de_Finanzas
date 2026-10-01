@@ -10,7 +10,7 @@ type Props = {
 /** El aviso cuando no se pudo iniciar la sesión: qué pasó y qué hacer (heurística #9). Se anuncia solo (role="alert"). */
 function AvisoDeLoginFallido() {
   return (
-    <div role="alert" className="mt-6 rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+    <div role="alert" className="mt-6 rounded-lg border border-peligro-borde bg-peligro-suave p-4 text-sm text-peligro">
       <p className="font-medium">
         <span aria-hidden="true">⚠ </span>
         No pudimos iniciar tu sesión.
@@ -30,9 +30,9 @@ function AvisoDeLoginFallido() {
 export default function BienvenidaConLogin({ ingresar, falloElLogin }: Props) {
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-6">
-      <div className="w-full rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-slate-900">Administrador de Finanzas</h1>
-        <p className="mt-2 text-slate-700">
+      <div className="w-full rounded-2xl border border-borde bg-superficie p-8 shadow-sm">
+        <h1 className="text-2xl font-bold text-tinta">Administrador de Finanzas</h1>
+        <p className="mt-2 text-tinta-suave">
           Contale al asistente tus gastos e ingresos como se los contarías a alguien: los registra, te dice en qué se va
           la plata y a cuánto está el dólar.
         </p>
@@ -41,7 +41,7 @@ export default function BienvenidaConLogin({ ingresar, falloElLogin }: Props) {
         {falloElLogin && <AvisoDeLoginFallido />}
 
         <div className="mt-6">
-          <p className="mb-4 text-sm text-slate-700">Ingresá con tu cuenta de Google para empezar.</p>
+          <p className="mb-4 text-sm text-tinta-suave">Ingresá con tu cuenta de Google para empezar.</p>
           <LoginButton accion={ingresar} />
         </div>
       </div>

@@ -21,7 +21,7 @@ type Props = {
   cerrarSesion: () => Promise<void>;
 };
 
-const ITEM = "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-slate-900 transition";
+const ITEM = "flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-tinta transition";
 
 /** Lo que dura la animación con la que un ítem se pliega al borrarlo (ms). Es la misma duración de la clase `duration-300`. */
 const DURACION_DE_SALIDA_MS = 300;
@@ -36,13 +36,7 @@ const esperar = (ms: number) => new Promise<void>((listo) => setTimeout(listo, m
  */
 export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
   const { conversaciones, quitarConversacion } = useSidebar();
-  const {
-    conversacionId,
-    nuevaConversacion,
-    abrirConversacion,
-    usarAtajo,
-    generando,
-  } = useChatEnPantalla();
+  const { conversacionId, nuevaConversacion, abrirConversacion, usarAtajo, generando } = useChatEnPantalla();
   // En celular la hamburguesa del encabezado abre el menú; acá se cierra.
   const { abrirDebug, menuAbierto: abierto, setMenuAbierto: setAbierto } = usePaneles();
   const [porBorrar, setPorBorrar] = useState<ItemConversacion | null>(null);
@@ -107,14 +101,14 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
         aria-label="Menú principal"
         className={`${
           abierto ? "fixed inset-y-0 left-0 z-30 flex w-72 shadow-xl" : "hidden"
-        } flex-col border-r border-slate-200 bg-slate-50 md:static md:flex md:w-72 md:shrink-0 md:shadow-none`}
+        } flex-col border-r border-borde bg-fondo md:static md:flex md:w-72 md:shrink-0 md:shadow-none`}
       >
         {/* Solo en celular: la ✕ para cerrar va sola en su fila, arriba a la derecha (no compite con «Nueva conversación»). */}
         <div className="flex justify-end px-2 pt-2 md:hidden">
           <button
             type="button"
             onClick={() => setAbierto(false)}
-            className="grid size-11 shrink-0 place-items-center rounded-xl text-slate-700 hover:bg-slate-200/70"
+            className="grid size-11 shrink-0 place-items-center rounded-xl text-tinta-suave hover:bg-superficie-fuerte/70"
             aria-label="Cerrar el menú"
           >
             <Icono nombre="cerrar" className="size-5" />
@@ -133,7 +127,7 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
               setAbierto(false);
               nuevaConversacion();
             }}
-            className={`${ITEM} font-medium hover:bg-slate-200/70`}
+            className={`${ITEM} font-medium hover:bg-superficie-fuerte/70`}
           >
             <Icono nombre="conversacionNueva" className="size-5 shrink-0" />
             Nueva conversación
@@ -147,9 +141,9 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
                 type="button"
                 onClick={() => elegirAtajo(atajo)}
                 disabled={generando}
-                className={`${ITEM} hover:bg-slate-200/70 disabled:opacity-50`}
+                className={`${ITEM} hover:bg-superficie-fuerte/70 disabled:opacity-50`}
               >
-                <Icono nombre={atajo.icono} className="size-5 shrink-0 text-slate-700" />
+                <Icono nombre={atajo.icono} className="size-5 shrink-0 text-tinta-suave" />
                 {atajo.titulo}
               </button>
             </li>
@@ -160,16 +154,16 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
           <section aria-labelledby="titulo-conversaciones">
             <h2
               id="titulo-conversaciones"
-              className="px-5 pt-3 pb-1 text-xs font-semibold tracking-wide text-slate-600 uppercase"
+              className="px-5 pt-3 pb-1 text-xs font-semibold tracking-wide text-tinta-suave uppercase"
             >
               Conversaciones
             </h2>
             {/* Región viva siempre montada: así el lector de pantalla anuncia el aviso cuando aparece. */}
-            <p role="status" className="px-5 text-sm text-red-800 empty:hidden">
+            <p role="status" className="px-5 text-sm text-peligro empty:hidden">
               {errorAlBorrar}
             </p>
             {conversaciones.length === 0 ? (
-              <p className="px-5 py-2 text-sm text-slate-600">Todavía no tenés conversaciones guardadas.</p>
+              <p className="px-5 py-2 text-sm text-tinta-suave">Todavía no tenés conversaciones guardadas.</p>
             ) : (
               <ul className="space-y-0.5 px-2 pb-2" aria-busy={borrando}>
                 {conversaciones.map((conversacion) => {
@@ -181,7 +175,9 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
                     <li
                       key={conversacion.id}
                       className={`group relative transition-[max-height,opacity] duration-300 ease-in motion-reduce:transition-none motion-safe:animate-aparecer ${
-                        seEstaPlegando ? "pointer-events-none max-h-0 overflow-hidden opacity-0" : "max-h-12 opacity-100"
+                        seEstaPlegando
+                          ? "pointer-events-none max-h-0 overflow-hidden opacity-0"
+                          : "max-h-12 opacity-100"
                       }`}
                     >
                       <Link
@@ -195,8 +191,8 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
                         aria-current={esLaActual ? "page" : undefined}
                         className={`block min-h-11 truncate rounded-xl py-3 pr-12 pl-3 text-sm focus-visible:outline-offset-[-3px] ${
                           esLaActual
-                            ? "bg-slate-200 font-medium text-slate-900"
-                            : "text-slate-800 hover:bg-slate-200/70"
+                            ? "bg-superficie-fuerte font-medium text-tinta"
+                            : "text-tinta hover:bg-superficie-fuerte/70"
                         }`}
                       >
                         {/* key: cuando el asistente cambia el título, el texto nuevo entra con una animación. */}
@@ -210,7 +206,7 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
                         onClick={() => setPorBorrar(conversacion)}
                         disabled={borrando}
                         aria-label={`Borrar la conversación «${conversacion.titulo}»`}
-                        className="absolute top-1/2 right-0.5 grid size-11 -translate-y-1/2 place-items-center rounded-lg text-slate-600 hover:bg-red-50 hover:text-red-800 focus-visible:opacity-100 focus-visible:outline-offset-[-3px] disabled:opacity-50 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
+                        className="absolute top-1/2 right-0.5 grid size-11 -translate-y-1/2 place-items-center rounded-lg text-tinta-suave hover:bg-peligro-suave hover:text-peligro focus-visible:opacity-100 focus-visible:outline-offset-[-3px] disabled:opacity-50 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
                       >
                         <Icono nombre="borrar" className="size-4" />
                       </button>
@@ -223,7 +219,7 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
         </div>
 
         {/* El perfil va al pie de la barra en tablet y compu; en celular está en la esquina del encabezado. */}
-        <div className="hidden border-t border-slate-200 p-2 md:block">
+        <div className="hidden border-t border-borde p-2 md:block">
           <PerfilDeUsuario
             nombre={usuario.nombre}
             avatarUrl={usuario.avatarUrl}

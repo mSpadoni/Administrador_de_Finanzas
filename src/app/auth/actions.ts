@@ -10,7 +10,7 @@ import { authController } from "@/backend/controllers/auth.controller";
 export async function ingresarConGoogle(): Promise<void> {
   // `origin` = dirección de la app (ej. http://localhost:3000), para armar la URL a la que Google vuelve después.
   // `(await headers()).get(...)`: primero espera los headers del request y después lee "origin".
-  const origin = (await headers()).get("origin") ?? "http://localhost:3000"; 
+  const origin = (await headers()).get("origin") ?? "http://localhost:3000";
   const urlDeGoogle = await authController.urlDeLoginConGoogle(`${origin}/auth/callback`);
 
   // redirect corta la función y manda al navegador a otra URL.

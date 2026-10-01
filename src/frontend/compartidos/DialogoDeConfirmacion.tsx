@@ -83,12 +83,12 @@ function ContenidoDelDialogo({
         aria-modal="true"
         aria-labelledby={idTitulo}
         aria-describedby={idDescripcion}
-        className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl"
+        className="w-full max-w-sm rounded-2xl bg-superficie p-6 shadow-2xl"
       >
-        <h2 id={idTitulo} className="text-lg font-semibold text-slate-900">
+        <h2 id={idTitulo} className="text-lg font-semibold text-tinta">
           {titulo}
         </h2>
-        <p id={idDescripcion} className="mt-2 text-sm text-slate-700">
+        <p id={idDescripcion} className="mt-2 text-sm text-tinta-suave">
           {descripcion}
         </p>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -97,7 +97,7 @@ function ContenidoDelDialogo({
             type="button"
             onClick={onCancelar}
             disabled={pendiente}
-            className="h-11 rounded-full border border-slate-300 px-5 text-sm font-medium text-slate-900 transition hover:bg-slate-100 disabled:opacity-50"
+            className="h-11 rounded-full border border-borde-fuerte px-5 text-sm font-medium text-tinta transition hover:bg-superficie-suave disabled:opacity-50"
           >
             Cancelar
           </button>
@@ -107,8 +107,10 @@ function ContenidoDelDialogo({
             onClick={onConfirmar}
             disabled={pendiente}
             aria-busy={pendiente}
-            className={`h-11 rounded-full px-5 text-sm font-medium text-white transition disabled:cursor-wait disabled:opacity-70 ${
-              peligro ? "bg-red-700 hover:bg-red-800" : "bg-slate-900 hover:bg-slate-700"
+            className={`h-11 rounded-full px-5 text-sm font-medium transition disabled:cursor-wait disabled:opacity-70 ${
+              peligro
+                ? "bg-peligro-fondo text-sobre-peligro hover:bg-peligro-fondo-fuerte"
+                : "bg-invertido text-sobre-invertido hover:bg-invertido-fuerte"
             }`}
           >
             {pendiente && textoPendiente ? textoPendiente : textoConfirmar}

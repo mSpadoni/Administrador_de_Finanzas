@@ -18,20 +18,20 @@ type Props = {
 /** Una herramienta que usó el modelo: qué hizo, y (plegado) lo que decidió pasarle y lo que devolvió. */
 function Herramienta({ herramienta }: { herramienta: HerramientaDeDebug }) {
   return (
-    <li className="rounded-lg border border-slate-200 bg-white p-2">
+    <li className="rounded-lg border border-borde bg-superficie p-2">
       <p className="flex flex-wrap items-baseline justify-between gap-x-2">
-        <span className="font-medium text-slate-900">
+        <span className="font-medium text-tinta">
           <span aria-hidden="true">{herramienta.fallo ? "⚠ " : "✓ "}</span>
           {herramienta.texto}
         </span>
-        <code className="rounded bg-slate-100 px-1 text-xs text-slate-700">{herramienta.nombre}</code>
+        <code className="rounded bg-superficie-suave px-1 text-xs text-tinta-suave">{herramienta.nombre}</code>
       </p>
       <details className="mt-1 text-xs">
-        <summary className="cursor-pointer rounded text-slate-700 select-none">Ver datos</summary>
-        <p className="mt-1 font-medium text-slate-700">Lo que decidió pasarle el modelo:</p>
-        <pre className="mt-0.5 overflow-x-auto rounded bg-slate-100 p-2 text-slate-800">{herramienta.entrada}</pre>
-        <p className="mt-1 font-medium text-slate-700">Lo que devolvió:</p>
-        <pre className="mt-0.5 overflow-x-auto rounded bg-slate-100 p-2 text-slate-800">
+        <summary className="cursor-pointer rounded text-tinta-suave select-none">Ver datos</summary>
+        <p className="mt-1 font-medium text-tinta-suave">Lo que decidió pasarle el modelo:</p>
+        <pre className="mt-0.5 overflow-x-auto rounded bg-superficie-suave p-2 text-tinta">{herramienta.entrada}</pre>
+        <p className="mt-1 font-medium text-tinta-suave">Lo que devolvió:</p>
+        <pre className="mt-0.5 overflow-x-auto rounded bg-superficie-suave p-2 text-tinta">
           {herramienta.salida ?? "Todavía sin resultado."}
         </pre>
       </details>
@@ -43,19 +43,21 @@ function Herramienta({ herramienta }: { herramienta: HerramientaDeDebug }) {
 function Respuesta({ respuesta, numero }: { respuesta: RespuestaDeDebug; numero: number }) {
   const uso = lineasDeUso(respuesta.metadatos);
   return (
-    <article aria-label={`Respuesta ${numero}`} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-      <h3 className="text-sm font-semibold text-slate-900">
+    <article aria-label={`Respuesta ${numero}`} className="rounded-xl border border-borde bg-fondo p-3">
+      <h3 className="text-sm font-semibold text-tinta">
         Respuesta {numero}
         {respuesta.metadatos?.ms !== undefined && (
-          <span className="font-normal text-slate-700"> · {formatoDuracion(respuesta.metadatos.ms)}</span>
+          <span className="font-normal text-tinta-suave"> · {formatoDuracion(respuesta.metadatos.ms)}</span>
         )}
       </h3>
-      <p className="mt-0.5 truncate text-xs text-slate-600">Pedido: «{respuesta.pedido}»</p>
+      <p className="mt-0.5 truncate text-xs text-tinta-suave">Pedido: «{respuesta.pedido}»</p>
       {respuesta.herramientas.length === 0 ? (
-        <p className="mt-2 text-xs text-slate-700">El modelo respondió sin usar herramientas.</p>
+        <p className="mt-2 text-xs text-tinta-suave">El modelo respondió sin usar herramientas.</p>
       ) : (
         <>
-          <p className="mt-2 text-xs font-medium text-slate-700">Herramientas que decidió usar el modelo, en orden:</p>
+          <p className="mt-2 text-xs font-medium text-tinta-suave">
+            Herramientas que decidió usar el modelo, en orden:
+          </p>
           <ol aria-label="Herramientas" className="mt-1 space-y-1.5 text-sm">
             {respuesta.herramientas.map((herramienta) => (
               <Herramienta key={herramienta.id} herramienta={herramienta} />
@@ -64,7 +66,7 @@ function Respuesta({ respuesta, numero }: { respuesta: RespuestaDeDebug; numero:
         </>
       )}
       {uso.length > 0 && (
-        <ul aria-label="Uso" className="mt-2 space-y-0.5 border-t border-slate-200 pt-2 text-xs text-slate-700">
+        <ul aria-label="Uso" className="mt-2 space-y-0.5 border-t border-borde pt-2 text-xs text-tinta-suave">
           {uso.map((linea) => (
             <li key={linea}>{linea}</li>
           ))}
@@ -94,16 +96,16 @@ function ContenidoDelPanel({ mensajes, onCerrar }: Omit<Props, "abierto">) {
     <aside
       aria-label="Panel de debug"
       onKeyDown={alPresionarTecla}
-      className="fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-slate-200 bg-white shadow-2xl sm:w-[28rem]"
+      className="fixed inset-y-0 right-0 z-40 flex w-full flex-col border-l border-borde bg-superficie shadow-2xl sm:w-[28rem]"
     >
-      <div className="flex items-center justify-between gap-2 border-b border-slate-200 p-3">
-        <h2 className="text-base font-semibold text-slate-900">Panel de debug</h2>
+      <div className="flex items-center justify-between gap-2 border-b border-borde p-3">
+        <h2 className="text-base font-semibold text-tinta">Panel de debug</h2>
         <button
           ref={cerrarRef}
           type="button"
           onClick={onCerrar}
           aria-label="Cerrar el panel de debug"
-          className="grid size-11 place-items-center rounded-xl text-slate-700 hover:bg-slate-100"
+          className="grid size-11 place-items-center rounded-xl text-tinta-suave hover:bg-superficie-suave"
         >
           <Icono nombre="cerrar" className="size-5" />
         </button>
@@ -111,16 +113,19 @@ function ContenidoDelPanel({ mensajes, onCerrar }: Omit<Props, "abierto">) {
 
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
         {respuestas.length === 0 ? (
-          <p className="text-sm text-slate-700">Cuando el asistente responda, acá vas a ver qué hizo.</p>
+          <p className="text-sm text-tinta-suave">Cuando el asistente responda, acá vas a ver qué hizo.</p>
         ) : (
           <>
-            <section aria-label="Totales de la conversación" className="rounded-xl bg-slate-900 p-3 text-sm text-white">
+            <section
+              aria-label="Totales de la conversación"
+              className="rounded-xl bg-invertido p-3 text-sm text-sobre-invertido"
+            >
               <p className="font-medium">Esta conversación</p>
-              <p className="mt-1 text-slate-200 tabular-nums">
+              <p className="mt-1 text-sobre-invertido-suave tabular-nums">
                 {totales.respuestas} {totales.respuestas === 1 ? "respuesta" : "respuestas"} · {totales.herramientas}{" "}
                 {totales.herramientas === 1 ? "herramienta" : "herramientas"} · {formatoDuracion(totales.ms)}
               </p>
-              <p className="text-slate-200 tabular-nums">
+              <p className="text-sobre-invertido-suave tabular-nums">
                 {formatoTokens(totales.tokens.total)} tokens ({formatoTokens(totales.tokens.entrada)} /{" "}
                 {formatoTokens(totales.tokens.salida)} entrada / salida)
               </p>
@@ -128,7 +133,7 @@ function ContenidoDelPanel({ mensajes, onCerrar }: Omit<Props, "abierto">) {
             {respuestas.map((respuesta, indice) => (
               <Respuesta key={respuesta.id} respuesta={respuesta} numero={indice + 1} />
             ))}
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-tinta-suave">
               Los tiempos y los tokens se miden al generar cada respuesta: las de conversaciones que reabrís no los
               tienen.
             </p>

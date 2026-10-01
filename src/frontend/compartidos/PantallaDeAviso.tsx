@@ -15,14 +15,14 @@ type Props = {
 export default function PantallaDeAviso({ titulo, children, accion }: Props) {
   return (
     <main className="mx-auto flex min-h-screen max-w-2xl flex-col items-center justify-center px-6">
-      <div className="w-full rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold text-slate-900">{titulo}</h1>
-        <div className="mt-2 text-slate-700">{children}</div>
+      <div className="w-full rounded-2xl border border-borde bg-superficie p-8 shadow-sm">
+        <h1 className="text-2xl font-bold text-tinta">{titulo}</h1>
+        <div className="mt-2 text-tinta-suave">{children}</div>
         <div className="mt-6 flex flex-wrap gap-3">
           {accion}
           <Link
             href="/"
-            className="rounded-lg border border-slate-300 px-4 py-2 font-medium text-slate-800 hover:bg-slate-100"
+            className="rounded-lg border border-borde-fuerte px-4 py-2 font-medium text-tinta hover:bg-superficie-suave"
           >
             Volver al inicio
           </Link>

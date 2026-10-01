@@ -23,7 +23,7 @@ export default function MenuDeAtajos({ onUsar, deshabilitado, claseDelContenedor
       lado="arriba"
       deshabilitado={deshabilitado}
       claseDelContenedor={claseDelContenedor}
-      claseDelBoton="grid size-11 shrink-0 place-items-center rounded-full text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
+      claseDelBoton="grid size-11 shrink-0 place-items-center rounded-full text-tinta-suave transition hover:bg-superficie-suave disabled:opacity-50"
       boton={<Icono nombre="mas" className="size-6" />}
     >
       {(cerrar) =>
@@ -36,12 +36,12 @@ export default function MenuDeAtajos({ onUsar, deshabilitado, claseDelContenedor
               cerrar();
               onUsar(atajo);
             }}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-slate-100 focus-visible:bg-slate-100"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition hover:bg-superficie-suave focus-visible:bg-superficie-suave"
           >
-            <Icono nombre={atajo.icono} className="size-5 shrink-0 text-slate-700" />
+            <Icono nombre={atajo.icono} className="size-5 shrink-0 text-tinta-suave" />
             <span className="min-w-0">
-              <span className="block text-sm font-medium text-slate-900">{atajo.titulo}</span>
-              <span className="block truncate text-xs text-slate-600">{atajo.descripcion}</span>
+              <span className="block text-sm font-medium text-tinta">{atajo.titulo}</span>
+              <span className="block truncate text-xs text-tinta-suave">{atajo.descripcion}</span>
             </span>
           </button>
         ))

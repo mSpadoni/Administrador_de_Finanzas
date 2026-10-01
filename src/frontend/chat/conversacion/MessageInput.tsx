@@ -95,8 +95,8 @@ export default function MessageInput({
       {/* focus-within: el aro del contenedor reemplaza al foco del textarea (que no se dibuja) mientras se escribe. */}
       <div
         data-expandida={dosFilas}
-        className={`grid grid-cols-[auto_1fr_auto] items-end gap-x-1 rounded-3xl border bg-white/80 p-1 shadow-md backdrop-blur-md focus-within:ring-2 sm:p-1.5 ${
-          muyLargo ? "border-2 border-red-600 focus-within:ring-red-600" : "border-slate-500 focus-within:ring-blue-700"
+        className={`grid grid-cols-[auto_1fr_auto] items-end gap-x-1 rounded-3xl border bg-superficie/80 p-1 shadow-md backdrop-blur-md focus-within:ring-2 sm:p-1.5 ${
+          muyLargo ? "border-2 border-peligro focus-within:ring-peligro" : "border-borde-control focus-within:ring-foco"
         }`}
       >
         <MenuDeAtajos
@@ -117,7 +117,7 @@ export default function MessageInput({
           placeholder="Ej.: Gasté 5.000 en el súper…"
           // field-sizing-content: el campo crece con el texto hasta max-h-40 y ahí scrollea (donde el navegador no lo
           // soporta queda de una línea con scroll).
-          className={`field-sizing-content max-h-40 min-h-11 resize-none bg-transparent py-2.5 text-base text-slate-900 outline-none placeholder:text-sm placeholder:text-slate-700 ${
+          className={`field-sizing-content max-h-40 min-h-11 resize-none bg-transparent py-2.5 text-base text-tinta outline-none placeholder:text-sm placeholder:text-tinta-suave ${
             dosFilas ? "col-span-3 col-start-1 row-start-1 px-3" : "col-start-2 row-start-1 px-2"
           }`}
         />
@@ -128,7 +128,7 @@ export default function MessageInput({
             type="button"
             onClick={onDetener}
             aria-label="Detener"
-            className={`${BOTON_REDONDO} ${UBICACION_DEL_ENVIAR[+dosFilas]} bg-slate-900 text-white hover:bg-slate-700`}
+            className={`${BOTON_REDONDO} ${UBICACION_DEL_ENVIAR[+dosFilas]} bg-invertido text-sobre-invertido hover:bg-invertido-fuerte`}
           >
             <Icono nombre="detener" className="size-4" />
           </button>
@@ -137,7 +137,7 @@ export default function MessageInput({
             type="submit"
             disabled={!sePuedeEnviar}
             aria-label="Enviar"
-            className={`${BOTON_REDONDO} ${UBICACION_DEL_ENVIAR[+dosFilas]} bg-blue-700 text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-600`}
+            className={`${BOTON_REDONDO} ${UBICACION_DEL_ENVIAR[+dosFilas]} bg-marca text-sobre-marca hover:bg-marca-fuerte disabled:cursor-not-allowed disabled:bg-superficie-fuerte disabled:text-tinta-suave`}
           >
             <Icono nombre="enviar" className="size-5" />
           </button>
@@ -147,7 +147,7 @@ export default function MessageInput({
         id={idAyuda}
         // Pasado el límite se anuncia solo (role="alert") y el envío queda bloqueado.
         role={muyLargo ? "alert" : undefined}
-        className={`mt-1.5 px-3 text-xs ${muyLargo ? "font-medium text-red-700" : "text-slate-600"}`}
+        className={`mt-1.5 px-3 text-xs ${muyLargo ? "font-medium text-peligro" : "text-tinta-suave"}`}
       >
         {muyLargo
           ? `⚠ No se puede enviar: tu mensaje tiene ${valor.length} caracteres; el máximo es ${MAX_CARACTERES_MENSAJE}. Acortalo o mandalo en partes.`

@@ -22,7 +22,7 @@ type Props = {
 };
 
 const ITEM_DEL_MENU =
-  "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-900 transition hover:bg-slate-100 focus-visible:bg-slate-100";
+  "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-tinta transition hover:bg-superficie-suave focus-visible:bg-superficie-suave";
 
 /** La foto de la persona; si no tiene o no carga, un círculo con su inicial. Es decorativa: el nombre va al lado. */
 function Avatar({ nombre, avatarUrl }: { nombre: string; avatarUrl: string | null }) {
@@ -45,7 +45,7 @@ function Avatar({ nombre, avatarUrl }: { nombre: string; avatarUrl: string | nul
   return (
     <span
       aria-hidden="true"
-      className="grid size-8 shrink-0 place-items-center rounded-full bg-blue-700 text-sm font-semibold text-white"
+      className="grid size-8 shrink-0 place-items-center rounded-full bg-marca text-sm font-semibold text-sobre-marca"
     >
       {nombre.trim().charAt(0).toUpperCase() || "?"}
     </span>
@@ -69,8 +69,8 @@ export default function PerfilDeUsuario({ nombre, avatarUrl, cerrarSesion, onAbr
         alineado={enElEncabezado ? "fin" : "inicio"}
         claseDelBoton={
           enElEncabezado
-            ? "grid size-11 place-items-center rounded-full transition hover:bg-slate-100"
-            : "flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-slate-100"
+            ? "grid size-11 place-items-center rounded-full transition hover:bg-superficie-suave"
+            : "flex w-full items-center gap-3 rounded-xl p-2 text-left transition hover:bg-superficie-suave"
         }
         boton={
           enElEncabezado ? (
@@ -78,8 +78,8 @@ export default function PerfilDeUsuario({ nombre, avatarUrl, cerrarSesion, onAbr
           ) : (
             <>
               <Avatar nombre={nombre} avatarUrl={avatarUrl} />
-              <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">{nombre}</span>
-              <Icono nombre="arribaAbajo" className="size-4 shrink-0 text-slate-600" />
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-tinta">{nombre}</span>
+              <Icono nombre="arribaAbajo" className="size-4 shrink-0 text-tinta-suave" />
             </>
           )
         }

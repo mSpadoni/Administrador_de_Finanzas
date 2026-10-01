@@ -16,7 +16,7 @@ export default function PaginaDeError({ reset }: { error: Error & { digest?: str
         <button
           type="button"
           onClick={reset}
-          className="rounded-lg bg-blue-700 px-4 py-2 font-medium text-white hover:bg-blue-800"
+          className="rounded-lg bg-marca px-4 py-2 font-medium text-sobre-marca hover:bg-marca-fuerte"
         >
           Reintentar
         </button>
@@ -28,5 +28,3 @@ export default function PaginaDeError({ reset }: { error: Error & { digest?: str
     </PantallaDeAviso>
   );
 }
-
-

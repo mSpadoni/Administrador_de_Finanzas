@@ -14,7 +14,8 @@ type Props = {
   cerrarSesion: () => Promise<void>;
 };
 
-const BOTON_DEL_ENCABEZADO = "grid size-11 place-items-center rounded-xl text-slate-800 transition hover:bg-slate-100";
+const BOTON_DEL_ENCABEZADO =
+  "grid size-11 place-items-center rounded-xl text-tinta transition hover:bg-superficie-suave";
 
 /**
  * El encabezado con el único <h1>. El título lleva a una conversación nueva, desde cero, como el logo de cualquier sitio
@@ -30,7 +31,7 @@ export default function EncabezadoDeLaApp({ usuario, cerrarSesion }: Props) {
   const { nuevaConversacion } = useChatEnPantalla();
   const { menuAbierto, setMenuAbierto, balanceAbierto, setBalanceAbierto, abrirDebug } = usePaneles();
   return (
-    <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 border-b border-slate-200 bg-white px-2 py-1 md:flex md:justify-between md:px-4 md:py-0">
+    <header className="grid grid-cols-[1fr_auto_1fr] items-center gap-1 border-b border-borde bg-superficie px-2 py-1 md:flex md:justify-between md:px-4 md:py-0">
       <div className="justify-self-start md:hidden">
         <button
           id="boton-menu"
@@ -45,7 +46,7 @@ export default function EncabezadoDeLaApp({ usuario, cerrarSesion }: Props) {
         </button>
       </div>
 
-      <h1 className="text-center text-sm leading-tight font-bold text-slate-900 md:py-3 md:text-left md:text-lg md:leading-normal">
+      <h1 className="text-center text-sm leading-tight font-bold text-tinta md:py-3 md:text-left md:text-lg md:leading-normal">
         <Link
           href="/"
           onClick={(evento) => {
@@ -53,7 +54,7 @@ export default function EncabezadoDeLaApp({ usuario, cerrarSesion }: Props) {
             evento.preventDefault();
             nuevaConversacion();
           }}
-          className="rounded-lg hover:text-blue-800"
+          className="rounded-lg hover:text-enlace-fuerte"
         >
           {/* En celular cada parte va en su línea; desde tablet, todo en una. */}
           <span className="block md:inline">Administrador</span> <span className="block md:inline">de Finanzas</span>

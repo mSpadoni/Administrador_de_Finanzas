@@ -49,7 +49,7 @@ export default function PantallaDeChat({
       {/* Skip link: con Tab, lo primero es poder saltar directo al chat (WCAG 2.4.1). */}
       <a
         href="#chat"
-        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-white focus:px-3 focus:py-2 focus:shadow"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-lg focus:bg-superficie focus:px-3 focus:py-2 focus:shadow"
       >
         Ir al chat
       </a>

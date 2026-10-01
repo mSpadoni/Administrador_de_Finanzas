@@ -3,7 +3,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import type { AsistenteUIMessage } from "@/shared/chat";
 import { useSidebar } from "../../sidebar/EstadoSidebar";
 import { anuncioDeRespuesta, cambioLosMovimientos, tituloDeLaConversacion } from "../../conversacion/respuesta";
@@ -21,6 +21,8 @@ export function useChatDelAsistente(
   const { alTerminarRespuesta, cambiarTitulo } = useSidebar();
   const router = useRouter();
   const [anuncio, setAnuncio] = useState(""); // Lo que lee el lector de pantalla cuando termina una respuesta.
+  // Mientras Next vuelve a leer el resumen del mes (después de registrar o borrar un movimiento).
+  const [actualizandoResumen, iniciarActualizacion] = useTransition();
 
   // El transporte se crea una sola vez (useState con función). Manda solo el mensaje nuevo y el id de la
   // conversación: el servidor lee el historial de la base.
@@ -52,7 +54,7 @@ export function useChatDelAsistente(
           .catch(() => undefined); // Es un extra: si falla, queda el título de antes.
       }
       // Si se registró o borró un movimiento, el panel «Este mes» se vuelve a leer (la página no recarga: el chat sigue).
-      if (!isError && cambioLosMovimientos(message)) router.refresh();
+      if (!isError && cambioLosMovimientos(message)) iniciarActualizacion(() => router.refresh());
     },
   });
 
@@ -66,6 +68,8 @@ export function useChatDelAsistente(
     ...chat,
     enviar,
     anuncio,
+    /** Mientras se vuelve a leer el resumen del mes (el panel «Este mes» lo avisa). */
+    actualizandoResumen,
     /** Mientras el asistente está pensando o escribiendo. */
     generando: chat.status === "submitted" || chat.status === "streaming",
   };

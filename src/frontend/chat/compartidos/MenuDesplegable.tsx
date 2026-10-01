@@ -113,7 +113,7 @@ export default function MenuDesplegable({
           role="menu"
           aria-label={etiqueta}
           onKeyDown={alPresionarTecla}
-          className={`absolute z-40 min-w-64 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl ${
+          className={`absolute z-40 min-w-64 rounded-2xl border border-borde bg-superficie p-1.5 shadow-xl ${
             lado === "arriba" ? "bottom-full mb-2" : "top-full mt-2"
           } ${alineado === "inicio" ? "left-0" : "right-0"}`}
         >

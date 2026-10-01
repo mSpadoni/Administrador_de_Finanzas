@@ -30,7 +30,7 @@ function BotonEnviar() {
       type="submit"
       disabled={pending}
       aria-busy={pending}
-      className="h-11 rounded-full bg-blue-700 px-6 text-sm font-medium text-white transition hover:bg-blue-800 disabled:cursor-wait disabled:opacity-80"
+      className="h-11 rounded-full bg-marca px-6 text-sm font-medium text-sobre-marca transition hover:bg-marca-fuerte disabled:cursor-wait disabled:opacity-80"
     >
       {pending ? "Redirigiendo a Google…" : "Ingresar con Google"}
     </button>

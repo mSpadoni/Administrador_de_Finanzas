@@ -35,10 +35,10 @@ function Cajon({ estadisticas, onCerrar }: Props) {
         id="panel-balance"
         aria-labelledby="titulo-balance"
         onKeyDown={alPresionarTecla}
-        className="fixed inset-y-0 right-0 z-30 flex w-72 max-w-full flex-col bg-white shadow-xl"
+        className="fixed inset-y-0 right-0 z-30 flex w-72 max-w-full flex-col bg-superficie shadow-xl"
       >
-        <div className="flex items-center justify-between gap-2 border-b border-slate-200 p-3">
-          <h2 id="titulo-balance" className="text-base font-semibold text-slate-900">
+        <div className="flex items-center justify-between gap-2 border-b border-borde p-3">
+          <h2 id="titulo-balance" className="text-base font-semibold text-tinta">
             Este mes
           </h2>
           <button
@@ -46,7 +46,7 @@ function Cajon({ estadisticas, onCerrar }: Props) {
             type="button"
             onClick={onCerrar}
             aria-label="Cerrar el balance del mes"
-            className="grid size-11 place-items-center rounded-xl text-slate-700 hover:bg-slate-100"
+            className="grid size-11 place-items-center rounded-xl text-tinta-suave hover:bg-superficie-suave"
           >
             <Icono nombre="cerrar" className="size-5" />
           </button>
