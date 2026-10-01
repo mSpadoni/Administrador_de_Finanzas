@@ -27,7 +27,8 @@ Cómo se pagó o se cobró: efectivo, débito, crédito, transferencia o billete
 _Avoid_: Forma de pago, método
 
 **Fecha del movimiento**:
-El día en que ocurrió el movimiento según la persona (hora de Argentina), no el momento en que se registró.
+El día en que ocurrió el movimiento según la persona (hora de Argentina), no el momento en que se registró. Puede ser
+futura solo si la plata se mueve ese día (un cheque diferido, un débito automático, una transferencia programada).
 _Avoid_: Fecha de carga
 
 ### Monedas y cotizaciones
@@ -69,3 +70,7 @@ _Avoid_: Período previo, mes pasado (como término general)
 **Estadísticas**:
 Totales por categoría, promedio diario de gastos y variación de los gastos contra el período anterior, calculados sobre los movimientos de un período.
 _Avoid_: Métricas, reporte
+
+**Promedio diario de gastos**:
+Los gastos del período divididos por todos sus días: para un mes, sus 28 a 31 días, aunque todavía no haya terminado.
+_Avoid_: Promedio por día transcurrido

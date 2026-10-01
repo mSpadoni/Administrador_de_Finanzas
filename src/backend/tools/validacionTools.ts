@@ -19,7 +19,9 @@ const PeriodoSchema = z
     unidad: z.enum(["dia", "semana", "mes"]).optional().describe("Día, semana (lunes a domingo) o mes calendario."),
     referencia: FechaSchema.optional().describe("Una fecha dentro del período (AAAA-MM-DD). Sin valor: hoy."),
     desde: FechaSchema.optional().describe("Rango explícito: primer día (AAAA-MM-DD). Tiene prioridad sobre unidad."),
-    hasta: FechaSchema.optional().describe("Rango explícito: último día (AAAA-MM-DD). Sin valor: hoy."),
+    hasta: FechaSchema.optional().describe(
+      "Rango explícito: último día (AAAA-MM-DD). Sin valor: hoy. Solo junto con desde: si la persona dijo «hasta» pero no «desde», preguntale desde cuándo (ofrecele «desde hoy»)."
+    ),
   })
   .optional()
   .describe(
@@ -39,7 +41,9 @@ export const EntradaRegistrarMovimientoSchema = z.object({
     .enum(MEDIOS_DE_PAGO)
     .describe("Nunca lo asumas: si la persona no lo dijo, preguntáselo antes de registrar."),
   descripcion: z.string().describe("Corta, en palabras de la persona (ej. 'Súper Coto', 'Sueldo de septiembre')."),
-  fecha: FechaSchema.optional().describe("El día del movimiento (AAAA-MM-DD). Sin valor: hoy."),
+  fecha: FechaSchema.optional().describe(
+    "El día del movimiento (AAAA-MM-DD). Sin valor: hoy. Una fecha futura solo si la persona dice que el movimiento ocurre ese día (un cheque diferido, un débito programado); si no, preguntá."
+  ),
   tipoDeDolar: z
     .enum(TIPOS_DE_DOLAR)
     .optional()

@@ -21,6 +21,16 @@ export function lanzarPeriodoAlReves(desde: string, hasta: string): never {
   throw new ErrorDeDominio(`El período termina (${hasta}) antes de empezar (${desde}).`);
 }
 
+/**
+ * Un período con «hasta» pero sin «desde»: no se adivina desde cuándo. El mensaje le dice al asistente qué preguntar (y
+ * que ofrezca «desde hoy», así la persona no tiene que decir una fecha).
+ */
+export function lanzarPeriodoSinDesde(): never {
+  throw new ErrorDeDominio(
+    "Falta desde cuándo. Preguntale a la persona desde qué día quiere ver y ofrecele «desde hoy» para que no tenga que decir una fecha."
+  );
+}
+
 /** Datos de un movimiento que no son válidos, en un lugar donde ya tendrían que haber llegado validados. */
 export function lanzarMovimientoInvalido(detalle: string): never {
   throw new ErrorDeDominio(`Movimiento inválido: ${detalle}`);

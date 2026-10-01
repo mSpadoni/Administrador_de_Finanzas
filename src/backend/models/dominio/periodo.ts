@@ -1,4 +1,4 @@
-import { lanzarPeriodoAlReves } from "./erroresDominio";
+import { lanzarPeriodoAlReves, lanzarPeriodoSinDesde } from "./erroresDominio";
 
 // Los períodos de las consultas (CONTEXT.md): rangos de días del calendario en hora de Argentina, con los dos
 // extremos incluidos. Lógica pura: el "ahora" entra por parámetro. Las fechas son "AAAA-MM-DD"; para operar se
@@ -84,8 +84,12 @@ export function periodoAnterior(periodo: Periodo): Periodo {
  */
 export type PedidoDePeriodo = { unidad?: UnidadDePeriodo; referencia?: string; desde?: string; hasta?: string };
 
-/** El período que se pidió. `hoy`: la fecha de hoy en Argentina. Un rango al revés es un error. */
+/**
+ * El período que se pidió. `hoy`: la fecha de hoy en Argentina. Un rango al revés es un error, y también un «hasta» sin
+ * «desde»: desde cuándo no se adivina (se le pregunta a la persona).
+ */
 export function resolverPeriodo({ unidad = "mes", referencia, desde, hasta }: PedidoDePeriodo, hoy: string): Periodo {
   if (desde) return rango(desde, hasta ?? hoy);
+  if (hasta) return lanzarPeriodoSinDesde();
   return periodoDe(unidad, referencia ?? hoy);
 }

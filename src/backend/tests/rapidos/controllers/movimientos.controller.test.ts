@@ -118,3 +118,32 @@ describe("MovimientosController.registrar — qué es un movimiento válido", ()
     });
   });
 });
+
+describe("MovimientosController — «hasta» sin «desde»", () => {
+  it("las estadísticas y la consulta piden el «desde», y le sugieren al asistente ofrecer «desde hoy»", async () => {
+    const { controller } = controllerConRepositorioFalso();
+    const esperado = {
+      ok: false,
+      motivo: "datos_invalidos",
+      detalle:
+        "Falta desde cuándo. Preguntale a la persona desde qué día quiere ver y ofrecele «desde hoy» para que no tenga que decir una fecha.",
+    };
+
+    expect(await controller.estadisticas({ hasta: "2026-10-31" })).toEqual(esperado);
+    expect(await controller.consultar({ periodo: { hasta: "2026-10-31" } })).toEqual(esperado);
+  });
+
+  it("«desde hoy» hasta una fecha futura es un rango válido", async () => {
+    const listar = async () => [];
+    const controller = new MovimientosController(
+      () => ({ listar }) as unknown as MovimientosModel,
+      undefined,
+      () => "2026-09-29"
+    );
+
+    expect(await controller.consultar({ periodo: { desde: "2026-09-29", hasta: "2026-10-31" } })).toMatchObject({
+      ok: true,
+      periodo: { desde: "2026-09-29", hasta: "2026-10-31" },
+    });
+  });
+});

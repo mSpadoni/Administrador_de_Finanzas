@@ -103,4 +103,10 @@ describe("resolverPeriodo (lo que pide el asistente: «este mes», «la semana p
     expect(resolverPeriodo({ desde: "2026-09-10" }, HOY)).toEqual({ desde: "2026-09-10", hasta: HOY });
     expect(() => resolverPeriodo({ desde: "2026-09-10", hasta: "2026-09-01" }, HOY)).toThrow(ErrorDeDominio);
   });
+
+  it("«hasta» sin «desde» no se adivina: es un error (hay que preguntar desde cuándo)", () => {
+    // Antes se ignoraba en silencio y devolvía el mes de hoy: con «hasta el 31/08» llegaban datos de septiembre.
+    expect(() => resolverPeriodo({ hasta: "2026-08-31" }, HOY)).toThrow(ErrorDeDominio);
+    expect(() => resolverPeriodo({ unidad: "mes", hasta: "2026-08-31" }, HOY)).toThrow(ErrorDeDominio);
+  });
 });
