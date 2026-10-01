@@ -51,3 +51,8 @@ src/backend/types/database.ts.nuevo
 /e2e/.sesiones/
 /playwright-report/
 /test-results/
+
+# Skills de los agentes (Claude Code y compañía): se instalan en cada máquina, no son parte del proyecto.
+/.claude/skills/
+/.agents/
+/skills-lock.json
