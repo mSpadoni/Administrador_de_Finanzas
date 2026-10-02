@@ -132,9 +132,10 @@ los repositorios.
 
 ## Organización de validaciones y errores
 
-- Cada carpeta con lógica tiene `validacion<Carpeta>.ts` (todo el `zod` de la carpeta) y `errores<Carpeta>.ts` (todas las
-  clases de error y los `throw`). Los demás archivos solo importan y llaman sus funciones; el `throw` se hace con una
-  función que devuelve `never` (ej. `lanzarPedidoInvalido`).
+- Toda carpeta que valida datos tiene `validacion<Carpeta>.ts` (todo el `zod` de la carpeta) y toda carpeta que lanza
+  errores tiene `errores<Carpeta>.ts` (todas las clases de error y los `throw`). Se crean cuando hacen falta: una carpeta
+  que no valida ni lanza nada (por ejemplo, de componentes) no los tiene. Los demás archivos solo importan y llaman sus
+  funciones; el `throw` se hace con una función que devuelve `never` (ej. `lanzarPedidoInvalido`).
 - Las tools no conocen los modelos: piden todo a un servicio (`MovimientosServicio` o `CotizacionesServicio`). Una tool es un
   adaptador entre el modelo de lenguaje y el servicio: define qué ve el LLM (descripción e `inputSchema`) y le pasa el pedido
   al servicio, que tiene las reglas. Controllers y servicios nombran sus modelos `modelo<Entidad>` (`modeloConversaciones`,
