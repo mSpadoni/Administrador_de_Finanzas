@@ -1,7 +1,25 @@
 # Arquitectura
 
-MVC sobre Next.js (App Router) + Supabase, con reglas de dependencia que se hacen cumplir solas
-(`npm run lint` y el build fallan si alguien las rompe).
+Arquitectura **en capas** sobre Next.js (App Router) + Supabase. Cada capa tiene una sola responsabilidad y solo depende de
+las de abajo; las reglas de dependencia se hacen cumplir solas (`npm run lint` y el build fallan si alguien las rompe).
+
+```text
+Frontend (src/frontend)        lo que se ve: recibe datos por props y las acciones como Server Actions
+   │
+   ▼
+Rutas (src/app)                entrada al servidor: sesión, delegar, traducir errores a HTTP
+   │
+   ▼
+Controllers ──► Asistente ──► Tools          el modelo de lenguaje y sus herramientas
+   │                            │
+   ▼                            ▼
+Servicios                      lógica que comparten varios puntos de entrada (tools y pantalla)
+   │
+   ▼
+Dominio · Repositorios · Infraestructura     reglas puras · Supabase · OpenAI, dolarapi, firma, log
+```
+
+Ver también el diagrama en [`diagramas/capas.svg`](diagramas/capas.svg).
 
 ## Estructura de código
 
@@ -20,9 +38,10 @@ e2e/           # Tests de punta a punta (Playwright) y los servidores falsos que
 
 La raíz conserva los archivos que Next.js, npm, TypeScript y las herramientas del repositorio esperan allí: `package.json`,
 `package-lock.json`, configuraciones (`next.config.ts`, `tsconfig.json`, `eslint.config.mjs`, `vitest.config.mts`,
-`playwright.config.ts`), `next-env.d.ts`, `.env.example`, `README.md` y archivos de agentes (`CLAUDE.md`,
-`REGLAS-SKILLS.md`, `skills-lock.json`). `CONTEXT.md` (el glosario del dominio) permanece en la raíz para que las skills de
-dominio lo encuentren con la convención actual.
+`playwright.config.ts`), `next-env.d.ts`, `.env.example`, `README.md` y las reglas para los agentes de IA (`CLAUDE.md`,
+`REGLAS-SKILLS.md`). Las skills de los agentes se instalan en cada máquina y git las ignora (`.claude/skills/`, `.agents/`,
+`skills-lock.json`). `CONTEXT.md` (el glosario del dominio) permanece en la raíz para que las skills de dominio lo
+encuentren con la convención actual.
 
 `docs/` agrupa arquitectura y ADRs. Los archivos de configuración y entorno no se mueven a `docs/` ni a `src/`.
 

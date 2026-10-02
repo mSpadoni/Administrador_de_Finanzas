@@ -20,6 +20,7 @@ sobre tus datos guardados en Supabase y sobre las cotizaciones de [dolarapi.com]
 - [Arquitectura](#arquitectura)
 - [El recorrido de un mensaje](#el-recorrido-de-un-mensaje)
 - [Decisiones técnicas y trade-offs](#decisiones-técnicas-y-trade-offs)
+- [Uso de IA](#uso-de-ia)
 - [Instalación local](#instalación-local)
 - [Scripts de npm](#scripts-de-npm)
 - [Tests](#tests)
@@ -402,6 +403,23 @@ las anteriores, el texto y las llamadas a tools con los resultados resumidos.
 - Feedback 👍/👎 en cada respuesta para medir la calidad del asistente.
 - Exportar a CSV e importar el resumen de la tarjeta.
 - Otras formas de cargar: una foto del ticket o un audio.
+
+## Uso de IA
+
+El proyecto se desarrolló con **Claude Code** (Anthropic) como asistente de programación, siguiendo reglas escritas para
+que el resultado fuera revisable y no código generado sin control:
+
+- [`CLAUDE.md`](CLAUDE.md) y [`REGLAS-SKILLS.md`](REGLAS-SKILLS.md) fijan las reglas del proyecto:
+  - las validaciones con Zod y los errores van en archivos propios de cada carpeta;
+  - cómo se diseñan los tests (partición de equivalencia, valores borde, regresión);
+  - la base de datos nunca se mockea (se prueba contra Supabase local) y el LLM y las APIs externas siempre se mockean;
+  - antes de cerrar cada tarea se corre la verificación completa (tipos, lint, tests, E2E y build).
+- Cada cambio se revisó y se verificó con los tests, y lo que depende del modelo se probó además con OpenAI real en local.
+  Así aparecieron, por ejemplo, el bug de las confirmaciones sin registrar y una regresión en el login, cada uno con su
+  test de regresión.
+- Las decisiones de diseño (arquitectura en capas, servicios compartidos, validación en tres capas, firma del historial)
+  están explicadas en este README y en [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md).
+- Las skills que usa el asistente de programación se instalan en cada máquina y no forman parte del repositorio.
 
 ## Instalación local
 
