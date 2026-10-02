@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import DialogoDeConfirmacion from "@/frontend/compartidos/DialogoDeConfirmacion";
+import { useEffect, useRef, useState } from "react";
 import { useChatEnPantalla } from "../../estado/ContextoDelChat";
 import { useSidebar } from "../EstadoSidebar";
+import AvisoDeBorrado from "./AvisoDeBorrado";
 import ItemDeConversacion from "./ItemDeConversacion";
+import { useBorradoConDeshacer } from "./useBorradoConDeshacer";
 import type { ItemConversacion } from "../sidebar";
 
 type Props = {
@@ -14,11 +15,6 @@ type Props = {
   alElegir: () => void;
 };
 
-/** Lo que dura la animación con la que un ítem se pliega al borrarlo (ms). Es la misma duración de la clase `duration-300`. */
-const DURACION_DE_SALIDA_MS = 300;
-
-const esperar = (ms: number) => new Promise<void>((listo) => setTimeout(listo, ms));
-
 /**
  * La lista de conversaciones de la barra lateral, con el borrado. La lista viene del estado compartido del sidebar (ver
  * EstadoSidebar): se actualiza sin volver a consultar.
@@ -26,40 +22,68 @@ const esperar = (ms: number) => new Promise<void>((listo) => setTimeout(listo, m
 export default function ListaDeConversaciones({ borrar, alElegir }: Props) {
   const { conversaciones, quitarConversacion } = useSidebar();
   const { conversacionId, nuevaConversacion, abrirConversacion } = useChatEnPantalla();
-  const [porBorrar, setPorBorrar] = useState<ItemConversacion | null>(null);
-  const [saliendo, setSaliendo] = useState<string | null>(null); // La conversación que se está plegando al borrarla.
   const [errorAlBorrar, setErrorAlBorrar] = useState<string | null>(null);
-  const [borrando, iniciarBorrado] = useTransition();
+  const tituloRef = useRef<HTMLHeadingElement>(null);
+  const listaRef = useRef<HTMLUListElement>(null);
+  // La conversación que estaba abierta cuando se la borró (para volver a abrirla si se deshace).
+  const estabaAbiertaRef = useRef<string | null>(null);
+  // La conversación que se acaba de recuperar con «Deshacer» (el foco vuelve a su link).
+  const recuperadaRef = useRef<string | null>(null);
 
   /**
-   * Borrar es la única acción destructiva: pide confirmación (heurística #3) en un diálogo propio. Al confirmar, el ítem se
-   * pliega y se desvanece mientras el servidor la borra; si era la abierta, se pasa a una conversación nueva. Si el servidor
-   * falla, el ítem vuelve a aparecer y se avisa qué pasó (sin el aviso, parecería que se borró y volvió sola).
+   * Borrar no pide confirmación: se puede deshacer (heurística #3, control y libertad). El ítem se pliega y aparece el
+   * aviso con «Deshacer»; el servidor la borra recién cuando el aviso se va. Si el servidor falla, el ítem vuelve y se
+   * avisa qué pasó (sin el aviso, parecería que se borró y volvió sola).
    */
-  function borrarLaConversacion(conversacion: ItemConversacion) {
-    setPorBorrar(null);
+  const borrado = useBorradoConDeshacer({
+    borrar,
+    alBorrar: (conversacion) => quitarConversacion(conversacion.id),
+    alFallar: (conversacion) =>
+      setErrorAlBorrar(`No se pudo borrar «${conversacion.titulo}». Revisá tu conexión y probá de nuevo.`),
+  });
+
+  function pedirBorrar(conversacion: ItemConversacion) {
     setErrorAlBorrar(null);
-    setSaliendo(conversacion.id);
-    iniciarBorrado(async () => {
-      try {
-        await Promise.all([borrar(conversacion.id), esperar(DURACION_DE_SALIDA_MS)]);
-      } catch {
-        setSaliendo(null);
-        setErrorAlBorrar(`No se pudo borrar «${conversacion.titulo}». Revisá tu conexión y probá de nuevo.`);
-        return;
-      }
-      quitarConversacion(conversacion.id);
-      setSaliendo(null);
-      if (conversacion.id === conversacionId) nuevaConversacion(true);
-    });
+    borrado.pedirBorrar(conversacion);
+    // Si era la abierta, se pasa ya a una conversación nueva (como si se hubiera borrado).
+    estabaAbiertaRef.current = conversacion.id === conversacionId ? conversacion.id : null;
+    if (conversacion.id === conversacionId) nuevaConversacion(true);
   }
+
+  function deshacer() {
+    const conversacion = borrado.pendiente;
+    if (!conversacion) return;
+    borrado.deshacer();
+    recuperadaRef.current = conversacion.id;
+    if (estabaAbiertaRef.current === conversacion.id) void abrirConversacion(conversacion.id);
+  }
+
+  // El foco nunca se pierde cuando el aviso se va: con «Deshacer», vuelve al link de la conversación recuperada; si se
+  // cerró (o se cumplió el tiempo) con el foco adentro, va al título de la lista.
+  const hayAviso = borrado.pendiente !== null;
+  const habiaAvisoRef = useRef(false);
+  useEffect(() => {
+    // Solo cuando un aviso se va (no al cargar la página: ahí el foco tiene que arrancar desde el principio).
+    const seFueUnAviso = habiaAvisoRef.current && !hayAviso;
+    habiaAvisoRef.current = hayAviso;
+    if (!seFueUnAviso) return;
+    const recuperada = recuperadaRef.current;
+    recuperadaRef.current = null;
+    if (recuperada) {
+      listaRef.current?.querySelector<HTMLElement>(`[data-conversacion="${recuperada}"] a`)?.focus();
+    } else if (document.activeElement === document.body) {
+      tituloRef.current?.focus();
+    }
+  }, [hayAviso]);
 
   return (
     <>
       <section aria-labelledby="titulo-conversaciones">
         <h2
+          ref={tituloRef}
           id="titulo-conversaciones"
-          className="px-5 pt-3 pb-1 text-xs font-semibold tracking-wide text-tinta-suave uppercase"
+          tabIndex={-1}
+          className="px-5 pt-3 pb-1 text-xs font-semibold tracking-wide text-tinta-suave uppercase focus-visible:outline-offset-[-3px]"
         >
           Conversaciones
         </h2>
@@ -70,33 +94,30 @@ export default function ListaDeConversaciones({ borrar, alElegir }: Props) {
         {conversaciones.length === 0 ? (
           <p className="px-5 py-2 text-sm text-tinta-suave">Todavía no tenés conversaciones guardadas.</p>
         ) : (
-          <ul className="space-y-0.5 px-2 pb-2" aria-busy={borrando}>
+          <ul ref={listaRef} className="space-y-0.5 px-2 pb-2">
             {conversaciones.map((conversacion) => (
               <ItemDeConversacion
                 key={conversacion.id}
                 conversacion={conversacion}
                 esLaActual={conversacion.id === conversacionId}
-                seEstaPlegando={conversacion.id === saliendo}
-                borrando={borrando}
+                seEstaPlegando={borrado.estaOculta(conversacion.id)}
                 onAbrir={() => {
                   alElegir();
                   void abrirConversacion(conversacion.id);
                 }}
-                onPedirBorrar={() => setPorBorrar(conversacion)}
+                onPedirBorrar={() => pedirBorrar(conversacion)}
               />
             ))}
           </ul>
         )}
       </section>
 
-      <DialogoDeConfirmacion
-        abierto={porBorrar !== null}
-        titulo="¿Borrar la conversación?"
-        descripcion={`Se va a borrar «${porBorrar?.titulo ?? ""}» con todos sus mensajes. No se puede deshacer. Tus movimientos registrados no se tocan.`}
-        textoConfirmar="Borrar"
-        peligro
-        onCancelar={() => setPorBorrar(null)}
-        onConfirmar={() => porBorrar && borrarLaConversacion(porBorrar)}
+      <AvisoDeBorrado
+        conversacion={borrado.pendiente}
+        onDeshacer={deshacer}
+        onCerrar={borrado.confirmar}
+        onPausar={borrado.pausar}
+        onReanudar={borrado.reanudar}
       />
     </>
   );

@@ -10,13 +10,11 @@ type Props = {
   conversacion: ItemConversacion;
   /** Es la que está abierta en pantalla. */
   esLaActual: boolean;
-  /** Se está borrando: se pliega antes de salir de la lista. */
+  /** Se borró (se puede deshacer o el servidor la está borrando): se pliega y queda fuera del alcance del teclado. */
   seEstaPlegando: boolean;
-  /** Hay un borrado en curso: los botones de borrar se deshabilitan. */
-  borrando: boolean;
   /** Abrir esta conversación en pantalla (sin recargar). */
   onAbrir: () => void;
-  /** Pedir confirmación para borrarla. */
+  /** Borrarla (se puede deshacer desde el aviso). */
   onPedirBorrar: () => void;
 };
 
@@ -28,7 +26,6 @@ export default function ItemDeConversacion({
   conversacion,
   esLaActual,
   seEstaPlegando,
-  borrando,
   onAbrir,
   onPedirBorrar,
 }: Props) {
@@ -36,6 +33,8 @@ export default function ItemDeConversacion({
     // Al borrar, el ítem se pliega (alto y opacidad a cero) antes de salir de la lista; al aparecer uno nuevo, sube y se
     // hace visible.
     <li
+      data-conversacion={conversacion.id}
+      inert={seEstaPlegando || undefined}
       className={`group relative transition-[max-height,opacity] duration-300 ease-in motion-reduce:transition-none motion-safe:animate-aparecer ${
         seEstaPlegando ? "pointer-events-none max-h-0 overflow-hidden opacity-0" : "max-h-12 opacity-100"
       }`}
@@ -61,9 +60,8 @@ export default function ItemDeConversacion({
       <button
         type="button"
         onClick={onPedirBorrar}
-        disabled={borrando}
         aria-label={`Borrar la conversación «${conversacion.titulo}»`}
-        className="absolute top-1/2 right-0.5 grid size-11 -translate-y-1/2 place-items-center rounded-lg text-tinta-suave hover:bg-peligro-suave hover:text-peligro focus-visible:opacity-100 focus-visible:outline-offset-[-3px] disabled:opacity-50 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
+        className="absolute top-1/2 right-0.5 grid size-11 -translate-y-1/2 place-items-center rounded-lg text-tinta-suave hover:bg-peligro-suave hover:text-peligro focus-visible:opacity-100 focus-visible:outline-offset-[-3px] [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100"
       >
         <Icono nombre="borrar" className="size-4" />
       </button>

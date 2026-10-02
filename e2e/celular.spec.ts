@@ -99,3 +99,38 @@ test("los cajones abiertos no tienen problemas de accesibilidad (ni siquiera men
   await expect(page.getByRole("dialog", { name: "Este mes" })).toBeVisible();
   expect(await problemas()).toEqual([]);
 });
+
+test("el aviso de «Deshacer» un borrado aparece abajo, a mano del pulgar, pero por arriba del campo de texto", async ({
+  page,
+}) => {
+  test.setTimeout(180_000); // manda dos mensajes: con el servidor de desarrollo en frío, la primera respuesta tarda
+  await page.goto("/");
+  const campo = page.getByRole("textbox", { name: "Tu mensaje" });
+  // Dos conversaciones con mensajes: se borra la que no está abierta, así el campo queda abajo (con una vacía, va al medio).
+  for (let vez = 0; vez < 2; vez += 1) {
+    if (vez > 0) {
+      await page.getByRole("button", { name: "Conversaciones" }).click();
+      await page.getByRole("link", { name: "Nueva conversación" }).click();
+    }
+    await campo.fill("Hola");
+    await campo.press("Enter");
+    await expect(page.getByText("Hola, soy el asistente de prueba.", { exact: true })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole("button", { name: "Enviar" })).toBeVisible(); // terminó de responder
+  }
+  await page.getByRole("button", { name: "Conversaciones" }).click();
+  const conversaciones = page.locator("li[data-conversacion]");
+  await expect(conversaciones).toHaveCount(2);
+  const laOtra = conversaciones.filter({ hasNot: page.locator('a[aria-current="page"]') });
+  await laOtra.getByRole("button", { name: /^Borrar la conversación/ }).click();
+
+  const aviso = page.getByText(/^Borraste «/).locator("..");
+  await expect(aviso).toBeVisible();
+  const cajaDelAviso = (await aviso.boundingBox())!;
+  const cajaDelCampo = (await campo.boundingBox())!;
+  const alto = page.viewportSize()!.height;
+  expect(cajaDelAviso.y).toBeGreaterThan(alto / 2); // en la mitad de abajo
+  expect(cajaDelAviso.y + cajaDelAviso.height).toBeLessThanOrEqual(cajaDelCampo.y); // sin tapar el campo
+  // Y por encima del cajón abierto: «Deshacer» se puede tocar.
+  await page.getByRole("button", { name: "Deshacer" }).click();
+  await expect(conversaciones.and(page.locator(":not([inert])"))).toHaveCount(2);
+});

@@ -3,7 +3,7 @@ import { test as base, expect as expectBase } from "@playwright/test";
 import { expect, test } from "./fixtures";
 
 // Los flujos críticos de punta a punta (REGLAS-SKILLS 3.3): enviar un mensaje y verlo guardado, registrar un gasto con la
-// tool y ver el resumen del mes, un error del asistente con su reintento, borrar una conversación, y la accesibilidad de
+// tool y ver el resumen del mes, un error del asistente con su reintento, borrar una conversación (y deshacerlo), y la accesibilidad de
 // la pantalla en los dos temas. La base es la local (Docker); OpenAI y dolarapi.com son falsos (e2e/servidores).
 
 base.describe("sin sesión", () => {
@@ -70,7 +70,7 @@ test.describe("el chat", () => {
     await expect(aviso).toHaveCount(0);
   });
 
-  test("borra una conversación con confirmación: cancelar no borra; confirmar sí, y no vuelve al recargar", async ({
+  test("borra una conversación sin confirmación: «Deshacer» la recupera; cerrar el aviso la borra y no vuelve al recargar", async ({
     page,
   }) => {
     await page.goto("/");
@@ -82,16 +82,19 @@ test.describe("el chat", () => {
 
     const borrar = page.getByRole("button", { name: "Borrar la conversación «Charla de prueba»" });
     await borrar.click();
-    await page.getByRole("dialog").getByRole("button", { name: "Cancelar" }).click();
+    await expect(page.getByText("Borraste «Charla de prueba».")).toBeVisible();
+    await page.getByRole("button", { name: "Deshacer" }).click();
     await expect(enLaLista).toBeVisible();
+    // Era la abierta: al deshacer vuelve a estar en pantalla, con sus mensajes.
+    await expect(page.getByText("Hola, soy el asistente de prueba.", { exact: true })).toBeVisible();
 
     await borrar.click();
-    await page.getByRole("dialog").getByRole("button", { name: "Borrar" }).click();
+    await page.getByRole("button", { name: "Cerrar el aviso" }).click();
     await expect(enLaLista).toHaveCount(0);
-    // Era la abierta: queda una conversación nueva, vacía.
-    await expect(page.getByRole("textbox", { name: "Tu mensaje" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Deshacer" })).toHaveCount(0);
 
     await page.reload();
+    await expect(page.getByRole("textbox", { name: "Tu mensaje" })).toBeVisible();
     await expect(page.getByRole("link", { name: "Charla de prueba" })).toHaveCount(0);
   });
 });

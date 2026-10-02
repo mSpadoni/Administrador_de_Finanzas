@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AsistenteUIMessage } from "@/shared/chat";
@@ -182,69 +182,155 @@ describe("el título de las conversaciones", () => {
   });
 });
 
-describe("borrar una conversación", () => {
+describe("borrar una conversación (con «Deshacer»)", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", rutaDeConversacion(ID_A));
     vi.useFakeTimers({ shouldAdvanceTime: true });
   });
   afterEach(() => vi.useRealTimers());
 
-  /** Pide borrar una conversación de la lista y confirma en el diálogo. */
-  async function borrarDeLaLista(titulo: string) {
-    await userEvent.click(screen.getByRole("button", { name: `Borrar la conversación «${titulo}»` }));
-    const dialogo = screen.getByRole("dialog", { name: "¿Borrar la conversación?" });
-    await userEvent.click(within(dialogo).getByRole("button", { name: "Borrar" }));
-  }
+  const pedirBorrar = (titulo: string) =>
+    userEvent.click(screen.getByRole("button", { name: `Borrar la conversación «${titulo}»` }));
+  const pasar = (ms: number) => act(async () => void (await vi.advanceTimersByTimeAsync(ms)));
+  const item = (titulo: string) => screen.getByRole("link", { name: titulo }).closest("li");
+  const deshacer = () => screen.queryByRole("button", { name: "Deshacer" });
 
-  it("el diálogo se cierra al confirmar y el ítem se pliega antes de salir de la lista", async () => {
+  it("al cargar la página el foco no se mueve solo (regresión: iba al título «Conversaciones» y Tab salteaba la barra)", () => {
+    pantalla();
+
+    expect(document.body).toHaveFocus();
+  });
+
+  it("no pide confirmación: el ítem se pliega, queda fuera del teclado y aparece el aviso con el foco en «Deshacer»", async () => {
     const { borrar } = pantalla();
 
-    await borrarDeLaLista("Dólar");
+    await pedirBorrar("Dólar");
 
     expect(screen.queryByRole("dialog")).toBeNull();
-    expect(borrar).toHaveBeenCalledWith(ID_B);
-    // Mientras se pliega sigue en el DOM (con la animación); cuando termina, sale.
-    const item = screen.getByRole("link", { name: "Dólar" }).closest("li");
-    expect(item).toHaveClass("max-h-0", "opacity-0");
-    await act(async () => void (await vi.advanceTimersByTimeAsync(400)));
-    expect(screen.queryByRole("link", { name: "Dólar" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Gastos de septiembre" })).toBeInTheDocument();
+    expect(item("Dólar")).toHaveClass("max-h-0", "opacity-0");
+    expect(item("Dólar")).toHaveAttribute("inert");
+    expect(screen.getByText("Borraste «Dólar».")).toBeInTheDocument();
+    expect(deshacer()).toHaveFocus();
+    expect(borrar).not.toHaveBeenCalled(); // el servidor todavía no se enteró
     expect(abierta()).toBe(`Abierta: ${ID_A} con 2 mensajes`); // la abierta no se toca
   });
 
-  it("si se borra la conversación abierta, se pasa a una nueva vacía", async () => {
-    pantalla();
+  it("«Deshacer» la devuelve a la lista con el foco en su link, y nunca se borra en el servidor", async () => {
+    const { borrar } = pantalla();
+    await pedirBorrar("Dólar");
 
-    await borrarDeLaLista("Gastos de septiembre");
-    await act(async () => void (await vi.advanceTimersByTimeAsync(400)));
+    await userEvent.click(deshacer()!);
+    await pasar(10_000);
 
-    expect(screen.queryByRole("link", { name: "Gastos de septiembre" })).toBeNull();
+    expect(item("Dólar")).toHaveClass("max-h-12", "opacity-100");
+    expect(item("Dólar")).not.toHaveAttribute("inert");
+    expect(screen.getByRole("link", { name: "Dólar" })).toHaveFocus();
+    expect(deshacer()).toBeNull();
+    expect(borrar).not.toHaveBeenCalled();
+  });
+
+  it("si nadie la deshace, se borra en el servidor al cumplirse el plazo (7 s) y sale de la lista", async () => {
+    const { borrar } = pantalla();
+    await pedirBorrar("Dólar");
+
+    // Margen de medio segundo a cada lado: con `shouldAdvanceTime`, el tiempo real que tardan los clicks también corre.
+    await pasar(6_500);
+    expect(borrar).not.toHaveBeenCalled();
+    expect(deshacer()).not.toBeNull();
+
+    await pasar(600);
+    expect(borrar).toHaveBeenCalledTimes(1);
+    expect(borrar).toHaveBeenCalledWith(ID_B);
+    expect(deshacer()).toBeNull();
+    expect(screen.queryByRole("link", { name: "Dólar" })).toBeNull();
+    expect(screen.getByRole("link", { name: "Gastos de septiembre" })).toBeInTheDocument();
+  });
+
+  it("cerrar el aviso con la ✕ la borra en el momento, sin esperar el plazo, y el foco no se pierde", async () => {
+    const { borrar } = pantalla();
+    await pedirBorrar("Dólar");
+
+    await userEvent.click(screen.getByRole("button", { name: "Cerrar el aviso" }));
+
+    expect(borrar).toHaveBeenCalledWith(ID_B);
+    await waitFor(() => expect(screen.queryByRole("link", { name: "Dólar" })).toBeNull());
+    expect(deshacer()).toBeNull();
+    expect(screen.getByRole("heading", { name: "Conversaciones" })).toHaveFocus();
+  });
+
+  it("si se borra la abierta, se pasa ya a una nueva vacía; «Deshacer» la vuelve a abrir", async () => {
+    const { leer, borrar } = pantalla();
+    leer.mockResolvedValue(CHARLA_A);
+
+    await pedirBorrar("Gastos de septiembre");
     expect(abierta()).toMatch(/Abierta: [0-9a-f-]{36} con 0 mensajes/);
     expect(abierta()).not.toContain(ID_A);
+
+    await userEvent.click(deshacer()!);
+
+    await waitFor(() => expect(abierta()).toBe(`Abierta: ${ID_A} con 2 mensajes`));
+    expect(leer).toHaveBeenCalledWith(ID_A);
+    expect(borrar).not.toHaveBeenCalled();
   });
 
-  it("si el servidor no la pudo borrar, el ítem vuelve, se avisa qué pasó y la conversación sigue abierta", async () => {
-    pantalla({ borrar: vi.fn().mockRejectedValue(new Error("sin conexión")) });
+  it("deshacer una que no estaba abierta no cambia la conversación en pantalla", async () => {
+    const { leer } = pantalla();
+    await pedirBorrar("Dólar");
 
-    await borrarDeLaLista("Gastos de septiembre");
-    await act(async () => void (await vi.advanceTimersByTimeAsync(400)));
+    await userEvent.click(deshacer()!);
 
-    const item = screen.getByRole("link", { name: "Gastos de septiembre" }).closest("li");
-    expect(item).toHaveClass("max-h-12", "opacity-100");
-    expect(screen.getByRole("status")).toHaveTextContent(
-      "No se pudo borrar «Gastos de septiembre». Revisá tu conexión y probá de nuevo."
-    );
     expect(abierta()).toBe(`Abierta: ${ID_A} con 2 mensajes`);
+    expect(leer).not.toHaveBeenCalled();
   });
 
-  it("cancelar el diálogo no borra nada", async () => {
-    const { borrar } = pantalla();
-    await userEvent.click(screen.getByRole("button", { name: "Borrar la conversación «Dólar»" }));
+  it("si el servidor no la pudo borrar, el ítem vuelve y se avisa qué pasó", async () => {
+    pantalla({ borrar: vi.fn().mockRejectedValue(new Error("sin conexión")) });
+    await pedirBorrar("Dólar");
 
-    await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+    await pasar(7_000);
+
+    await waitFor(() => expect(item("Dólar")).toHaveClass("max-h-12", "opacity-100"));
+    expect(item("Dólar")).not.toHaveAttribute("inert");
+    expect(screen.getByText("No se pudo borrar «Dólar». Revisá tu conexión y probá de nuevo.")).toBeInTheDocument();
+  });
+
+  it("con el mouse sobre el aviso el plazo se pausa, y al salir sigue desde donde estaba", async () => {
+    const { borrar } = pantalla();
+    await pedirBorrar("Dólar");
+    await pasar(3_000);
+
+    await userEvent.hover(screen.getByText("Borraste «Dólar»."));
+    await pasar(20_000);
+    expect(borrar).not.toHaveBeenCalled();
+
+    await userEvent.unhover(screen.getByText("Borraste «Dólar»."));
+    await pasar(3_500); // quedaban 4 s de los 7
+    expect(borrar).not.toHaveBeenCalled();
+    await pasar(1_000);
+    expect(borrar).toHaveBeenCalledWith(ID_B);
+  });
+
+  it("llegar a la ✕ con el teclado pausa el plazo (el foco que pone el aviso al aparecer, no)", async () => {
+    const { borrar } = pantalla();
+    await pedirBorrar("Dólar");
+
+    await userEvent.tab(); // de «Deshacer» a la ✕
+    expect(screen.getByRole("button", { name: "Cerrar el aviso" })).toHaveFocus();
+    await pasar(20_000);
 
     expect(borrar).not.toHaveBeenCalled();
-    expect(screen.getByRole("link", { name: "Dólar" })).toBeInTheDocument();
+  });
+
+  it("si se borra otra mientras hay una pendiente, la pendiente se borra en ese momento y el aviso pasa a la nueva", async () => {
+    const { borrar } = pantalla();
+    await pedirBorrar("Dólar");
+
+    await pedirBorrar("Gastos de septiembre");
+
+    expect(borrar).toHaveBeenCalledTimes(1);
+    expect(borrar).toHaveBeenCalledWith(ID_B);
+    expect(screen.getByText("Borraste «Gastos de septiembre».")).toBeInTheDocument();
+    expect(screen.queryByText("Borraste «Dólar».")).toBeNull();
   });
 });
 
