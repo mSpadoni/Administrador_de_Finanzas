@@ -30,7 +30,9 @@ describe("montoEnPesos", () => {
     const enDolares = { ...GASTO, moneda: "USD" as const };
 
     expect(() => montoEnPesos(enDolares, null)).toThrow(ErrorDeDominio);
+    expect(() => montoEnPesos(enDolares, null)).toThrow(/en dólares necesita la cotización/);
     expect(() => montoEnPesos(GASTO, { tipoDeDolar: "blue", valor: 1400 })).toThrow(ErrorDeDominio);
+    expect(() => montoEnPesos(GASTO, { tipoDeDolar: "blue", valor: 1400 })).toThrow(/en pesos no lleva cotización/);
   });
 });
 

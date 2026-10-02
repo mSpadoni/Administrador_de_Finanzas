@@ -25,6 +25,37 @@ export function cambioLosMovimientos(respuesta: AsistenteUIMessage): boolean {
   );
 }
 
+/** Qué hacer cuando termina una respuesta (ver useChatDelAsistente). */
+export type AccionesAlTerminar = {
+  /** Anunciarla al lector de pantalla: solo una respuesta completa (no la cortada con «Detener» ni un error). */
+  anunciar: boolean;
+  /** Subir la conversación en la lista del costado: siempre que no falló (aunque se haya cortado, quedó guardada). */
+  actualizarLaLista: boolean;
+  /** Pedirle al servidor un título según lo que se habló: solo con una respuesta completa. */
+  retitular: boolean;
+  /** Volver a leer «Este mes»: si no falló y registró o borró un movimiento. */
+  refrescarElResumen: boolean;
+};
+
+/** Qué hacer al terminar una respuesta, según cómo terminó y si cambió algún movimiento. */
+export function accionesAlTerminar({
+  seCorto,
+  fallo,
+  cambiaronLosMovimientos,
+}: {
+  seCorto: boolean;
+  fallo: boolean;
+  cambiaronLosMovimientos: boolean;
+}): AccionesAlTerminar {
+  const completa = !seCorto && !fallo;
+  return {
+    anunciar: completa,
+    actualizarLaLista: !fallo,
+    retitular: completa,
+    refrescarElResumen: !fallo && cambiaronLosMovimientos,
+  };
+}
+
 /**
  * El título de la conversación para el sidebar: el mismo que le pone el servidor al crearla (a partir del primer
  * mensaje del usuario), así el sidebar lo muestra sin volver a consultar la base.

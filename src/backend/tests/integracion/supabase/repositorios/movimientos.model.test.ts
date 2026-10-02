@@ -1,7 +1,7 @@
-import { afterAll, describe, expect, it } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import { ErrorDeDominio } from "@/backend/models/dominio/erroresDominio";
 import type { DatosDeMovimiento } from "@/backend/models/dominio/movimiento";
-import { periodoDe } from "@/backend/models/dominio/periodo";
+import { periodoDe, rango } from "@/backend/models/dominio/periodo";
 import { MovimientosModel } from "@/backend/models/repositorios/movimientos.model";
 import { borrarUsuariosDePrueba, crearUsuarioLogueado } from "@/backend/tests/helpers/supabase/usuarioDePrueba";
 
@@ -97,5 +97,34 @@ describe("MovimientosModel.borrar", () => {
     expect(await duenia.movimientos.borrar(guardado.id)).toBe(true);
     expect(await duenia.movimientos.borrar(guardado.id)).toBe(false);
     expect(await duenia.movimientos.listar(periodoDe("mes", "2026-09-01"))).toEqual([]);
+  });
+});
+
+describe("MovimientosModel.listar — filas que el dominio no acepta", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("una fila que pasa los check de la base pero no las reglas del dominio se omite (con un aviso en el log)", async () => {
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const { persona, movimientos } = await personaConMovimientos();
+    const valido = await movimientos.registrar({ ...GASTO, fecha: "2026-09-10" }, null);
+    // La base acepta cualquier fecha (es `date`); el dominio, solo entre 1900 y 2100. Se inserta directo, como podría
+    // hacerlo una fila vieja o cargada a mano.
+    const supabase = await persona.navegador.crearCliente();
+    const insertado = await supabase.from("movimientos").insert({
+      tipo: "gasto",
+      monto: 500,
+      moneda: "ARS",
+      monto_en_pesos: 500,
+      categoria: "supermercado",
+      medio_de_pago: "debito",
+      descripcion: "Fila vieja",
+      fecha: "1850-01-01",
+    });
+    expect(insertado.error).toBeNull();
+
+    const lista = await movimientos.listar(rango("1850-01-01", "2026-12-31"));
+
+    expect(lista.map((m) => m.id)).toEqual([valido.id]);
+    expect(aviso.mock.calls.map((llamada) => String(llamada[0])).join("\n")).toContain("movimientos.fila_invalida");
   });
 });

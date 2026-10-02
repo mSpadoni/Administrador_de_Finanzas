@@ -42,6 +42,7 @@ describe("rango", () => {
   it("arma un período explícito y rechaza uno que termina antes de empezar", () => {
     expect(rango("2026-09-01", "2026-09-10")).toEqual({ desde: "2026-09-01", hasta: "2026-09-10" });
     expect(() => rango("2026-09-10", "2026-09-01")).toThrow(ErrorDeDominio);
+    expect(() => rango("2026-09-10", "2026-09-01")).toThrow(/termina \(2026-09-01\) antes de empezar \(2026-09-10\)/);
     expect(rango("2026-09-10", "2026-09-10")).toEqual({ desde: "2026-09-10", hasta: "2026-09-10" }); // un solo día vale
   });
 });
@@ -102,11 +103,15 @@ describe("resolverPeriodo (lo que pide el asistente: «este mes», «la semana p
   it("solo desde es hasta hoy; un rango al revés es un error", () => {
     expect(resolverPeriodo({ desde: "2026-09-10" }, HOY)).toEqual({ desde: "2026-09-10", hasta: HOY });
     expect(() => resolverPeriodo({ desde: "2026-09-10", hasta: "2026-09-01" }, HOY)).toThrow(ErrorDeDominio);
+    expect(() => resolverPeriodo({ desde: "2026-09-10", hasta: "2026-09-01" }, HOY)).toThrow(/antes de empezar/);
   });
 
   it("«hasta» sin «desde» no se adivina: es un error (hay que preguntar desde cuándo)", () => {
     // Antes se ignoraba en silencio y devolvía el mes de hoy: con «hasta el 31/08» llegaban datos de septiembre.
     expect(() => resolverPeriodo({ hasta: "2026-08-31" }, HOY)).toThrow(ErrorDeDominio);
     expect(() => resolverPeriodo({ unidad: "mes", hasta: "2026-08-31" }, HOY)).toThrow(ErrorDeDominio);
+    // El motivo es que falta «desde» (no otro error del dominio).
+    expect(() => resolverPeriodo({ hasta: "2026-08-31" }, HOY)).toThrow(/Falta desde cuándo/);
+    expect(() => resolverPeriodo({ unidad: "mes", hasta: "2026-08-31" }, HOY)).toThrow(/Falta desde cuándo/);
   });
 });

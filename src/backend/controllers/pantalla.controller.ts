@@ -22,7 +22,7 @@ type DatosDeLaPantalla = {
  * servicios de conversaciones y de movimientos (un controller no llama a otro controller). El id ya viene validado por la
  * página.
  */
-class PantallaController {
+export class PantallaController {
   constructor(
     private readonly conversaciones: () => ConversacionesServicio = () => conversacionesServicio,
     private readonly movimientos: () => MovimientosServicio = () => movimientosServicio

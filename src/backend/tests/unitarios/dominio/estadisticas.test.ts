@@ -110,3 +110,54 @@ describe("estadisticas", () => {
     expect(resultado.variacionDeGastos.anterior).toBe(500);
   });
 });
+
+describe("estadísticas — casos que faltaban (auditoría de tests)", () => {
+  it("«otros» de gasto y «otros» de ingreso son categorías distintas: cada una con el porcentaje de su tipo", () => {
+    // El ingreso llega primero: así se prueba también que los gastos van antes aunque vengan después.
+    const totales = totalesPorCategoria([
+      mov({ tipo: "ingreso", categoria: "otros", montoEnPesos: 100, monto: 100 }),
+      mov({ tipo: "gasto", categoria: "otros", montoEnPesos: 50, monto: 50 }),
+      mov({ tipo: "gasto", categoria: "supermercado", montoEnPesos: 10, monto: 10 }),
+    ]);
+
+    expect(totales).toEqual([
+      { tipo: "gasto", categoria: "otros", total: 50, porcentaje: 83.33 },
+      { tipo: "gasto", categoria: "supermercado", total: 10, porcentaje: 16.67 },
+      { tipo: "ingreso", categoria: "otros", total: 100, porcentaje: 100 },
+    ]);
+  });
+
+  it("si se gasta más de lo que entra, el balance es negativo", () => {
+    expect(
+      resumen([
+        mov({ tipo: "ingreso", categoria: "sueldo", montoEnPesos: 100, monto: 100 }),
+        mov({ montoEnPesos: 250.5, monto: 250.5 }),
+      ])
+    ).toEqual({ ingresos: 100, gastos: 250.5, balance: -150.5 });
+  });
+
+  it("si los gastos bajan contra el período anterior, la variación es negativa", () => {
+    const septiembre = periodoDe("mes", "2026-09-15");
+    const actuales = [mov({ montoEnPesos: 750, monto: 750, fecha: "2026-09-10" })];
+    const anteriores = [mov({ montoEnPesos: 1000, monto: 1000, fecha: "2026-08-10" })];
+
+    expect(estadisticas(actuales, septiembre, anteriores).variacionDeGastos).toEqual({
+      anterior: 1000,
+      porcentaje: -25,
+    });
+  });
+
+  it("el promedio diario de un período de un solo día es el gasto de ese día", () => {
+    const unDia = { desde: "2026-09-10", hasta: "2026-09-10" };
+
+    expect(estadisticas([mov({ montoEnPesos: 1234.5, monto: 1234.5 })], unDia, []).promedioDiarioDeGastos).toBe(1234.5);
+  });
+
+  it("el promedio diario de un mes de 31 días divide por 31 (aunque haya pocos gastos)", () => {
+    const octubre = periodoDe("mes", "2026-10-01");
+
+    expect(
+      estadisticas([mov({ montoEnPesos: 3100, monto: 3100, fecha: "2026-10-01" })], octubre, []).promedioDiarioDeGastos
+    ).toBe(100);
+  });
+});

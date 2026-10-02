@@ -11,6 +11,7 @@ import {
   TEXTO_PENSANDO,
   tituloDeLaConversacion,
 } from "@/frontend/chat/conversacion/respuesta";
+import { accionesAlTerminar } from "@/frontend/chat/conversacion/respuesta";
 import { TEXTOS_DE_HERRAMIENTAS } from "@/frontend/chat/conversacion/tipos";
 import { errorParaMostrar, estaCercaDelFinal, siguienteScroll } from "@/frontend/chat/conversacion/tipos";
 
@@ -298,5 +299,37 @@ describe("mensajeListoParaMostrar (la respuesta se muestra cuando se hizo todo)"
     expect(mensajeListoParaMostrar(delAsistente(tool("t1", "output-error"), texto("No pude consultarlo.")), true)).toBe(
       true
     );
+  });
+});
+
+describe("accionesAlTerminar (qué hace la vista cuando termina una respuesta)", () => {
+  const nada = { anunciar: false, actualizarLaLista: false, retitular: false, refrescarElResumen: false };
+
+  it.each([
+    [
+      "completa, sin cambiar movimientos",
+      { seCorto: false, fallo: false, cambiaronLosMovimientos: false },
+      { anunciar: true, actualizarLaLista: true, retitular: true, refrescarElResumen: false },
+    ],
+    [
+      "completa, registró o borró un movimiento",
+      { seCorto: false, fallo: false, cambiaronLosMovimientos: true },
+      { anunciar: true, actualizarLaLista: true, retitular: true, refrescarElResumen: true },
+    ],
+    [
+      "cortada con «Detener» (quedó guardada, pero a medias)",
+      { seCorto: true, fallo: false, cambiaronLosMovimientos: false },
+      { anunciar: false, actualizarLaLista: true, retitular: false, refrescarElResumen: false },
+    ],
+    [
+      "cortada después de registrar un movimiento",
+      { seCorto: true, fallo: false, cambiaronLosMovimientos: true },
+      { anunciar: false, actualizarLaLista: true, retitular: false, refrescarElResumen: true },
+    ],
+    ["con error", { seCorto: false, fallo: true, cambiaronLosMovimientos: false }, nada],
+    ["con error aunque haya registrado algo", { seCorto: false, fallo: true, cambiaronLosMovimientos: true }, nada],
+    ["cortada y con error", { seCorto: true, fallo: true, cambiaronLosMovimientos: true }, nada],
+  ])("%s", (_caso, como, esperado) => {
+    expect(accionesAlTerminar(como)).toEqual(esperado);
   });
 });
