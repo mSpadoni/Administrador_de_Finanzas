@@ -79,9 +79,13 @@ export function ContenidoDelMes({ estadisticas }: Props) {
  */
 export default function PanelDelMes({ estadisticas }: Props) {
   return (
+    // tabIndex: el panel tiene su propio scroll; como parada de Tab, quien usa solo el teclado lo puede recorrer con las
+    // flechas (WCAG 2.1.1) y el lector de pantalla anuncia «Este mes». El aro de foco va hacia adentro: el panel está
+    // pegado al borde de la pantalla y uno por fuera quedaría cortado.
     <aside
       aria-labelledby="titulo-este-mes"
-      className="hidden w-64 shrink-0 overflow-y-auto border-l border-borde bg-superficie p-4 lg:block"
+      tabIndex={0}
+      className="hidden w-64 shrink-0 overflow-y-auto border-l border-borde bg-superficie p-4 focus-visible:outline-offset-[-3px] lg:block"
     >
       <h2 id="titulo-este-mes" className="mb-1 text-sm font-semibold text-tinta">
         Este mes

@@ -276,6 +276,13 @@ describe("el texto del asistente sigue estando", () => {
 });
 
 describe("panel «Este mes»", () => {
+  it("el panel es una parada de Tab con su nombre (tiene su propio scroll: así se recorre sin mouse)", () => {
+    render(<PanelDelMes estadisticas={ESTADISTICAS} />);
+
+    const panel = screen.getByRole("complementary", { name: "Este mes", hidden: true });
+    expect(panel).toHaveAttribute("tabindex", "0");
+  });
+
   it("muestra el mes, ingresos, gastos, balance y las categorías donde más se gasta", () => {
     render(<PanelDelMes estadisticas={ESTADISTICAS} />);
 

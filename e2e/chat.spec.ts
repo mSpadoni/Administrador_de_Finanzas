@@ -162,6 +162,12 @@ test.describe("accesibilidad y tema", () => {
     expect(pasoPorLaBarra).toBe(true);
     await expect(cuenta).toBeFocused();
 
+    // Desde el campo, Tab llega al panel «Este mes» (tiene su propio scroll).
+    await page.getByRole("textbox", { name: "Tu mensaje" }).focus();
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("complementary", { name: "Este mes" })).toBeFocused();
+    await cuenta.focus();
+
     // Enter abre el menú y Tab recorre las opciones.
     await page.keyboard.press("Enter");
     await expect(page.getByRole("menuitem", { name: "Panel de debug" })).toBeFocused();
