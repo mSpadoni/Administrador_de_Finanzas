@@ -7,6 +7,8 @@ sobre tus datos guardados en Supabase y sobre las cotizaciones de [dolarapi.com]
 
 **Demo:** https://administrador-de-finanzas-mspadoni.vercel.app (se entra con una cuenta de Google).
 
+**Video demo (recorrido por la app):** https://youtu.be/8iwNAZyjZMU
+
 ![Registrar gastos conversando](docs/capturas/registrar-gastos.png)
 
 **[Ver todas las capturas, explicadas una por una →](docs/CAPTURAS.md)**
@@ -555,3 +557,5 @@ código que las usa.
 ## Link a la app
 
 https://administrador-de-finanzas-mspadoni.vercel.app
+
+Video demo: https://youtu.be/8iwNAZyjZMU
