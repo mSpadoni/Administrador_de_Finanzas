@@ -143,6 +143,8 @@ export default function PerfilDeUsuario({ nombre, avatarUrl, cerrarSesion, onAbr
         descripcion="Vas a tener que volver a ingresar con Google para usar el asistente. Tus movimientos y conversaciones quedan guardados."
         textoConfirmar="Cerrar sesión"
         textoPendiente="Cerrando sesión…"
+        // En rojo, como «Borrar» y como «Cerrar sesión» en el menú: es la acción que te saca de la app.
+        peligro
         pendiente={cerrando}
         onCancelar={() => setConfirmando(false)}
         onConfirmar={() =>

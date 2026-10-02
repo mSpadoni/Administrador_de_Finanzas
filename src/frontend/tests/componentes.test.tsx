@@ -368,6 +368,32 @@ describe("PerfilDeUsuario", () => {
     await waitFor(() => expect(cerrarSesion).toHaveBeenCalledOnce());
   });
 
+  it("el botón que confirma «Cerrar sesión» está en rojo, igual que el de borrar (acción de peligro)", async () => {
+    render(
+      <>
+        <PerfilDeUsuario nombre="Mateo" avatarUrl={null} cerrarSesion={vi.fn()} onAbrirDebug={vi.fn()} />
+        <DialogoDeConfirmacion
+          abierto
+          titulo="¿Borrar la conversación?"
+          descripcion="No se puede deshacer."
+          textoConfirmar="Borrar"
+          peligro
+          onCancelar={vi.fn()}
+          onConfirmar={vi.fn()}
+        />
+      </>
+    );
+    const borrar = screen.getByRole("button", { name: "Borrar" });
+
+    await userEvent.click(screen.getByRole("button", { name: "Cuenta de Mateo" }));
+    await userEvent.click(screen.getByRole("menuitem", { name: "Cerrar sesión" }));
+    const confirmar = within(screen.getByRole("dialog", { name: "¿Cerrar sesión?" })).getByRole("button", {
+      name: "Cerrar sesión",
+    });
+
+    expect(confirmar.className).toBe(borrar.className);
+  });
+
   it("si se arrepiente y cancela, no cierra la sesión", async () => {
     const cerrarSesion = vi.fn();
     render(<PerfilDeUsuario nombre="Mateo" avatarUrl={null} cerrarSesion={cerrarSesion} onAbrirDebug={vi.fn()} />);
