@@ -1,3 +1,4 @@
+import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "./fixtures";
 
 // El modo celular de punta a punta, en un navegador con pantalla de celular: los paneles que en la compu están fijos se
@@ -75,4 +76,26 @@ test("con la letra al máximo (130 %), en el celular nada se sale del ancho de l
   expect(await page.evaluate(() => getComputedStyle(document.documentElement).fontSize)).toBe("20.8px");
   const anchoDeMas = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(anchoDeMas).toBeLessThanOrEqual(0);
+});
+
+test("los cajones abiertos no tienen problemas de accesibilidad (ni siquiera menores)", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByRole("textbox", { name: "Tu mensaje" })).toBeVisible();
+  const problemas = async () => {
+    await page.evaluate(() => Promise.allSettled(document.getAnimations().map((a) => a.finished)));
+    const r = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa", "wcag21aa", "wcag22aa", "best-practice"])
+      .analyze();
+    return r.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
+  };
+
+  // Regresión: con role="dialog" puesto directo en el <nav> y en el <aside>, axe marcaba aria-allowed-role.
+  await page.getByRole("button", { name: "Conversaciones" }).click();
+  await expect(page.getByRole("dialog", { name: "Menú principal" })).toBeVisible();
+  expect(await problemas()).toEqual([]);
+
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Balance del mes" }).click();
+  await expect(page.getByRole("dialog", { name: "Este mes" })).toBeVisible();
+  expect(await problemas()).toEqual([]);
 });

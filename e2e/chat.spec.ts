@@ -147,6 +147,30 @@ test.describe("accesibilidad y tema", () => {
     expect(await letraBase()).toBe("14.4px");
   });
 
+  test("solo con el teclado se llega a la barra lateral y a las opciones del menú de la cuenta", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByRole("textbox", { name: "Tu mensaje" })).toBeVisible();
+
+    // Tab hasta el botón de la cuenta (al pie de la barra lateral), pasando por «Nueva conversación».
+    const cuenta = page.getByRole("button", { name: "Cuenta de Mateo Prueba" });
+    let pasoPorLaBarra = false;
+    for (let i = 0; i < 20 && !(await cuenta.evaluate((b) => b === document.activeElement)); i++) {
+      await page.keyboard.press("Tab");
+      if (await page.getByRole("link", { name: "Nueva conversación" }).evaluate((l) => l === document.activeElement))
+        pasoPorLaBarra = true;
+    }
+    expect(pasoPorLaBarra).toBe(true);
+    await expect(cuenta).toBeFocused();
+
+    // Enter abre el menú y Tab recorre las opciones.
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("menuitem", { name: "Panel de debug" })).toBeFocused();
+    await page.keyboard.press("Tab");
+    await expect(page.getByRole("menuitem", { name: "Tamaño de letra…" })).toBeFocused();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("dialog", { name: "Tamaño de letra" })).toBeVisible();
+  });
+
   test("con el tema oscuro del sistema, la app se pone oscura", async ({ page }) => {
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/");

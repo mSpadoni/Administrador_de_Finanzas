@@ -210,6 +210,34 @@ describe("MenuDeAtajos", () => {
     expect(boton).toHaveFocus();
   });
 
+  it("con Tab también se recorren las opciones (regresión: antes Tab cerraba el menú sin dejar entrar)", async () => {
+    render(<MenuDeAtajos onUsar={vi.fn()} deshabilitado={false} />);
+    await userEvent.click(screen.getByRole("button", { name: "Atajos" }));
+    const items = screen.getAllByRole("menuitem");
+
+    await userEvent.tab();
+    expect(items[1]).toHaveFocus();
+    await userEvent.tab({ shift: true });
+    expect(items[0]).toHaveFocus();
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+  });
+
+  it("Tab desde la última opción cierra el menú; Shift+Tab desde la primera lo cierra y vuelve al botón", async () => {
+    render(<MenuDeAtajos onUsar={vi.fn()} deshabilitado={false} />);
+    const boton = screen.getByRole("button", { name: "Atajos" });
+
+    await userEvent.click(boton);
+    for (let i = 1; i < ATAJOS.length; i++) await userEvent.tab();
+    expect(screen.getAllByRole("menuitem").at(-1)).toHaveFocus();
+    await userEvent.tab();
+    expect(screen.queryByRole("menu")).toBeNull();
+
+    await userEvent.click(boton);
+    await userEvent.tab({ shift: true });
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(boton).toHaveFocus();
+  });
+
   it("un click afuera lo cierra", async () => {
     render(
       <>

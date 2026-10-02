@@ -80,10 +80,12 @@ function Respuesta({ respuesta, numero }: { respuesta: RespuestaDeDebug; numero:
 
 function ContenidoDelPanel({ mensajes, onCerrar }: Omit<Props, "abierto">) {
   const cerrarRef = useRef<HTMLButtonElement>(null);
-  const panelRef = useRef<HTMLElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   // En celular el panel tapa toda la pantalla: es un modal. En compu queda al costado y se puede seguir chateando.
   const ocupaLaPantalla = useCoincideConLaPantalla("(max-width: 639px)");
   useModal(panelRef, ocupaLaPantalla);
+  // Como diálogo (celular) va en un <div>: un <aside> no puede tener ese rol. Al costado (compu), un <aside>.
+  const Contenedor = ocupaLaPantalla ? "div" : "aside";
   const respuestas = respuestasParaDebug(mensajes);
   const totales = totalesDeDebug(respuestas);
 
@@ -99,7 +101,7 @@ function ContenidoDelPanel({ mensajes, onCerrar }: Omit<Props, "abierto">) {
   }
 
   return (
-    <aside
+    <Contenedor
       ref={panelRef}
       aria-label="Panel de debug"
       role={ocupaLaPantalla ? "dialog" : undefined}
@@ -149,7 +151,7 @@ function ContenidoDelPanel({ mensajes, onCerrar }: Omit<Props, "abierto">) {
           </>
         )}
       </div>
-    </aside>
+    </Contenedor>
   );
 }
 

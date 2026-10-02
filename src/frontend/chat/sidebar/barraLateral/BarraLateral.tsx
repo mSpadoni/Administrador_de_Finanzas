@@ -34,6 +34,7 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
   // En celular la hamburguesa del encabezado abre el menú; acá se cierra.
   const { abrirDebug, menuAbierto: abierto, setMenuAbierto: setAbierto } = usePaneles();
   const { barraRef, primerLinkRef } = useCajonDelMenu(abierto, setAbierto);
+  const Contenedor = abierto ? "div" : "nav";
 
   function elegirAtajo(atajo: Atajo) {
     setAbierto(false);
@@ -52,11 +53,12 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
         />
       )}
 
-      <nav
+      <Contenedor
         ref={barraRef}
         id="barra-lateral"
         aria-label="Menú principal"
-        // Como cajón (celular, abierta) es un diálogo modal; fija al costado (tablet y compu), un landmark de navegación.
+        // Como cajón (celular, abierta) es un diálogo modal en un <div> (un <nav> no puede tener ese rol); fija al costado
+        // (tablet y compu), un landmark de navegación.
         role={abierto ? "dialog" : undefined}
         aria-modal={abierto || undefined}
         className={`${
@@ -112,7 +114,7 @@ export default function BarraLateral({ borrar, usuario, cerrarSesion }: Props) {
             }}
           />
         </div>
-      </nav>
+      </Contenedor>
     </>
   );
 }

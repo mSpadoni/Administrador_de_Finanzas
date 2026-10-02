@@ -69,8 +69,21 @@ export default function MenuDesplegable({
         evento.preventDefault();
         cerrar();
         break;
+      // Tab y Shift+Tab también recorren las opciones (además de las flechas): es lo que prueba primero quien usa el
+      // teclado. Pasada la última, el menú se cierra y Tab sigue por la página; antes de la primera, vuelve al botón.
       case "Tab":
-        cerrar(false);
+        if (!evento.shiftKey && actual < items.length - 1) {
+          evento.preventDefault();
+          enfocar(actual + 1);
+        } else if (evento.shiftKey && actual > 0) {
+          evento.preventDefault();
+          enfocar(actual - 1);
+        } else if (evento.shiftKey) {
+          evento.preventDefault();
+          cerrar();
+        } else {
+          cerrar(false);
+        }
         break;
       case "ArrowDown":
         evento.preventDefault();

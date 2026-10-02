@@ -15,7 +15,7 @@ type Props = {
 
 function Cajon({ estadisticas, onCerrar }: Props) {
   const cerrarRef = useRef<HTMLButtonElement>(null);
-  const cajonRef = useRef<HTMLElement>(null);
+  const cajonRef = useRef<HTMLDivElement>(null);
   // Encima de todo: mientras está abierto, el resto de la página queda inerte (el foco no se escapa).
   useModal(cajonRef, true);
 
@@ -35,7 +35,8 @@ function Cajon({ estadisticas, onCerrar }: Props) {
     <div className="lg:hidden">
       {/* Fondo oscuro detrás del cajón: tocarlo lo cierra. */}
       <div {...FONDO_DEL_MODAL} aria-hidden="true" onClick={onCerrar} className="fixed inset-0 z-20 bg-slate-900/40" />
-      <aside
+      {/* Un <div>: un <aside> no puede tener el rol de diálogo (este cajón siempre es un diálogo modal). */}
+      <div
         ref={cajonRef}
         role="dialog"
         aria-modal="true"
@@ -61,7 +62,7 @@ function Cajon({ estadisticas, onCerrar }: Props) {
         <div className="min-h-0 flex-1 overflow-y-auto p-4">
           <ContenidoDelMes estadisticas={estadisticas} />
         </div>
-      </aside>
+      </div>
     </div>
   );
 }

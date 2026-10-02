@@ -10,7 +10,7 @@ import { useModal } from "@/frontend/compartidos/useModal";
  * paneles): si cambiara en cada render, el efecto se repetiría y el foco saltaría.
  */
 export function useCajonDelMenu(abierto: boolean, setAbierto: (abierto: boolean) => void) {
-  const barraRef = useRef<HTMLElement>(null);
+  const barraRef = useRef<HTMLDivElement>(null);
   const primerLinkRef = useRef<HTMLAnchorElement>(null);
   useModal(barraRef, abierto);
 
