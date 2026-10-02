@@ -5,7 +5,7 @@ Asistente de finanzas personales para Argentina. Le contás tus gastos e ingreso
 te va la plata y a cuánto está el dólar. Es un chat con un modelo de lenguaje (OpenAI) que decide qué herramientas usar
 sobre tus datos guardados en Supabase y sobre las cotizaciones de [dolarapi.com](https://dolarapi.com).
 
-**Demo:** https://administrador-de-finanzas-mspadoni.vercel.app (se entra con una cuenta de Google).
+**Demo:** [https://administrador-de-finanzas-mspadoni.vercel.app](https://administrador-de-finanzas-oh5ry287w-mspadoni.vercel.app/) (se entra con una cuenta de Google).
 
 **Video demo (recorrido por la app):** https://youtu.be/8iwNAZyjZMU
 
