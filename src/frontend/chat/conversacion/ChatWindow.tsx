@@ -94,8 +94,16 @@ export default function ChatWindow({ nombre }: { nombre: string }) {
                 )}
 
                 {/* aria-live="off": mientras la respuesta llega palabra por palabra no se anuncia (sería ruido).
-                    La respuesta completa la anuncia la región de abajo cuando termina. */}
-                <ol aria-label="Mensajes" aria-live="off" className="flex flex-col gap-4">
+                    La respuesta completa la anuncia la región de abajo cuando termina.
+                    tabIndex: con mensajes, la lista es una parada de Tab (entre los atajos y el campo), así quien usa
+                    solo el teclado puede scrollear la conversación con las flechas, Re Pág/Av Pág, Inicio y Fin
+                    (WCAG 2.1.1). Vacía no hace falta: no hay nada que scrollear. */}
+                <ol
+                  aria-label="Mensajes de la conversación"
+                  aria-live="off"
+                  tabIndex={messages.length > 0 ? 0 : undefined}
+                  className="flex flex-col gap-4 rounded-xl"
+                >
                   {messages.map((mensaje) => {
                     // La respuesta que se está generando con herramientas se muestra recién cuando terminaron todas
                     // (mientras tanto, la línea de estado dice qué está haciendo); las demás, siempre.

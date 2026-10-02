@@ -385,3 +385,25 @@ describe("el borrador del campo", () => {
     expect(campo).toHaveValue("x".repeat(6001));
   });
 });
+
+describe("la conversación con el teclado", () => {
+  it("con mensajes, la lista es una parada de Tab justo antes de los atajos y el campo (para scrollearla sin mouse)", async () => {
+    pantalla();
+    const atajos = screen.getByRole("button", { name: "Atajos" });
+    atajos.focus();
+
+    await userEvent.tab({ shift: true });
+    expect(screen.getByRole("list", { name: "Mensajes de la conversación" })).toHaveFocus();
+    await userEvent.tab();
+    expect(atajos).toHaveFocus();
+  });
+
+  it("vacía no es una parada de Tab", async () => {
+    pantalla({ mensajes: [] });
+    screen.getByRole("button", { name: "Atajos" }).focus();
+
+    await userEvent.tab({ shift: true });
+    expect(screen.getByRole("list", { name: "Mensajes de la conversación" })).not.toHaveFocus();
+    expect(screen.getByRole("list", { name: "Mensajes de la conversación" })).not.toHaveAttribute("tabindex");
+  });
+});

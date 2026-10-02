@@ -171,6 +171,48 @@ test.describe("accesibilidad y tema", () => {
     await expect(page.getByRole("dialog", { name: "Tamaño de letra" })).toBeVisible();
   });
 
+  test("solo con el teclado se puede scrollear una conversación larga (Inicio y Fin)", async ({ page }) => {
+    // Seis idas y vueltas con el servidor de desarrollo: más que el minuto por defecto.
+    test.setTimeout(180_000);
+    await page.setViewportSize({ width: 1280, height: 600 });
+    await page.goto("/");
+    const campo = page.getByRole("textbox", { name: "Tu mensaje" });
+    for (let i = 1; i <= 6; i++) {
+      await campo.fill(`Hola ${i}`);
+      await campo.press("Enter");
+      await expect(page.getByText("Hola, soy el asistente de prueba.", { exact: true })).toHaveCount(i, {
+        timeout: 30_000,
+      });
+      // Hasta que la respuesta no termina del todo, el campo no deja mandar otra (vuelve el botón «Enviar»).
+      await expect(page.getByRole("button", { name: "Enviar" })).toBeVisible();
+    }
+    const lista = page.getByRole("list", { name: "Mensajes de la conversación" });
+    const zona = () =>
+      lista.evaluate((l) => {
+        const z = l.closest(".overflow-y-auto") as HTMLElement;
+        return { arriba: z.scrollTop, alFinal: Math.abs(z.scrollHeight - z.clientHeight - z.scrollTop) < 2 };
+      });
+
+    // Desde el campo: Shift+Tab pasa por «Atajos» y llega a la lista (con la respuesta ya terminada: mientras el
+    // asistente responde, «Atajos» está deshabilitado y Tab lo saltea).
+    await expect(page.getByRole("button", { name: "Atajos" })).toBeEnabled();
+    await campo.focus();
+    await page.keyboard.press("Shift+Tab");
+    await page.keyboard.press("Shift+Tab");
+    await expect(lista).toBeFocused();
+
+    // La conversación no entra en la pantalla: está scrolleada abajo (si no, el test no probaría nada).
+    expect((await zona()).arriba).toBeGreaterThan(0);
+    await expect(page.getByText("Hola 1", { exact: true })).not.toBeInViewport();
+
+    await page.keyboard.press("Home");
+    await expect.poll(async () => (await zona()).arriba).toBe(0);
+    await expect(page.getByText("Hola 1", { exact: true })).toBeInViewport();
+    await page.keyboard.press("End");
+    await expect.poll(async () => (await zona()).alFinal).toBe(true);
+    await expect(page.getByText("Hola 6", { exact: true })).toBeInViewport();
+  });
+
   test("con el tema oscuro del sistema, la app se pone oscura", async ({ page }) => {
     await page.emulateMedia({ colorScheme: "dark" });
     await page.goto("/");
