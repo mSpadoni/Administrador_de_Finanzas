@@ -14,7 +14,7 @@ type Props = {
   seEstaPlegando: boolean;
   /** Abrir esta conversación en pantalla (sin recargar). */
   onAbrir: () => void;
-  /** Borrarla (se puede deshacer desde el aviso). */
+  /** Pedir confirmación para borrarla (después, se puede deshacer desde el aviso). */
   onPedirBorrar: () => void;
 };
 

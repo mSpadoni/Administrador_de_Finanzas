@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AsistenteUIMessage } from "@/shared/chat";
@@ -189,8 +189,14 @@ describe("borrar una conversación (con «Deshacer»)", () => {
   });
   afterEach(() => vi.useRealTimers());
 
-  const pedirBorrar = (titulo: string) =>
+  const tocarBorrar = (titulo: string) =>
     userEvent.click(screen.getByRole("button", { name: `Borrar la conversación «${titulo}»` }));
+  /** Toca el tacho de una conversación y confirma en el diálogo. */
+  async function pedirBorrar(titulo: string) {
+    await tocarBorrar(titulo);
+    const dialogo = screen.getByRole("dialog", { name: "¿Borrar la conversación?" });
+    await userEvent.click(within(dialogo).getByRole("button", { name: "Borrar" }));
+  }
   const pasar = (ms: number) => act(async () => void (await vi.advanceTimersByTimeAsync(ms)));
   const item = (titulo: string) => screen.getByRole("link", { name: titulo }).closest("li");
   const deshacer = () => screen.queryByRole("button", { name: "Deshacer" });
@@ -201,7 +207,44 @@ describe("borrar una conversación (con «Deshacer»)", () => {
     expect(document.body).toHaveFocus();
   });
 
-  it("no pide confirmación: el ítem se pliega, queda fuera del teclado y aparece el aviso con el foco en «Deshacer»", async () => {
+  it("el tacho primero pide confirmación: mientras el diálogo está abierto no se oculta nada ni aparece el aviso", async () => {
+    const { borrar } = pantalla();
+
+    await tocarBorrar("Dólar");
+
+    expect(screen.getByRole("dialog", { name: "¿Borrar la conversación?" })).toHaveTextContent(
+      "Se va a borrar «Dólar» con todos sus mensajes. Vas a tener unos segundos para deshacerlo."
+    );
+    expect(item("Dólar")).not.toHaveAttribute("inert");
+    expect(deshacer()).toBeNull();
+    expect(borrar).not.toHaveBeenCalled();
+  });
+
+  it("cancelar el diálogo no borra nada ni muestra el aviso", async () => {
+    const { borrar } = pantalla();
+    await tocarBorrar("Dólar");
+
+    await userEvent.click(screen.getByRole("button", { name: "Cancelar" }));
+    await pasar(10_000);
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(deshacer()).toBeNull();
+    expect(item("Dólar")).toHaveClass("max-h-12", "opacity-100");
+    expect(borrar).not.toHaveBeenCalled();
+  });
+
+  it("Escape también cancela el diálogo", async () => {
+    const { borrar } = pantalla();
+    await tocarBorrar("Dólar");
+
+    await userEvent.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(deshacer()).toBeNull();
+    expect(borrar).not.toHaveBeenCalled();
+  });
+
+  it("al confirmar, el diálogo se cierra, el ítem se pliega fuera del teclado y aparece el aviso con el foco en «Deshacer»", async () => {
     const { borrar } = pantalla();
 
     await pedirBorrar("Dólar");

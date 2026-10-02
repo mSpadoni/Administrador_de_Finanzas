@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import DialogoDeConfirmacion from "@/frontend/compartidos/DialogoDeConfirmacion";
 import { useChatEnPantalla } from "../../estado/ContextoDelChat";
 import { useSidebar } from "../EstadoSidebar";
 import AvisoDeBorrado from "./AvisoDeBorrado";
@@ -22,6 +23,7 @@ type Props = {
 export default function ListaDeConversaciones({ borrar, alElegir }: Props) {
   const { conversaciones, quitarConversacion } = useSidebar();
   const { conversacionId, nuevaConversacion, abrirConversacion } = useChatEnPantalla();
+  const [porBorrar, setPorBorrar] = useState<ItemConversacion | null>(null);
   const [errorAlBorrar, setErrorAlBorrar] = useState<string | null>(null);
   const tituloRef = useRef<HTMLHeadingElement>(null);
   const listaRef = useRef<HTMLUListElement>(null);
@@ -31,8 +33,9 @@ export default function ListaDeConversaciones({ borrar, alElegir }: Props) {
   const recuperadaRef = useRef<string | null>(null);
 
   /**
-   * Borrar no pide confirmación: se puede deshacer (heurística #3, control y libertad). El ítem se pliega y aparece el
-   * aviso con «Deshacer»; el servidor la borra recién cuando el aviso se va. Si el servidor falla, el ítem vuelve y se
+   * Borrar pide confirmación (heurística #5, prevenir errores) y, después de confirmar, todavía se puede deshacer
+   * (heurística #3, control y libertad): el ítem se pliega y aparece el aviso con «Deshacer»; el servidor la borra recién
+   * cuando el aviso se va. Si el servidor falla, el ítem vuelve y se
    * avisa qué pasó (sin el aviso, parecería que se borró y volvió sola).
    */
   const borrado = useBorradoConDeshacer({
@@ -105,12 +108,26 @@ export default function ListaDeConversaciones({ borrar, alElegir }: Props) {
                   alElegir();
                   void abrirConversacion(conversacion.id);
                 }}
-                onPedirBorrar={() => pedirBorrar(conversacion)}
+                onPedirBorrar={() => setPorBorrar(conversacion)}
               />
             ))}
           </ul>
         )}
       </section>
+
+      <DialogoDeConfirmacion
+        abierto={porBorrar !== null}
+        titulo="¿Borrar la conversación?"
+        descripcion={`Se va a borrar «${porBorrar?.titulo ?? ""}» con todos sus mensajes. Vas a tener unos segundos para deshacerlo. Tus movimientos registrados no se tocan.`}
+        textoConfirmar="Borrar"
+        peligro
+        onCancelar={() => setPorBorrar(null)}
+        onConfirmar={() => {
+          if (!porBorrar) return;
+          setPorBorrar(null);
+          pedirBorrar(porBorrar);
+        }}
+      />
 
       <AvisoDeBorrado
         conversacion={borrado.pendiente}

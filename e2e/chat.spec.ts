@@ -70,7 +70,7 @@ test.describe("el chat", () => {
     await expect(aviso).toHaveCount(0);
   });
 
-  test("borra una conversación sin confirmación: «Deshacer» la recupera; cerrar el aviso la borra y no vuelve al recargar", async ({
+  test("borra una conversación con confirmación: cancelar no borra; confirmar y «Deshacer» la recupera; confirmar y cerrar el aviso la borra y no vuelve al recargar", async ({
     page,
   }) => {
     await page.goto("/");
@@ -81,7 +81,14 @@ test.describe("el chat", () => {
     await expect(enLaLista).toBeVisible();
 
     const borrar = page.getByRole("button", { name: "Borrar la conversación «Charla de prueba»" });
+    const confirmar = () => page.getByRole("dialog").getByRole("button", { name: "Borrar" }).click();
     await borrar.click();
+    await page.getByRole("dialog").getByRole("button", { name: "Cancelar" }).click();
+    await expect(page.getByText(/^Borraste «/)).toHaveCount(0);
+    await expect(enLaLista).toBeVisible();
+
+    await borrar.click();
+    await confirmar();
     await expect(page.getByText("Borraste «Charla de prueba».")).toBeVisible();
     await page.getByRole("button", { name: "Deshacer" }).click();
     await expect(enLaLista).toBeVisible();
@@ -89,6 +96,7 @@ test.describe("el chat", () => {
     await expect(page.getByText("Hola, soy el asistente de prueba.", { exact: true })).toBeVisible();
 
     await borrar.click();
+    await confirmar();
     await page.getByRole("button", { name: "Cerrar el aviso" }).click();
     await expect(enLaLista).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Deshacer" })).toHaveCount(0);

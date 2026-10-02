@@ -19,8 +19,8 @@ type Props = {
 };
 
 /**
- * Pregunta de confirmación en el medio de la pantalla, sobre un fondo oscuro, para las acciones que no se pueden
- * deshacer (cerrar sesión, borrar una conversación). Reemplaza al `window.confirm` del navegador, que no se puede
+ * Pregunta de confirmación en el medio de la pantalla, sobre un fondo oscuro, para las acciones con consecuencias (cerrar
+ * sesión, borrar una conversación). Reemplaza al `window.confirm` del navegador, que no se puede
  * estilar ni traducir. Sigue el patrón «dialog» de la guía WAI-ARIA: al abrirse el foco va al botón de cancelar (la
  * opción segura), Tab no sale del diálogo, Escape o un click afuera cancelan y al cerrarse el foco vuelve a donde estaba.
  */

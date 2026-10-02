@@ -117,11 +117,18 @@ test("el aviso de «Deshacer» un borrado aparece abajo, a mano del pulgar, pero
     await expect(page.getByText("Hola, soy el asistente de prueba.", { exact: true })).toBeVisible({ timeout: 60_000 });
     await expect(page.getByRole("button", { name: "Enviar" })).toBeVisible(); // terminó de responder
   }
+  // Se entra de nuevo a la segunda (ya guardada): así el estado de la pantalla no depende de recargas del servidor de
+  // desarrollo mientras se compilaba.
+  await page.goto(page.url());
+  await expect(page.getByText("Hola, soy el asistente de prueba.", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Conversaciones" }).click();
+  await expect(page.getByRole("dialog", { name: "Menú principal" })).toBeVisible();
   const conversaciones = page.locator("li[data-conversacion]");
   await expect(conversaciones).toHaveCount(2);
   const laOtra = conversaciones.filter({ hasNot: page.locator('a[aria-current="page"]') });
+  await expect(laOtra).toHaveCount(1);
   await laOtra.getByRole("button", { name: /^Borrar la conversación/ }).click();
+  await page.getByRole("dialog", { name: "¿Borrar la conversación?" }).getByRole("button", { name: "Borrar" }).click();
 
   const aviso = page.getByText(/^Borraste «/).locator("..");
   await expect(aviso).toBeVisible();
